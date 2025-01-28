@@ -7,6 +7,24 @@ from selenium.common.exceptions import NoSuchElementException
 import time
 import random
 
+#  ===== O DeepSeek sugeriu isso aqui: =====
+
+# from selenium.webdriver.common.keys import Keys
+# from sqlalchemy.orm import Session
+# from app.models.ad import Ad
+# from app.db.session import SessionLocal
+# import time
+
+# class OLXCrawler:
+#     def run(self):
+#         db = SessionLocal()
+#         try:
+#             self.driver.get("https://www.olx.com.br")
+#             # Implemente a lógica de scraping aqui
+#         finally:
+#             self.driver.quit()
+#             db.close()
+
 class Crawler():
     def __init__(self):
         self.driver = WebDriver().getDriver()
