@@ -6,8 +6,8 @@ from app.database import Base
 class Ad(Base):
     __tablename__ = 'ad'
     
-    id = Column(Integer, primary_key=True)    # TODO id = Column(Integer, primary_key=True, index=True)
-    url = Column(Text())    # TODO url = Column(String, unique=True, index=True)
-    title = Column(String(50))   # TODO pode ser só String
+    id = Column(Integer, primary_key=True, index=True)
+    url = Column(String, unique=True, index=True)
+    title = Column(String)
     price = Column(Numeric(10, 2))
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
