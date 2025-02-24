@@ -1,38 +1,48 @@
-from backend.services.database_manager import DatabaseManager
-from scraper.olx_scraper.webdriver import WebDriver
+import time
+import random
+import requests
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 
-import time
-import random
+from olx.webdriver import WebDriver
 
 class Scraper():
-    def __init__(self):
-        self.db_manager = DatabaseManager()
+    def __init__(self, api_url="http://127.0.0.1:8000"):
         self.driver = WebDriver().getDriver()
-    
+        self.api_url = api_url
+
     def run(self):
         try:
             self.searchScreen()
-            self.doResearch("livro java")
+            self.doResearch("livro python")
             links = self.captureItemLinks()
             items = self.getItemsData(links)
 
             for item in items:
-                self.db_manager.save_ad(
-                    url=item['url'],
-                    title=item['title'],
-                    price=item['price']
-                )
-                print(item)
+                self.send_to_api(item)
 
         except Exception as ex:
-            print(ex)
+            print(f"Erro: {ex}")
         finally:
             self.driver.quit()
-    
+
+    def send_to_api(self, item):
+        """Envia os dados do anúncio para a API FastAPI"""
+        try:
+            response = requests.post(
+                f"{self.api_url}/ads/",
+                json=item,
+                timeout=10
+            )
+            if response.status_code == 201:
+                print(f"Anúncio salvo com sucesso: {item['title']}")
+            else:
+                print(f"Erro ao salvar anúncio: {response.text}")
+        except requests.exceptions.RequestException as e:
+            print(f"Erro na requisição: {e}")
+
     def closeModalIfExists(self):
         try:
             close_modal_button = self.driver.find_element(
@@ -43,16 +53,15 @@ class Scraper():
             print("Modal fechado.")
         except NoSuchElementException:
             print("Modal não encontrado.")
-    
+
     def searchScreen(self):
         self.driver.get("https://www.olx.com.br/")
         self.driver.maximize_window()
         time.sleep(random.uniform(5, 10))
 
         self.closeModalIfExists()
-
         time.sleep(random.uniform(3, 6))
-    
+
     def doResearch(self, researchKey):
         search_input = self.driver.find_element(
             By.CLASS_NAME, "olx-text-input__input-field"
@@ -62,12 +71,6 @@ class Scraper():
         search_input.send_keys(Keys.ENTER)
 
         time.sleep(random.uniform(5, 10))
-
-    def getResultPagesCount(self):
-        pass
-    
-    def nextResultPage(self):
-        pass
 
     def captureItemLinks(self):
         ad_links = []
@@ -79,9 +82,9 @@ class Scraper():
                     ad_links.append(link)
         except NoSuchElementException:
             print("Nenhum anúncio encontrado.")
-        
+
         return ad_links
-    
+
     def getItemsData(self, ad_links):
         items = []
         for i, link in enumerate(ad_links[:5]):
@@ -89,10 +92,8 @@ class Scraper():
             self.driver = WebDriver().getDriver()
 
             print(f"Acessando anúncio {i + 1}: {link}")
-            
-            items.append(
-                self.getItemData(i, link)
-            )
+
+            items.append(self.getItemData(i, link))
             time.sleep(random.uniform(5, 7))
         return items
 
