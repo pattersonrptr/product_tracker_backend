@@ -1,0 +1,59 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
+      - REDIS_URL=redis://redis:6379/0
+      - PYTHONPATH=/app
+    command: /app/start.sh
+
+  scraper:
+    build: .
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
+      - REDIS_URL=redis://redis:6379/0
+    command: celery -A scrapers.main worker --loglevel=info
+
+  celery_beat:
+    build: .
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
+      - REDIS_URL=redis://redis:6379/0
+    command: celery -A scrapers.main beat --loglevel=info
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: price_monitor
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
