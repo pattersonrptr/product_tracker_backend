@@ -1,59 +1,57 @@
 services:
   web:
     build: .
+    container_name: web
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
     depends_on:
       - db
       - redis
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
-      - REDIS_URL=redis://redis:6379/0
-      - PYTHONPATH=/app
-    command: /app/start.sh
+    command: ./start.sh
 
   scraper:
     build: .
-    volumes:
-      - .:/app
+    container_name: scraper
     depends_on:
       - db
       - redis
     environment:
+      - API_URL=http://web:8000
       - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
-      - REDIS_URL=redis://redis:6379/0
-    command: celery -A scrapers.main worker --loglevel=info
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    command: celery -A scrapers.tasks worker --loglevel=info
 
-  celery_beat:
+  celery-beat:
     build: .
-    volumes:
-      - .:/app
+    container_name: celery-beat
     depends_on:
-      - db
+      - scraper
       - redis
     environment:
+      - API_URL=http://web:8000
       - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
-      - REDIS_URL=redis://redis:6379/0
-    command: celery -A scrapers.main beat --loglevel=info
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    command: celery -A scrapers.tasks beat --loglevel=info
 
   db:
     image: postgres:13
+    container_name: db
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: price_monitor
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
   redis:
-    image: redis:latest
+    image: redis:alpine
+    container_name: redis
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
 
 volumes:
-  postgres_data:
-  redis_data:
+  pgdata:
