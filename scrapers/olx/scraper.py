@@ -1,3 +1,4 @@
+import os
 import time
 import random
 import requests
@@ -6,12 +7,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 
-from olx.webdriver import WebDriver
+from scrapers.olx.webdriver import WebDriver
 
-class Scraper():
-    def __init__(self, api_url="http://127.0.0.1:8000"):
-        self.driver = WebDriver().getDriver()
-        self.api_url = api_url
+class Scraper:
+    def __init__(self, api_url=None):
+        self.driver = WebDriver().get_driver()
+        self.api_url = api_url or os.getenv("API_URL", "http://web:8000")
 
     def run(self):
         try:
@@ -72,6 +73,7 @@ class Scraper():
 
         time.sleep(random.uniform(5, 10))
 
+
     def captureItemLinks(self):
         ad_links = []
         try:
@@ -87,9 +89,9 @@ class Scraper():
 
     def getItemsData(self, ad_links):
         items = []
-        for i, link in enumerate(ad_links[:5]):
+        for i, link in enumerate(ad_links[:1]):
             self.driver.quit()
-            self.driver = WebDriver().getDriver()
+            self.driver = WebDriver().get_driver()
 
             print(f"Acessando anúncio {i + 1}: {link}")
 
