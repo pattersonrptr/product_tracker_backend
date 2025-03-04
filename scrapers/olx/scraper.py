@@ -14,10 +14,10 @@ class Scraper:
         self.driver = WebDriver().get_driver()
         self.api_url = api_url or os.getenv("API_URL", "http://web:8000")
 
-    def run(self):
+    def run(self, search):
         try:
             self.search_screen()
-            self.do_research("livro python")
+            self.do_research(search)
             links = self.capture_item_links()
             items = self.get_items_data(links)
 
