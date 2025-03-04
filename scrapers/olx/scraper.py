@@ -16,10 +16,10 @@ class Scraper:
 
     def run(self):
         try:
-            self.searchScreen()
-            self.doResearch("livro python")
-            links = self.captureItemLinks()
-            items = self.getItemsData(links)
+            self.search_screen()
+            self.do_research("livro python")
+            links = self.capture_item_links()
+            items = self.get_items_data(links)
 
             for item in items:
                 self.send_to_api(item)
@@ -33,7 +33,7 @@ class Scraper:
         """Envia os dados do anúncio para a API FastAPI"""
         try:
             response = requests.post(
-                f"{self.api_url}/ads/",
+                f"{self.api_url}/products/",
                 json=item,
                 timeout=10
             )
@@ -44,7 +44,7 @@ class Scraper:
         except requests.exceptions.RequestException as e:
             print(f"Erro na requisição: {e}")
 
-    def closeModalIfExists(self):
+    def close_modal_if_exists(self):
         try:
             close_modal_button = self.driver.find_element(
                 By.CLASS_NAME,
@@ -55,51 +55,51 @@ class Scraper:
         except NoSuchElementException:
             print("Modal não encontrado.")
 
-    def searchScreen(self):
+    def search_screen(self):
         self.driver.get("https://www.olx.com.br/")
         self.driver.maximize_window()
         time.sleep(random.uniform(5, 10))
 
-        self.closeModalIfExists()
+        self.close_modal_if_exists()
         time.sleep(random.uniform(3, 6))
 
-    def doResearch(self, researchKey):
+    def do_research(self, research_key):
         search_input = self.driver.find_element(
             By.CLASS_NAME, "olx-text-input__input-field"
         )
-        search_input.send_keys(researchKey)
+        search_input.send_keys(research_key)
         time.sleep(random.uniform(5, 10))
         search_input.send_keys(Keys.ENTER)
 
         time.sleep(random.uniform(5, 10))
 
 
-    def captureItemLinks(self):
-        ad_links = []
+    def capture_item_links(self):
+        products_links = []
         try:
-            ads = self.driver.find_elements(By.CLASS_NAME, "olx-ad-card__link-wrapper")
-            for ad in ads:
-                link = ad.get_attribute("href")
+            products = self.driver.find_elements(By.CLASS_NAME, "olx-ad-card__link-wrapper")
+            for product in products:
+                link = product.get_attribute("href")
                 if link:
-                    ad_links.append(link)
+                    products_links.append(link)
         except NoSuchElementException:
             print("Nenhum anúncio encontrado.")
 
-        return ad_links
+        return products_links
 
-    def getItemsData(self, ad_links):
+    def get_items_data(self, products_links):
         items = []
-        for i, link in enumerate(ad_links[:1]):
+        for i, link in enumerate(products_links[:1]):
             self.driver.quit()
             self.driver = WebDriver().get_driver()
 
             print(f"Acessando anúncio {i + 1}: {link}")
 
-            items.append(self.getItemData(i, link))
+            items.append(self.get_item_data(i, link))
             time.sleep(random.uniform(5, 7))
         return items
 
-    def getItemData(self, item_number, link):
+    def get_item_data(self, item_number, link):
         self.driver.get(link)
         time.sleep(random.uniform(5, 10))
         try:

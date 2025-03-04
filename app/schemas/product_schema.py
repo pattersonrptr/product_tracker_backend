@@ -1,15 +1,15 @@
 from pydantic import BaseModel
 from datetime import datetime
 
-class AdBase(BaseModel):
+class ProductBase(BaseModel):
     url: str
     title: str
     price: float
 
-class AdCreate(AdBase):
+class ProductCreate(ProductBase):
     pass
 
-class AdResponse(AdBase):
+class ProductResponse(ProductBase):
     id: int
     created_at: datetime
 
