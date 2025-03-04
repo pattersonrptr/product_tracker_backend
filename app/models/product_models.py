@@ -1,10 +1,9 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Numeric, Text, create_engine, DateTime
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, Numeric, DateTime
 from app.database import Base
 
-class Ad(Base):
-    __tablename__ = 'ad'
+class Product(Base):
+    __tablename__ = 'product'
     
     id = Column(Integer, primary_key=True, index=True)
     url = Column(String, unique=True, index=True)
