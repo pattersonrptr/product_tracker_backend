@@ -5,7 +5,7 @@ WORKDIR /app
 COPY install_system_requirements.sh .
 RUN bash ./install_system_requirements.sh
 
-RUN pip --version && google-chrome-stable --version && chromedriver --version
+RUN pip --version
 
 COPY requirements.txt .
 RUN pip install --break-system-packages --no-cache-dir -r requirements.txt

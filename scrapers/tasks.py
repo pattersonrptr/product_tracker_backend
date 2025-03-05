@@ -18,7 +18,7 @@ def run_scraper(search):
     sleep_time = random.uniform(5, 25)
     time.sleep(sleep_time)
     print(f"RUNNING SCRAPER WITH {search} (slept for {sleep_time:.2f}s)")
-    Scraper().run(search=search)
+    Scraper().run(search_term=search)
     return f"Done with {search} (slept for {sleep_time:.2f}s)"
 
 @app.task(name="scrapers.tasks.run_scrapers")

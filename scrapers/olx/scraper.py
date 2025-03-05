@@ -2,130 +2,146 @@ import os
 import time
 import random
 import requests
+import cloudscraper
+from urllib.parse import quote_plus
+from bs4 import BeautifulSoup
 
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException
-
-from scrapers.olx.webdriver import WebDriver
 
 class Scraper:
     def __init__(self, api_url=None):
-        self.driver = WebDriver().get_driver()
-        self.api_url = api_url or os.getenv("API_URL", "http://web:8000")
+        # self.session = requests.Session()
+        self.session = cloudscraper.create_scraper()
+        self.api_url = api_url or os.getenv("API_URL", "web:8000")
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+            'DNT': '1',
+            'Sec-GPC': '1',
+        }
+        self.timeouts = (5, 15)  # (connect, read)
+        self.session.headers.update(self.headers)
 
-    def run(self, search):
+    def run(self, search_term, max_items=10):
+        """Executa todo o fluxo de scraping"""
         try:
-            self.search_screen()
-            self.do_research(search)
-            links = self.capture_item_links()
-            items = self.get_items_data(links)
+            # Fase 1: Coleta de links
+            search_url = self._build_search_url(search_term)
+            html = self._safe_request(search_url)
+            if not html:
+                return
 
-            for item in items:
-                self.send_to_api(item)
+            links = self._extract_links(html)
+            if not links:
+                print("Nenhum anúncio encontrado.")
+                return
 
-        except Exception as ex:
-            print(f"Erro: {ex}")
-        finally:
-            self.driver.quit()
+            # Fase 2: Coleta de dados dos anúncios
+            items = []
+            for i, link in enumerate(links[:max_items]):
+                item = self._process_product_page(link, i + 1)
+                if item:
+                    items.append(item)
+                time.sleep(random.uniform(1, 3))  # Delay aleatório entre requisições
 
-    def send_to_api(self, item):
-        """Envia os dados do anúncio para a API FastAPI"""
-        try:
-            response = requests.post(
-                f"{self.api_url}/products/",
-                json=item,
-                timeout=10
-            )
-            if response.status_code == 201:
-                print(f"Anúncio salvo com sucesso: {item['title']}")
-            else:
-                print(f"Erro ao salvar anúncio: {response.text}")
-        except requests.exceptions.RequestException as e:
-            print(f"Erro na requisição: {e}")
+            # Fase 3: Envio para API
+            if items:
+                self._send_to_api(items)
 
-    def close_modal_if_exists(self):
-        try:
-            close_modal_button = self.driver.find_element(
-                By.CLASS_NAME,
-                "olx-modal__close-button"
-            )
-            close_modal_button.click()
-            print("Modal fechado.")
-        except NoSuchElementException:
-            print("Modal não encontrado.")
+        except Exception as e:
+            print(f"Erro durante a execução: {str(e)}")
 
-    def search_screen(self):
-        self.driver.get("https://www.olx.com.br/")
-        self.driver.maximize_window()
-        time.sleep(random.uniform(5, 10))
+    def _build_search_url(self, search_term):
+        """Constrói a URL de pesquisa formatada corretamente"""
+        encoded_search = quote_plus(search_term)
+        return f"https://www.olx.com.br/brasil?q={encoded_search}"
 
-        self.close_modal_if_exists()
-        time.sleep(random.uniform(3, 6))
+    def _safe_request(self, url, max_retries=3):
+        """Faz requisições HTTP com tratamento de erros e retries"""
+        for attempt in range(max_retries):
+            try:
+                response = self.session.get(
+                    url,
+                    timeout=self.timeouts,
+                    allow_redirects=True
+                )
+                response.raise_for_status()
+                return response.text
 
-    def do_research(self, research_key):
-        search_input = self.driver.find_element(
-            By.CLASS_NAME, "olx-text-input__input-field"
-        )
-        search_input.send_keys(research_key)
-        time.sleep(random.uniform(5, 10))
-        search_input.send_keys(Keys.ENTER)
+            except requests.exceptions.HTTPError as e:
+                print(f"Erro HTTP {e.response.status_code} em {url}")
+            except requests.exceptions.RequestException as e:
+                print(f"Erro de conexão: {str(e)}")
 
-        time.sleep(random.uniform(5, 10))
+            if attempt < max_retries - 1:
+                sleep_time = random.uniform(2, 5) * (attempt + 1)
+                print(f"Tentando novamente em {sleep_time:.1f} segundos...")
+                time.sleep(sleep_time)
 
+        print(f"Falha após {max_retries} tentativas para {url}")
+        return None
 
-    def capture_item_links(self):
-        products_links = []
-        try:
-            products = self.driver.find_elements(By.CLASS_NAME, "olx-ad-card__link-wrapper")
-            for product in products:
-                link = product.get_attribute("href")
-                if link:
-                    products_links.append(link)
-        except NoSuchElementException:
-            print("Nenhum anúncio encontrado.")
+    def _extract_links(self, html_content):
+        """Extrai links dos anúncios da página de resultados"""
+        soup = BeautifulSoup(html_content, 'html.parser')
+        links = []
 
-        return products_links
+        for a in soup.find_all('a', {'class': 'olx-ad-card__link-wrapper'}):
+            href = a.get('href', '').split('#')[0]  # Remove fragmentos de URL
+            if href and href not in links:
+                links.append(href)
 
-    def get_items_data(self, products_links):
-        items = []
-        for i, link in enumerate(products_links[:1]):
-            self.driver.quit()
-            self.driver = WebDriver().get_driver()
+        return links
 
-            print(f"Acessando anúncio {i + 1}: {link}")
+    def _process_product_page(self, url, item_number):
+        """Processa uma página individual de produto"""
+        html = self._safe_request(url)
+        if not html:
+            return None
 
-            items.append(self.get_item_data(i, link))
-            time.sleep(random.uniform(5, 7))
-        return items
-
-    def get_item_data(self, item_number, link):
-        self.driver.get(link)
-        time.sleep(random.uniform(5, 10))
-        try:
-            title_element = self.driver.find_element(
-                By.CSS_SELECTOR,
-                "h1[data-ds-component='DS-Text'].ad__sc-45jt43-0"
-            )
-            title = title_element.text
-        except NoSuchElementException:
-            title = "Título não encontrado"
-
-        try:
-            price_element = self.driver.find_element(
-                By.CSS_SELECTOR,
-                "h2.olx-text:nth-child(2)"
-            )
-            price = price_element.text.replace("R$ ", "")
-        except NoSuchElementException:
-            price = "Preço não encontrado"
-
-        print("Number: ", item_number)
-        print("Title: ", title)
-        print("Price: ", price)
+        soup = BeautifulSoup(html, 'html.parser')
 
         return {
-            "url": link,
-            "title": title,
-            "price": price,
+            'url': url,
+            'title': self._extract_title(soup),
+            'price': self._extract_price(soup),
+            'item_number': item_number
         }
+
+    def _extract_title(self, soup):
+        """Extrai título do anúncio"""
+        try:
+            return soup.find('h1', {'data-ds-component': 'DS-Text'}).get_text(strip=True)
+        except AttributeError:
+            return "Título não encontrado"
+
+    def _extract_price(self, soup):
+        """Extrai e formata o preço"""
+        try:
+            price_text = soup.select_one('h2.olx-text:nth-child(2)').get_text(strip=True)
+            return price_text.replace('R$', '').strip()
+        except AttributeError:
+            return "Preço não encontrado"
+
+    def _send_to_api(self, items):
+        """Envia dados coletados para a API"""
+        success_count = 0
+        for item in items:
+            try:
+                response = requests.post(
+                    f"{self.api_url}/products/",
+                    json=item,
+                    timeout=10
+                )
+                if response.status_code == 201:
+                    success_count += 1
+                else:
+                    print(f"Erro ao enviar {item['title']}: {response.text}")
+            except Exception as e:
+                print(f"Falha no envio para API: {str(e)}")
+
+        print(f"Envio concluído: {success_count}/{len(items)} itens salvos")
+
+#
+# if __name__ == "__main__":
+#     scraper = OlxScraper()
+#     scraper.run("livro python", max_items=5)

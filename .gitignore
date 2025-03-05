@@ -176,4 +176,5 @@ cython_debug/
 notes.txt
 
 .idea/
-.ipynb
+
+*.ipynb
