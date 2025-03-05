@@ -30,7 +30,7 @@ def run_scrapers():
 app.conf.beat_schedule = {
     'run_scrapers_daily': {
         'task': 'scrapers.tasks.run_scrapers',
-        'schedule': crontab(hour=0, minute=0),  # Meia-noite UTC
+        'schedule': crontab(hour="0", minute="0"),  # Meia-noite UTC
     },
 }
 
