@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 
 class Scraper:
     def __init__(self, api_url=None):
-        # self.session = requests.Session()
+        self.BASE_URL = "https://www.olx.com.br/brasil"
         self.session = cloudscraper.create_scraper()
         self.api_url = api_url or os.getenv("API_URL", "web:8000")
         self.headers = {
@@ -53,7 +53,7 @@ class Scraper:
     def _build_search_url(self, search_term):
         """Constrói a URL de pesquisa formatada corretamente"""
         encoded_search = quote_plus(search_term)
-        return f"https://www.olx.com.br/brasil?q={encoded_search}"
+        return f"{self.BASE_URL}?q={encoded_search}"
 
     def _safe_request(self, url, max_retries=3):
         """Faz requisições HTTP com tratamento de erros e retries"""
@@ -140,8 +140,3 @@ class Scraper:
                 print(f"Falha no envio para API: {str(e)}")
 
         print(f"Envio concluído: {success_count}/{len(items)} itens salvos")
-
-#
-# if __name__ == "__main__":
-#     scraper = OlxScraper()
-#     scraper.run("livro python", max_items=5)
