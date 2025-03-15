@@ -11,10 +11,14 @@ class ProductRepository:
 
     def create(self, product_data: dict):
         product = Product(**product_data)
-        self.db.add(product)
-        self.db.commit()
-        self.db.refresh(product)
-        return product
+        try:
+            self.db.add(product)
+            self.db.commit()
+            self.db.refresh(product)
+            return product
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
     def get_all(self):
         return self.db.query(Product).all()
@@ -26,16 +30,25 @@ class ProductRepository:
         product = self.get_by_id(product_id)
         if not product:
             return None
-        for key, value in product_data.items():
-            setattr(product, key, value)
-        self.db.commit()
-        self.db.refresh(product)
-        return product
+        try:
+            for key, value in product_data.items():
+                setattr(product, key, value)
+            self.db.commit()
+            self.db.refresh(product)
+            return product
+        except Exception as e:
+            self.db.rollback()
+
+            raise e
 
     def delete(self, product_id: int):
         product = self.get_by_id(product_id)
         if not product:
             return None
-        self.db.delete(product)
-        self.db.commit()
-        return True
+        try:
+            self.db.delete(product)
+            self.db.commit()
+            return True
+        except Exception as e:
+            self.db.rollback()
+            raise e

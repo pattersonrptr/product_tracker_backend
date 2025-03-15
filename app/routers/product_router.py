@@ -26,7 +26,7 @@ def get_product_service(db: Session = Depends(get_db)):
 
 @router.post("/products/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(product_data: ProductCreate, product_service: ProductService = Depends(get_product_service)):
-    return await CreateProduct(product_service).execute(product_data.dict())
+    return await CreateProduct(product_service).execute(product_data.model_dump())
 
 
 @router.get("/products/", response_model=List[ProductResponse])
@@ -44,7 +44,7 @@ async def get_product(product_id: int, product_service: ProductService = Depends
 
 @router.put("/products/{product_id}", response_model=ProductResponse)
 async def update_product(product_id: int, product_data: ProductCreate, product_service: ProductService = Depends(get_product_service)):
-    updated_product = await product_service.update_product(product_id, product_data.dict())
+    updated_product = await product_service.update_product(product_id, product_data.model_dump())
     if not updated_product:
         raise HTTPException(status_code=404, detail="Product not found")
     return updated_product
