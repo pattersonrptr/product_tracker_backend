@@ -18,28 +18,20 @@ def create_product_uc(mock_product_service):
 
 @pytest.mark.asyncio
 async def test_execute_success(create_product_uc, mock_product_service):
-    # Dados de teste
     test_data = {"name": "New Product", "price": 199.90}
     expected_result = {"id": 1, **test_data}
-
-    # Configurar o mock
     mock_product_service.create_product.return_value = expected_result
-
-    # Executar o use case
     result = await create_product_uc.execute(test_data)
 
-    # Verificações
     mock_product_service.create_product.assert_awaited_once_with(test_data)
     assert result == expected_result
 
 
 @pytest.mark.asyncio
 async def test_execute_propagates_errors(create_product_uc, mock_product_service):
-    # Configurar o mock para levantar uma exceção
     error = Exception("Database error")
     mock_product_service.create_product.side_effect = error
 
-    # Executar e verificar a exceção
     with pytest.raises(Exception) as exc_info:
         await create_product_uc.execute({"name": "Invalid"})
 

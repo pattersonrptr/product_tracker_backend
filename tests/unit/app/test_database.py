@@ -8,10 +8,9 @@ def test_get_db_url_from_alembic_ini():
         mock_config = Mock()
         mock_parser.return_value = mock_config
         mock_config.get.return_value = 'postgresql://user:***@db:5432/price_monitor'
-
         url = get_db_url_from_alembic_ini()
-
         called_path = mock_config.read.call_args[0][0]
+
         assert called_path.endswith('alembic.ini'), f"Unexpected path: {called_path}"
 
         mock_config.get.assert_called_once_with('alembic', 'sqlalchemy.url')

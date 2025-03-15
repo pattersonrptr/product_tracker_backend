@@ -22,9 +22,7 @@ class Scraper:
         self.session.headers.update(self.headers)
 
     def run(self, search_term, max_items=10):
-        """Executa todo o fluxo de scraping"""
         try:
-            # Fase 1: Coleta de links
             search_url = self._build_search_url(search_term)
             html = self._safe_request(search_url)
             if not html:
@@ -32,31 +30,27 @@ class Scraper:
 
             links = self._extract_links(html)
             if not links:
-                print("Nenhum anúncio encontrado.")
+                print("No product found.")
                 return
 
-            # Fase 2: Coleta de dados dos anúncios
             items = []
             for i, link in enumerate(links[:max_items]):
                 item = self._process_product_page(link, i + 1)
                 if item:
                     items.append(item)
-                time.sleep(random.uniform(1, 3))  # Delay aleatório entre requisições
+                time.sleep(random.uniform(1, 3))
 
-            # Fase 3: Envio para API
             if items:
                 self._send_to_api(items)
 
         except Exception as e:
-            print(f"Erro durante a execução: {str(e)}")
+            print(f"Error during the execution: {str(e)}")
 
     def _build_search_url(self, search_term):
-        """Constrói a URL de pesquisa formatada corretamente"""
         encoded_search = quote_plus(search_term)
         return f"{self.BASE_URL}?q={encoded_search}"
 
     def _safe_request(self, url, max_retries=3):
-        """Faz requisições HTTP com tratamento de erros e retries"""
         for attempt in range(max_retries):
             try:
                 response = self.session.get(
@@ -68,32 +62,30 @@ class Scraper:
                 return response.text
 
             except requests.exceptions.HTTPError as e:
-                print(f"Erro HTTP {e.response.status_code} em {url}")
+                print(f"HTTP error {e.response.status_code} em {url}")
             except requests.exceptions.RequestException as e:
-                print(f"Erro de conexão: {str(e)}")
+                print(f"Connection error: {str(e)}")
 
             if attempt < max_retries - 1:
                 sleep_time = random.uniform(2, 5) * (attempt + 1)
-                print(f"Tentando novamente em {sleep_time:.1f} segundos...")
+                print(f"Trying again in {sleep_time:.1f} seconds...")
                 time.sleep(sleep_time)
 
-        print(f"Falha após {max_retries} tentativas para {url}")
+        print(f"Failed after {max_retries} attempts for {url}")
         return None
 
     def _extract_links(self, html_content):
-        """Extrai links dos anúncios da página de resultados"""
         soup = BeautifulSoup(html_content, 'html.parser')
         links = []
 
         for a in soup.find_all('a', {'class': 'olx-ad-card__link-wrapper'}):
-            href = a.get('href', '').split('#')[0]  # Remove fragmentos de URL
+            href = a.get('href', '').split('#')[0]
             if href and href not in links:
                 links.append(href)
 
         return links
 
     def _process_product_page(self, url, item_number):
-        """Processa uma página individual de produto"""
         html = self._safe_request(url)
         if not html:
             return None
@@ -108,22 +100,19 @@ class Scraper:
         }
 
     def _extract_title(self, soup):
-        """Extrai título do anúncio"""
         try:
             return soup.find('h1', {'data-ds-component': 'DS-Text'}).get_text(strip=True)
         except AttributeError:
-            return "Título não encontrado"
+            return "Title not found"
 
     def _extract_price(self, soup):
-        """Extrai e formata o preço"""
         try:
             price_text = soup.select_one('h2.olx-text:nth-child(2)').get_text(strip=True)
             return price_text.replace('R$', '').strip()
         except AttributeError:
-            return "Preço não encontrado"
+            return "Price not found"
 
     def _send_to_api(self, items):
-        """Envia dados coletados para a API"""
         success_count = 0
         for item in items:
             try:
@@ -135,8 +124,8 @@ class Scraper:
                 if response.status_code == 201:
                     success_count += 1
                 else:
-                    print(f"Erro ao enviar {item['title']}: {response.text}")
+                    print(f"Error when sending {item['title']}: {response.text}")
             except Exception as e:
-                print(f"Falha no envio para API: {str(e)}")
+                print(f"Failed to send to API: {str(e)}")
 
-        print(f"Envio concluído: {success_count}/{len(items)} itens salvos")
+        print(f"Submission completed: {success_count}/{len(items)} saved items.")
