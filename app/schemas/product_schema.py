@@ -1,10 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl, Field, ConfigDict
 from datetime import datetime
 
 class ProductBase(BaseModel):
-    url: str
-    title: str
-    price: float
+    url: HttpUrl
+    title: str = Field(min_length=1)
+    price: float = Field(gt=0)
 
 class ProductCreate(ProductBase):
     pass
@@ -13,5 +13,4 @@ class ProductResponse(ProductBase):
     id: int
     created_at: datetime
 
-    class Config:
-        orm_mode = True  # Isso permite a conversão automática de ORM para Pydantic
+    model_config = ConfigDict(from_attributes=True)
