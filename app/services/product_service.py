@@ -9,17 +9,16 @@ class ProductService:
         self.repository = repository
 
     async def create_product(self, product_data: dict):
-        return self.repository.create(product_data)
+        return await self.repository.create(product_data)
 
     async def get_all_products(self):
-        return self.repository.get_all()
+        return await self.repository.get_all()
 
     async def get_product_by_id(self, product_id: int):
-        return self.repository.get_by_id(product_id)
+        return await self.repository.get_by_id(product_id)
 
     async def update_product(self, product_id: int, product_data: dict):
-        return self.repository.update(product_id, product_data)
+        return await self.repository.update(product_id, product_data)
 
     async def delete_product(self, product_id: int):
-        return self.repository.delete(product_id)
-
+        return await self.repository.delete(product_id)
