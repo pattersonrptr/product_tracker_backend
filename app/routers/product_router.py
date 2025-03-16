@@ -25,33 +25,33 @@ def get_product_service(db: Session = Depends(get_db)):
 
 
 @router.post("/products/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
-async def create_product(product_data: ProductCreate, product_service: ProductService = Depends(get_product_service)):
-    return await CreateProduct(product_service).execute(product_data.model_dump())
+def create_product(product_data: ProductCreate, product_service: ProductService = Depends(get_product_service)):
+    return CreateProduct(product_service).execute(product_data.model_dump())
 
 
 @router.get("/products/", response_model=List[ProductResponse])
-async def get_products(product_service: ProductService = Depends(get_product_service)):
-    return await product_service.get_all_products()
+def get_products(product_service: ProductService = Depends(get_product_service)):
+    return product_service.get_all_products()
 
 
 @router.get("/products/{product_id}", response_model=ProductResponse)
-async def get_product(product_id: int, product_service: ProductService = Depends(get_product_service)):
-    product = await product_service.get_product_by_id(product_id)
+def get_product(product_id: int, product_service: ProductService = Depends(get_product_service)):
+    product = product_service.get_product_by_id(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
 
 @router.put("/products/{product_id}", response_model=ProductResponse)
-async def update_product(product_id: int, product_data: ProductCreate, product_service: ProductService = Depends(get_product_service)):
-    updated_product = await product_service.update_product(product_id, product_data.model_dump())
+def update_product(product_id: int, product_data: ProductCreate, product_service: ProductService = Depends(get_product_service)):
+    updated_product = product_service.update_product(product_id, product_data.model_dump())
     if not updated_product:
         raise HTTPException(status_code=404, detail="Product not found")
     return updated_product
 
 
 @router.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_product(product_id: int, product_service: ProductService = Depends(get_product_service)):
-    deleted = await product_service.delete_product(product_id)
+def delete_product(product_id: int, product_service: ProductService = Depends(get_product_service)):
+    deleted = product_service.delete_product(product_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Product not found")

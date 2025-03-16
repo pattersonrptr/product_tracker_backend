@@ -101,13 +101,15 @@ class Scraper:
 
     def _extract_title(self, soup):
         try:
-            return soup.find('h1', {'data-ds-component': 'DS-Text'}).get_text(strip=True)
+            return soup.find('span', {'class': 'olx-text--title-medium'}).get_text(strip=True)
         except AttributeError:
             return "Title not found"
 
     def _extract_price(self, soup):
         try:
-            price_text = soup.select_one('h2.olx-text:nth-child(2)').get_text(strip=True)
+            price_text = soup.find(
+                'span', {'class': 'olx-text olx-text--title-large olx-text--block'}
+            ).get_text(strip=True)
             return price_text.replace('R$', '').strip()
         except AttributeError:
             return "Price not found"
