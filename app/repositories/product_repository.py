@@ -26,6 +26,9 @@ class ProductRepository:
     def get_by_id(self, product_id: int):
         return self.db.query(Product).filter(Product.id == product_id).first()
 
+    def get_by_url(self, url):
+        return self.db.query(Product).filter(Product.url == url).first()
+
     def update(self, product_id: int, product_data: dict):
         product = self.get_by_id(product_id)
         if not product:

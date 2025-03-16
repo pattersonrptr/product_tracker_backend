@@ -21,30 +21,28 @@ class Scraper:
         self.timeouts = (5, 15)  # (connect, read)
         self.session.headers.update(self.headers)
 
-    def run(self, search_term, max_items=10):
+    def scrape_search(self, search_term):
+        max_items = 10
+
         try:
             search_url = self._build_search_url(search_term)
             html = self._safe_request(search_url)
             if not html:
-                return
+                return []
 
             links = self._extract_links(html)
             if not links:
                 print("No product found.")
-                return
+                return []
 
-            items = []
-            for i, link in enumerate(links[:max_items]):
-                item = self._process_product_page(link, i + 1)
-                if item:
-                    items.append(item)
-                time.sleep(random.uniform(1, 3))
-
-            if items:
-                self._send_to_api(items)
+            return links[:max_items]
 
         except Exception as e:
             print(f"Error during the execution: {str(e)}")
+
+
+    def scrape_product_page(self, url):
+        return self._process_product_page(url)
 
     def _build_search_url(self, search_term):
         encoded_search = quote_plus(search_term)
@@ -85,7 +83,7 @@ class Scraper:
 
         return links
 
-    def _process_product_page(self, url, item_number):
+    def _process_product_page(self, url):
         html = self._safe_request(url)
         if not html:
             return None
@@ -96,7 +94,6 @@ class Scraper:
             'url': url,
             'title': self._extract_title(soup),
             'price': self._extract_price(soup),
-            'item_number': item_number
         }
 
     def _extract_title(self, soup):

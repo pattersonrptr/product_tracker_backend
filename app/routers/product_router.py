@@ -30,7 +30,9 @@ def create_product(product_data: ProductCreate, product_service: ProductService 
 
 
 @router.get("/products/", response_model=List[ProductResponse])
-def get_products(product_service: ProductService = Depends(get_product_service)):
+def get_products(url: str = None, product_service: ProductService = Depends(get_product_service)):
+    if url:
+        return product_service.get_product_by_url(url)
     return product_service.get_all_products()
 
 

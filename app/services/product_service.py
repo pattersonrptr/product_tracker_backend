@@ -20,6 +20,10 @@ class ProductService:
     def get_product_by_id(self, product_id: int):
         return self.repository.get_by_id(product_id)
 
+    def get_product_by_url(self, url):
+        return self.repository.get_by_url(url)
+
+
     def update_product(self, product_id: int, product_data: dict):
         if 'url' in product_data and isinstance(product_data['url'], HttpUrl):
             product_data['url'] = str(product_data['url'])
