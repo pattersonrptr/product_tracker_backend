@@ -19,13 +19,13 @@ SEARCHES = ["livro python", "livro java", "livro javascript"]
 
 @app.task(name="scrapers.tasks.run_olx_scraper_searches")
 def run_olx_scraper_searches():
-    """Task 1: Dispara uma task para cada termo de busca"""
+    """Task 1: Trigger a task for each search term"""
     return group(run_olx_scraper.s(search) for search in SEARCHES)()
 
 
 @app.task(name="scrapers.tasks.run_olx_scraper")
 def run_olx_scraper(search):
-    """Task 2: Executa o scraper para um termo de busca e retorna URLs"""
+    """Task 2: Run the scraper for a search term and return URLs"""
     sleep_time = random.uniform(5, 25)
     time.sleep(sleep_time)
     print(f"🔎 Buscando termo: {search} (sleep {sleep_time:.2f}s)")
@@ -33,8 +33,8 @@ def run_olx_scraper(search):
     scraper = Scraper()
     try:
         urls = scraper.scrape_search(search)
-        # Chama a Task 3 ASSINCRONAMENTE com os resultados
-        # TODO: aqui sempre passa success, talvez não seja bom chamar aqui dentro do try, mas depois dele
+        # Call Task 3 ASYNCHRONOUSLY with the results
+        # TODO: here it always passes success, maybe it's not good to call it here inside the try, but after it
         process_url_list.apply_async(args=[{"status": "success", "search": search, "urls": urls}])
         return {"status": "success", "search": search, "urls": urls}
     except Exception as e:
@@ -43,14 +43,14 @@ def run_olx_scraper(search):
 
 @app.task(name="scrapers.tasks.process_url_list")
 def process_url_list(result):
-    """Task 3: Processa URLs e coordena as Tasks 4 e 5"""
-    # TODO: ta sempre recebendo status success, devo passar o error também ou remover isso?
+    """Task 3: Processes URLs and coordinates Tasks 4 and 5"""
+    # TODO: I'm always getting success status, should I pass the error too or remove this?
     if result["status"] != "success":
-        return f"⚠️ Erro na busca {result['search']}: {result['message']}"
+        return f"⚠️ Search error {result['search']}: {result['message']}"
 
-    print(f"📥 Processando {len(result['urls'])} URLs de {result['search']}")
+    print(f"📥 Processing {len(result['urls'])} URLs of {result['search']}")
 
-    # Cria um chord com as Tasks 4 e aciona a Task 5 ao final
+    # Create a chord with Tasks 4 and trigger Task 5 at the end
     return chord(
         scrape_product_page.s(url) for url in result["urls"]
     )(save_products.s())
@@ -58,7 +58,7 @@ def process_url_list(result):
 
 @app.task(name="scrapers.tasks.scrape_product_page")
 def scrape_product_page(url):
-    """Task 4: Coleta dados de um produto a partir da URL"""
+    """Task 4: Collect product data from URL"""
     sleep_time = random.uniform(1, 3)
     time.sleep(sleep_time)
     print(f"🛒 Scraping URL: {url} (sleep {sleep_time:.2f}s)")
@@ -73,25 +73,25 @@ def scrape_product_page(url):
 
 @app.task(name="scrapers.tasks.save_products")
 def save_products(results):
-    """Task 5: Salva produtos no banco via API"""
+    """Task 5: Save products to the database via API"""
     successful = [r["data"] for r in results if r["status"] == "success"]
-    print(f"💾 Salvando {len(successful)} produtos")
+    print(f"💾 Saving {len(successful)} products")
 
     api_url = f"{os.getenv('API_URL', 'web:8000')}/products/"
     created = 0
 
     for product in successful:
-        # Verifica se produto já existe
+        # Check if product already exists
         response = requests.get(api_url, params={"url": product["url"]})
         if response.status_code == 200 and response.json():
             continue
 
-        # Cria novo produto
+        # Create new product
         response = requests.post(api_url, json=product, timeout=10)
         if response.status_code == 201:
             created += 1
 
-    return f"✅ {created} novos produtos criados"
+    return f"✅ {created} new products created"
 
 
 app.conf.beat_schedule = {

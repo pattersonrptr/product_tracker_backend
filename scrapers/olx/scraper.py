@@ -21,21 +21,30 @@ class Scraper:
         self.timeouts = (5, 15)  # (connect, read)
         self.session.headers.update(self.headers)
 
+
     def scrape_search(self, search_term):
-        max_items = 10
+        page_number = 1
+        has_next = True
+        all_links = []
 
         try:
-            search_url = self._build_search_url(search_term)
-            html = self._safe_request(search_url)
-            if not html:
-                return []
+            while has_next:
+                search_url = self._build_search_url(search_term, page_number)
+                html = self._safe_request(search_url)
 
-            links = self._extract_links(html)
-            if not links:
-                print("No product found.")
-                return []
+                if not html:
+                    has_next = False
 
-            return links[:max_items]
+                links = self._extract_links(html)
+
+                if not links:
+                    has_next = False
+
+                all_links.extend(links)
+                print(f"Links collected: {len(all_links)}")
+                page_number += 1
+
+            return all_links
 
         except Exception as e:
             print(f"Error during the execution: {str(e)}")
@@ -44,9 +53,11 @@ class Scraper:
     def scrape_product_page(self, url):
         return self._process_product_page(url)
 
-    def _build_search_url(self, search_term):
+
+    def _build_search_url(self, search_term, page_number=1):
         encoded_search = quote_plus(search_term)
-        return f"{self.BASE_URL}?q={encoded_search}"
+        return f"{self.BASE_URL}?q={encoded_search}&o={page_number}"
+
 
     def _safe_request(self, url, max_retries=3):
         for attempt in range(max_retries):
@@ -72,6 +83,7 @@ class Scraper:
         print(f"Failed after {max_retries} attempts for {url}")
         return None
 
+
     def _extract_links(self, html_content):
         soup = BeautifulSoup(html_content, 'html.parser')
         links = []
@@ -82,6 +94,7 @@ class Scraper:
                 links.append(href)
 
         return links
+
 
     def _process_product_page(self, url):
         html = self._safe_request(url)
@@ -96,11 +109,13 @@ class Scraper:
             'price': self._extract_price(soup),
         }
 
+
     def _extract_title(self, soup):
         try:
             return soup.find('span', {'class': 'olx-text--title-medium'}).get_text(strip=True)
         except AttributeError:
             return "Title not found"
+
 
     def _extract_price(self, soup):
         try:
@@ -110,6 +125,7 @@ class Scraper:
             return price_text.replace('R$', '').strip()
         except AttributeError:
             return "Price not found"
+
 
     def _send_to_api(self, items):
         success_count = 0
