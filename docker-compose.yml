@@ -22,6 +22,7 @@ services:
       - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
       - CELERY_BROKER_URL=redis://redis:6379/0
     command: ["/bin/sh", "-c", "celery multi start 8 -A scrapers.tasks --loglevel=info --concurrency=2 --detach && tail -f /dev/null"]
+    # TODO: celery multy cria vários workers, eu queria só testar isso, mas devo voltar a criar 1 worker apenas com 8 a 4 concurrencies
 
   flower:
     build: .

@@ -139,8 +139,13 @@ def update_products(results):
 app.conf.beat_schedule = {
     'run_olx_scraper_searches_daily': {
         'task': 'scrapers.tasks.run_olx_scraper_searches',
-        'schedule': crontab(hour="0", minute="0"),
+        'schedule': crontab(hour="14", minute="40"),
+    },
+    'run_olx_scraper_update_daily': {
+        'task': 'scrapers.tasks.run_olx_scraper_update',
+        'schedule': crontab(hour="14", minute="42"),
     },
 }
 
-app.conf.timezone = 'UTC'
+# app.conf.timezone = 'UTC'
+app.conf.timezone = 'America/Sao_Paulo'
