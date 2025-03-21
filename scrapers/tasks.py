@@ -65,6 +65,7 @@ def process_url_list(result):
 @app.task(name="scrapers.tasks.scrape_product_page")
 def scrape_product_page(url):
     """Task 4: Collect product data from URL"""
+    # TODO: maybe sleep is not needed, maybe cloudscraper is already handling this
     sleep_time = random.uniform(1, 3)
 
     time.sleep(sleep_time)
@@ -94,12 +95,45 @@ def save_products(results):
         if response.status_code == 200 and response.json():
             continue
 
-        # Create new product
         response = requests.post(api_url, json=product, timeout=10)
         if response.status_code == 201:
             created += 1
 
     return f"✅ {created} new products created"
+
+
+@app.task(name="scrapers.tasks.run_olx_scraper_update")
+def run_olx_scraper_update():
+    print("Updating products by URLs")
+
+    api_url = f"{os.getenv('API_URL', 'web:8000')}/products/"
+    response = requests.get(api_url)
+    urls = []
+
+    if response.status_code == 200 and response.json():
+        urls = [item['url'] for item in response.json()]
+
+    return chord(
+        scrape_product_page.s(url).set(countdown=10) for url in urls
+    )(update_products.s())
+
+
+@app.task(name="scrapers.tasks.update_products")
+def update_products(results):
+    """Update products in the database via API"""
+    successful = [r["data"] for r in results if r["status"] == "success"]
+    print(f"💾 Updating {len(successful)} products")
+
+    updated = 0
+
+    for product in successful:
+        api_url = f"{os.getenv('API_URL', 'web:8000')}/products/url/{product['url']}"
+        response = requests.put(api_url, json=product, timeout=10)
+
+        if response.status_code == 200:
+            updated += 1
+
+    return f"✅ {updated} products updated"
 
 
 app.conf.beat_schedule = {

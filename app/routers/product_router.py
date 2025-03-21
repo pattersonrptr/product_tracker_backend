@@ -52,6 +52,14 @@ def update_product(product_id: int, product_data: ProductCreate, product_service
     return updated_product
 
 
+@router.put("/products/url/{url:path}", response_model=ProductResponse)
+def update_product_by_url(url: str, product_data: ProductCreate, product_service: ProductService = Depends(get_product_service)):
+    updated_product = product_service.update_product_by_url(url, product_data.model_dump())
+    if not updated_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return updated_product
+
+
 @router.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_product(product_id: int, product_service: ProductService = Depends(get_product_service)):
     deleted = product_service.delete_product(product_id)

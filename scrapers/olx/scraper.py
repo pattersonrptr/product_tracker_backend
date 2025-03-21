@@ -1,7 +1,7 @@
 import os
 import time
 import random
-import requests
+import requests     # TODO: check if requests is still needed
 import cloudscraper
 from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
