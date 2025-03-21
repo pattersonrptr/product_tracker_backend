@@ -88,7 +88,7 @@ class Scraper:
         soup = BeautifulSoup(html_content, 'html.parser')
         links = []
 
-        for a in soup.find_all('a', {'class': 'olx-ad-card__link-wrapper'}):
+        for a in soup.select('section.olx-ad-card--horizontal > a'):
             href = a.get('href', '').split('#')[0]
             if href and href not in links:
                 links.append(href)
@@ -98,15 +98,18 @@ class Scraper:
 
     def _process_product_page(self, url):
         html = self._safe_request(url)
-        if not html:
-            return None
+        title = None
+        price = None
 
-        soup = BeautifulSoup(html, 'html.parser')
+        if html:
+            soup = BeautifulSoup(html, 'html.parser')
+            title = self._extract_title(soup)
+            price = self._extract_price(soup)
 
         return {
             'url': url,
-            'title': self._extract_title(soup),
-            'price': self._extract_price(soup),
+            'title': title,
+            'price': price,
         }
 
 

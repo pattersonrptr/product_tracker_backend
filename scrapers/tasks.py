@@ -14,7 +14,13 @@ app = Celery(
     backend='redis://redis:6379/0'
 )
 
-SEARCHES = ["livro python", "livro java", "livro javascript"]
+# app.conf.update(
+#     task_concurrency=16,
+#     worker_prefetch_multiplier=10,
+#     worker_heartbeat=120,
+# )
+
+SEARCHES = ["livro python"]
 
 
 @app.task(name="scrapers.tasks.run_olx_scraper_searches")
@@ -26,16 +32,19 @@ def run_olx_scraper_searches():
 @app.task(name="scrapers.tasks.run_olx_scraper")
 def run_olx_scraper(search):
     """Task 2: Run the scraper for a search term and return URLs"""
-    sleep_time = random.uniform(5, 25)
-    time.sleep(sleep_time)
-    print(f"🔎 Buscando termo: {search} (sleep {sleep_time:.2f}s)")
+    # sleep_time = random.uniform(5, 25)
+    # time.sleep(sleep_time)
+    # print(f"🔎 Searching term: {search} (sleep {sleep_time:.2f}s)")
+    print(f"🔎 Searching term: {search}")
 
     scraper = Scraper()
     try:
         urls = scraper.scrape_search(search)
         # Call Task 3 ASYNCHRONOUSLY with the results
-        # TODO: here it always passes success, maybe it's not good to call it here inside the try, but after it
-        process_url_list.apply_async(args=[{"status": "success", "search": search, "urls": urls}])
+        process_url_list.apply_async(
+            args=[{"status": "success", "search": search, "urls": urls}],
+            countdown=10
+        )
         return {"status": "success", "search": search, "urls": urls}
     except Exception as e:
         return {"status": "error", "search": search, "message": str(e)}
@@ -44,15 +53,12 @@ def run_olx_scraper(search):
 @app.task(name="scrapers.tasks.process_url_list")
 def process_url_list(result):
     """Task 3: Processes URLs and coordinates Tasks 4 and 5"""
-    # TODO: I'm always getting success status, should I pass the error too or remove this?
-    if result["status"] != "success":
-        return f"⚠️ Search error {result['search']}: {result['message']}"
 
     print(f"📥 Processing {len(result['urls'])} URLs of {result['search']}")
 
     # Create a chord with Tasks 4 and trigger Task 5 at the end
     return chord(
-        scrape_product_page.s(url) for url in result["urls"]
+        scrape_product_page.s(url).set(countdown=10) for url in result["urls"]
     )(save_products.s())
 
 
@@ -60,10 +66,12 @@ def process_url_list(result):
 def scrape_product_page(url):
     """Task 4: Collect product data from URL"""
     sleep_time = random.uniform(1, 3)
+
     time.sleep(sleep_time)
     print(f"🛒 Scraping URL: {url} (sleep {sleep_time:.2f}s)")
 
     scraper = Scraper()
+
     try:
         product_data = scraper.scrape_product_page(url)
         return {"status": "success", "data": product_data}
