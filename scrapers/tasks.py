@@ -36,6 +36,10 @@ def run_olx_scraper(search):
 
     scraper = Scraper()
     try:
+        # TODO: In the save_products task, it is prevented from trying to save products that already exist,
+        #  but it would be better to load a list of URLs of already saved products before scraping,
+        #  thus using it as a filter to avoid redoing the scrape_product_page task. The update tasks
+        #  will be responsible for updating products saved more than 1 month ago.
         urls = scraper.scrape_search(search)
         # Call Task 3 ASYNCHRONOUSLY with the results
         process_url_list.apply_async(
