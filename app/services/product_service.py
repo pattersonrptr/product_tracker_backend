@@ -21,7 +21,7 @@ class ProductService:
         return self.repository.get_by_id(product_id)
 
     def get_product_by_url(self, url):
-        return self.repository.get_by_url(url)
+        return self.repository.get_by_url(url) or []
 
     def update_product(self, product_id: int, product_data: dict):
         if 'url' in product_data and isinstance(product_data['url'], HttpUrl):
@@ -29,7 +29,7 @@ class ProductService:
         return self.repository.update(product_id, product_data)
 
     def update_product_by_url(self, url: str, product_data: dict):
-        print(f"Updating product with URL: {url}")  # Log para depuração
+        print(f"Updating product with URL: {url}")
         if 'url' in product_data and isinstance(product_data['url'], HttpUrl):
             product_data['url'] = str(product_data['url'])
         return self.repository.update_by_url(url, product_data)

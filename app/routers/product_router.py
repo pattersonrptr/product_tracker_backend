@@ -34,6 +34,7 @@ def get_products(url: str = None, product_service: ProductService = Depends(get_
     if url:
         return product_service.get_product_by_url(url)
     return product_service.get_all_products()
+# TODO: search by updated_at
 
 
 @router.get("/products/{product_id}", response_model=ProductResponse)

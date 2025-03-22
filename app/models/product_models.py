@@ -11,4 +11,4 @@ class Product(Base):
     title = Column(String)
     price = Column(Numeric(10, 2))
     created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
-    # TODO: add a updated at field
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC), nullable=True)

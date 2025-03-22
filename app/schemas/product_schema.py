@@ -8,7 +8,7 @@ class ProductBase(BaseModel):
 
     @field_validator('price', mode='before')
     @classmethod
-    def parse_brazilian_decimal(cls, value):
+    def parse_decimal(cls, value):
         if isinstance(value, str):
             value = value.replace(',', '.')
         return float(value)
@@ -19,5 +19,6 @@ class ProductCreate(ProductBase):
 class ProductResponse(ProductBase):
     id: int
     created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

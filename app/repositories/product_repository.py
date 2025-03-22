@@ -4,6 +4,7 @@ Data Access Layer
 
 from sqlalchemy.orm import Session
 from app.models.product_models import Product
+from datetime import datetime, UTC
 
 class ProductRepository:
     def __init__(self, db: Session):
@@ -41,6 +42,7 @@ class ProductRepository:
         try:
             for key, value in product_data.items():
                 setattr(product, key, value)
+            product.updated_at = datetime.now(UTC)
             self.db.commit()
             self.db.refresh(product)
             return product
@@ -56,6 +58,7 @@ class ProductRepository:
         try:
             for key, value in product_data.items():
                 setattr(product, key, value)
+            product.updated_at = datetime.now(UTC)
             self.db.commit()
             self.db.refresh(product)
             return product

@@ -32,9 +32,6 @@ def run_olx_scraper_searches():
 @app.task(name="scrapers.tasks.run_olx_scraper")
 def run_olx_scraper(search):
     """Task 2: Run the scraper for a search term and return URLs"""
-    # sleep_time = random.uniform(5, 25)
-    # time.sleep(sleep_time)
-    # print(f"🔎 Searching term: {search} (sleep {sleep_time:.2f}s)")
     print(f"🔎 Searching term: {search}")
 
     scraper = Scraper()
@@ -53,7 +50,6 @@ def run_olx_scraper(search):
 @app.task(name="scrapers.tasks.process_url_list")
 def process_url_list(result):
     """Task 3: Processes URLs and coordinates Tasks 4 and 5"""
-
     print(f"📥 Processing {len(result['urls'])} URLs of {result['search']}")
 
     # Create a chord with Tasks 4 and trigger Task 5 at the end
@@ -65,11 +61,7 @@ def process_url_list(result):
 @app.task(name="scrapers.tasks.scrape_product_page")
 def scrape_product_page(url):
     """Task 4: Collect product data from URL"""
-    # TODO: maybe sleep is not needed, maybe cloudscraper is already handling this
-    sleep_time = random.uniform(1, 3)
-
-    time.sleep(sleep_time)
-    print(f"🛒 Scraping URL: {url} (sleep {sleep_time:.2f}s)")
+    print(f"🛒 Scraping URL: {url}")
 
     scraper = Scraper()
 
@@ -139,11 +131,11 @@ def update_products(results):
 app.conf.beat_schedule = {
     'run_olx_scraper_searches_daily': {
         'task': 'scrapers.tasks.run_olx_scraper_searches',
-        'schedule': crontab(hour="14", minute="40"),
+        'schedule': crontab(hour="00", minute="00"),
     },
     'run_olx_scraper_update_daily': {
         'task': 'scrapers.tasks.run_olx_scraper_update',
-        'schedule': crontab(hour="14", minute="42"),
+        'schedule': crontab(hour="02", minute="00"),
     },
 }
 
