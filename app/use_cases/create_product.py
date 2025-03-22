@@ -8,5 +8,5 @@ class CreateProduct:
     def __init__(self, product_service: ProductService):
         self.product_service = product_service
 
-    async def execute(self, product_data: dict):
-        return await self.product_service.create_product(product_data)
+    def execute(self, product_data: dict):
+        return self.product_service.create_product(product_data)

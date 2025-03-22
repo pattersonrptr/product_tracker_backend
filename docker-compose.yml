@@ -21,7 +21,19 @@ services:
       - API_URL=http://web:8000
       - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
       - CELERY_BROKER_URL=redis://redis:6379/0
-    command: celery -A scrapers.tasks worker --loglevel=info
+    command: celery -A scrapers.tasks worker --loglevel=info --concurrency=16
+    # command: ["/bin/sh", "-c", "celery multi start 8 -A scrapers.tasks --loglevel=info --concurrency=2 --detach && tail -f /dev/null"]
+
+  flower:
+    build: .
+    container_name: flower
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    command: celery -A scrapers.tasks flower --port=5555
 
   celery-beat:
     build: .

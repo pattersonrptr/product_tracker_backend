@@ -1,7 +1,7 @@
 import os
 import time
 import random
-import requests
+import requests     # TODO: check if requests is still needed
 import cloudscraper
 from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
@@ -21,34 +21,43 @@ class Scraper:
         self.timeouts = (5, 15)  # (connect, read)
         self.session.headers.update(self.headers)
 
-    def run(self, search_term, max_items=10):
+
+    def scrape_search(self, search_term):
+        page_number = 1
+        has_next = True
+        all_links = []
+
         try:
-            search_url = self._build_search_url(search_term)
-            html = self._safe_request(search_url)
-            if not html:
-                return
+            while has_next:
+                search_url = self._build_search_url(search_term, page_number)
+                html = self._safe_request(search_url)
 
-            links = self._extract_links(html)
-            if not links:
-                print("No product found.")
-                return
+                if not html:
+                    has_next = False
 
-            items = []
-            for i, link in enumerate(links[:max_items]):
-                item = self._process_product_page(link, i + 1)
-                if item:
-                    items.append(item)
-                time.sleep(random.uniform(1, 3))
+                links = self._extract_links(html)
 
-            if items:
-                self._send_to_api(items)
+                if not links:
+                    has_next = False
+
+                all_links.extend(links)
+                print(f"Links collected: {len(all_links)}")
+                page_number += 1
+
+            return all_links
 
         except Exception as e:
             print(f"Error during the execution: {str(e)}")
 
-    def _build_search_url(self, search_term):
+
+    def scrape_product_page(self, url):
+        return self._process_product_page(url)
+
+
+    def _build_search_url(self, search_term, page_number=1):
         encoded_search = quote_plus(search_term)
-        return f"{self.BASE_URL}?q={encoded_search}"
+        return f"{self.BASE_URL}?q={encoded_search}&o={page_number}"
+
 
     def _safe_request(self, url, max_retries=3):
         for attempt in range(max_retries):
@@ -74,43 +83,52 @@ class Scraper:
         print(f"Failed after {max_retries} attempts for {url}")
         return None
 
+
     def _extract_links(self, html_content):
         soup = BeautifulSoup(html_content, 'html.parser')
         links = []
 
-        for a in soup.find_all('a', {'class': 'olx-ad-card__link-wrapper'}):
+        for a in soup.select('section.olx-ad-card--horizontal > a'):
             href = a.get('href', '').split('#')[0]
             if href and href not in links:
                 links.append(href)
 
         return links
 
-    def _process_product_page(self, url, item_number):
-        html = self._safe_request(url)
-        if not html:
-            return None
 
-        soup = BeautifulSoup(html, 'html.parser')
+    def _process_product_page(self, url):
+        html = self._safe_request(url)
+        title = None
+        price = None
+
+        if html:
+            soup = BeautifulSoup(html, 'html.parser')
+            title = self._extract_title(soup)
+            price = self._extract_price(soup)
 
         return {
             'url': url,
-            'title': self._extract_title(soup),
-            'price': self._extract_price(soup),
-            'item_number': item_number
+            'title': title,
+            'price': price,
         }
+
 
     def _extract_title(self, soup):
         try:
-            return soup.find('h1', {'data-ds-component': 'DS-Text'}).get_text(strip=True)
+            return soup.find('span', {'class': 'olx-text--title-medium'}).get_text(strip=True)
         except AttributeError:
             return "Title not found"
 
+
     def _extract_price(self, soup):
         try:
-            price_text = soup.select_one('h2.olx-text:nth-child(2)').get_text(strip=True)
+            price_text = soup.find(
+                'span', {'class': 'olx-text olx-text--title-large olx-text--block'}
+            ).get_text(strip=True)
             return price_text.replace('R$', '').strip()
         except AttributeError:
             return "Price not found"
+
 
     def _send_to_api(self, items):
         success_count = 0
