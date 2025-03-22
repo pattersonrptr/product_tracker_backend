@@ -34,7 +34,6 @@ def get_products(url: str = None, product_service: ProductService = Depends(get_
     if url:
         return product_service.get_product_by_url(url)
     return product_service.get_all_products()
-# TODO: search by updated_at
 
 
 @router.get("/products/{product_id}", response_model=ProductResponse)
@@ -43,6 +42,11 @@ def get_product(product_id: int, product_service: ProductService = Depends(get_p
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
+
+
+@router.get("/products/urls/old/", response_model=List[ProductResponse])
+def get_old_product_urls(days: int = 30, product_service: ProductService = Depends(get_product_service)):
+    return product_service.get_products_older_than(days)
 
 
 @router.put("/products/{product_id}", response_model=ProductResponse)
