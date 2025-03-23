@@ -35,6 +35,10 @@ class ProductRepository:
         return self.db.query(Product).filter(Product.url == url).first()
 
 
+    def get_products_older_than(self, cutoff_date: datetime):
+        return self.db.query(Product).filter(Product.updated_at < cutoff_date).all()
+
+
     def update(self, product_id: int, product_data: dict):
         product = self.get_by_id(product_id)
         if not product:

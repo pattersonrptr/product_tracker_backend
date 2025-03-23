@@ -36,17 +36,27 @@ def run_olx_scraper(search):
 
     scraper = Scraper()
     try:
-        # TODO: In the save_products task, it is prevented from trying to save products that already exist,
-        #  but it would be better to load a list of URLs of already saved products before scraping,
-        #  thus using it as a filter to avoid redoing the scrape_product_page task. The update tasks
-        #  will be responsible for updating products saved more than 1 month ago.
         urls = scraper.scrape_search(search)
+
+        api_url = f"{os.getenv('API_URL', 'http://web:8000')}/products/"
+        response = requests.get(api_url)
+        existing_products = response.json() if response.status_code == 200 else []
+        existing_urls = {p['url'] for p in existing_products}
+
+        new_urls = list(set(urls) - existing_urls)
+
+        print(f"New: {len(new_urls)}")
+        print(f"Existing: {len(existing_urls)}")
+
+        print(f"Found {len(urls)} URLs, {len(new_urls)} are new")
+
+
         # Call Task 3 ASYNCHRONOUSLY with the results
         process_url_list.apply_async(
-            args=[{"status": "success", "search": search, "urls": urls}],
+            args=[{"status": "success", "search": search, "urls": new_urls}],
             countdown=10
         )
-        return {"status": "success", "search": search, "urls": urls}
+        return {"status": "success", "search": search, "urls": new_urls}
     except Exception as e:
         return {"status": "error", "search": search, "message": str(e)}
 
@@ -102,7 +112,7 @@ def save_products(results):
 def run_olx_scraper_update():
     print("Updating products by URLs")
 
-    api_url = f"{os.getenv('API_URL', 'web:8000')}/products/"
+    api_url = f"{os.getenv('API_URL', 'web:8000')}/products/urls/old/?days=30"
     response = requests.get(api_url)
     urls = []
 
@@ -143,5 +153,4 @@ app.conf.beat_schedule = {
     },
 }
 
-# app.conf.timezone = 'UTC'
 app.conf.timezone = 'America/Sao_Paulo'
