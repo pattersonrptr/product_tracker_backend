@@ -12,13 +12,16 @@ from app.schemas.product_schema import (
     ProductStats,
     ProductPartialResponse,
 )
-from app.use_cases.create_product import CreateProduct
-from app.use_cases.get_products import GetProducts
-from app.use_cases.get_product_by_id import GetProductById
-from app.use_cases.get_old_product_urls import GetOldProductUrls
-from app.use_cases.update_product import UpdateProduct
-from app.use_cases.update_product_by_url import UpdateProductByUrl
-from app.use_cases.delete_product import DeleteProduct
+from app.use_cases.product_use_cases import (
+    CreateProduct,
+    GetProducts,
+    GetProductById,
+    GetOldProductUrls,
+    UpdateProduct,
+    UpdateProductByUrl,
+    DeleteProduct,
+    GetProductByUrl,
+)
 from app.services.product_service import ProductService
 from app.repositories.product_repository import ProductRepository
 from app.database import SessionLocal

@@ -34,7 +34,6 @@ class ProductService:
         return self.repository.update(product_id, product_data)
 
     def update_product_by_url(self, url: str, product_data: dict):
-        print(f"Updating product with URL: {url}")
         if 'url' in product_data and isinstance(product_data['url'], HttpUrl):
             product_data['url'] = str(product_data['url'])
         return self.repository.update_by_url(url, product_data)
