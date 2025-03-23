@@ -2,16 +2,17 @@ from pydantic import BaseModel, HttpUrl, Field, ConfigDict, field_validator
 from datetime import datetime, date
 from typing import Optional, List
 import re
+from decimal import Decimal
 
 
 def parse_price(value):
-    if isinstance(value, (int, float)):
+    if isinstance(value, (int, float, Decimal)):
         return float(value)
+
     if not isinstance(value, str):
-        raise ValueError("The value should be string")
+        raise ValueError("The value should be a string or a number")
 
     value = re.sub(r"[^0-9.,]", "", value)
-
     value = value.replace(",", ".")
 
     if value.count(".") > 1:

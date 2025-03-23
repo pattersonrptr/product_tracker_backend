@@ -11,6 +11,7 @@ from app.schemas.product_schema import (
     ProductSearch,
     ProductStats,
     ProductPartialResponse,
+    parse_price,
 )
 
 def test_product_base_valid():
@@ -157,3 +158,15 @@ def test_product_filter_invalid_price_range():
 def test_product_bulk_create_empty_list():
     with pytest.raises(ValidationError):
         ProductBulkCreate(products=[])
+
+def test_parse_price_non_string():
+    with pytest.raises(ValueError, match="The value should be a string or a number"):
+        parse_price([1, 2, 3])
+
+def test_parse_price_multiple_dots():
+    result = parse_price("1.000.99")
+    assert result == 1000.99
+
+def test_parse_price_invalid_format():
+    with pytest.raises(ValueError, match="Invalid format for float conversion"):
+        parse_price("abc")

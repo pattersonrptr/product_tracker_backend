@@ -20,7 +20,7 @@ from app.use_cases.product_use_cases import (
     UpdateProduct,
     UpdateProductByUrl,
     DeleteProduct,
-    GetProductByUrl,
+    GetProductByUrl, FilterProducts, SearchProducts, GetProductStats, GetMinimalProducts,
 )
 from app.services.product_service import ProductService
 from app.repositories.product_repository import ProductRepository
@@ -106,7 +106,8 @@ def filter_products(
     filter: ProductFilter = Depends(),
     product_service: ProductService = Depends(get_product_service)
 ):
-    return product_service.filter_products(filter.model_dump(exclude_none=True))
+    filter_use_case = FilterProducts(product_service)
+    return filter_use_case.execute(filter.model_dump(exclude_none=True))
 
 @router.post("/products/bulk/", response_model=List[ProductResponse], status_code=status.HTTP_201_CREATED)
 def bulk_create_products(
@@ -120,16 +121,19 @@ def search_products(
     search: ProductSearch = Depends(),
     product_service: ProductService = Depends(get_product_service)
 ):
-    return product_service.search_products(search.query)
+    search_use_case = SearchProducts(product_service)
+    return search_use_case.execute(search.query)
 
 @router.get("/products/stats/", response_model=ProductStats)
 def get_product_stats(
     product_service: ProductService = Depends(get_product_service)
 ):
-    return product_service.get_product_stats()
+    stats_use_case = GetProductStats(product_service)
+    return stats_use_case.execute()
 
 @router.get("/products/minimal/", response_model=List[ProductPartialResponse])
 def get_minimal_products(
     product_service: ProductService = Depends(get_product_service)
 ):
-    return product_service.get_minimal_products()
+    minimal_use_case = GetMinimalProducts(product_service)
+    return minimal_use_case.execute()
