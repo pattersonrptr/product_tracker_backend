@@ -46,14 +46,14 @@ def create_product(
 ):
     return CreateProduct(product_service).execute(product_data.model_dump())
 
-@router.get("/products/", response_model=List[ProductResponse])
-def get_products(
-    url: Optional[str] = None,
-    product_service: ProductService = Depends(get_product_service)
-):
-    return GetProducts(product_service).execute(url)
+# @router.get("/products/", response_model=List[ProductResponse])
+# def get_products(
+#     url: Optional[str] = None,
+#     product_service: ProductService = Depends(get_product_service)
+# ):
+#     return GetProducts(product_service).execute(url)
 
-@router.get("/products/filter/", response_model=List[ProductResponse])
+@router.get("/products/", response_model=List[ProductResponse])
 def filter_products(
     filter: ProductFilter = Depends(),
     product_service: ProductService = Depends(get_product_service)

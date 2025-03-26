@@ -42,6 +42,8 @@ def run_olx_scraper(search):
 
         api_url = f"{os.getenv('API_URL', 'http://web:8000')}/products/"
         response = requests.get(api_url)
+
+
         existing_products = response.json() if response.status_code == 200 else []
         existing_urls = {p['url'] for p in existing_products}
 
@@ -114,10 +116,8 @@ def save_products(results):
 def run_olx_scraper_update():
     print("Updating products by URLs")
 
-    days = 30
-    cutoff_date = datetime.today() - timedelta(days=days)
-
-    api_url = f"{os.getenv('API_URL', 'web:8000')}/products/filter/?updated_before={cutoff_date}"
+    cutoff_date = datetime.today() - timedelta(days=30)
+    api_url = f"{os.getenv('API_URL', 'web:8000')}/products/?updated_before={cutoff_date}"
     response = requests.get(api_url)
     products = []
 

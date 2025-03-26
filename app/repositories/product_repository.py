@@ -108,6 +108,9 @@ class ProductRepository:
     def filter_products(self, filter_data: dict):
         query = self.db.query(Product)
 
+        if 'url' in filter_data and filter_data['url']:
+            query = query.filter(Product.url.ilike(f"%{filter_data['url']}%"))
+
         if 'title' in filter_data and filter_data['title']:
             query = query.filter(Product.title.ilike(f"%{filter_data['title']}%"))
 
@@ -122,6 +125,12 @@ class ProductRepository:
 
         if 'created_before' in filter_data and filter_data['created_before'] is not None:
             query = query.filter(Product.created_at <= filter_data['created_before'])
+
+        if 'updated_after' in filter_data and filter_data['updated_after'] is not None:
+            query = query.filter(Product.updated_at >= filter_data['updated_after'])
+
+        if 'updated_before' in filter_data and filter_data['updated_before'] is not None:
+            query = query.filter(Product.updated_at <= filter_data['updated_before'])
 
         products = query.all()
         for product in products:
