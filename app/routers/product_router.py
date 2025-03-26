@@ -53,6 +53,14 @@ def get_products(
 ):
     return GetProducts(product_service).execute(url)
 
+@router.get("/products/filter/", response_model=List[ProductResponse])
+def filter_products(
+    filter: ProductFilter = Depends(),
+    product_service: ProductService = Depends(get_product_service)
+):
+    filter_use_case = FilterProducts(product_service)
+    return filter_use_case.execute(filter.model_dump(exclude_none=True))
+
 @router.get("/products/{product_id}", response_model=ProductResponse)
 def get_product(
     product_id: int,
@@ -100,14 +108,6 @@ def delete_product(
     deleted = DeleteProduct(product_service).execute(product_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Product not found")
-
-@router.get("/products/filter/", response_model=List[ProductResponse])
-def filter_products(
-    filter: ProductFilter = Depends(),
-    product_service: ProductService = Depends(get_product_service)
-):
-    filter_use_case = FilterProducts(product_service)
-    return filter_use_case.execute(filter.model_dump(exclude_none=True))
 
 @router.post("/products/bulk/", response_model=List[ProductResponse], status_code=status.HTTP_201_CREATED)
 def bulk_create_products(

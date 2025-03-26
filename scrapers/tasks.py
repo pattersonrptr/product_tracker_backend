@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from celery import Celery, group, chord
 from celery.schedules import crontab
 from scrapers.olx.scraper import Scraper
@@ -112,16 +114,32 @@ def save_products(results):
 def run_olx_scraper_update():
     print("Updating products by URLs")
 
-    api_url = f"{os.getenv('API_URL', 'web:8000')}/products/urls/old/?days=30"
+    days = 30
+    cutoff_date = datetime.today() - timedelta(days=days)
+
+    api_url = f"{os.getenv('API_URL', 'web:8000')}/products/filter/?updated_before={cutoff_date}"
     response = requests.get(api_url)
-    urls = []
+    products = []
 
     if response.status_code == 200 and response.json():
-        urls = [item['url'] for item in response.json()]
+        products = response.json()
 
     return chord(
-        scrape_product_page.s(url).set(countdown=10) for url in urls
+        update_product.s(product).set(countdown=10) for product in products
     )(update_products.s())
+
+
+@app.task(name="scrapers.tasks.update_product")
+def update_product(product):
+    print(f"🛒 Scraping URL: {product['url']}")
+
+    scraper = Scraper()
+
+    try:
+        product_data = scraper.update_product(product)
+        return {"status": "success", "data": product_data}
+    except Exception as e:
+        return {"status": "error", "url": product['url'], "message": str(e)}
 
 
 @app.task(name="scrapers.tasks.update_products")

@@ -6,6 +6,8 @@ import cloudscraper
 from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
 
+from app.models import Product
+
 
 class Scraper:
     def __init__(self, api_url=None):
@@ -51,7 +53,39 @@ class Scraper:
 
 
     def scrape_product_page(self, url):
-        return self._process_product_page(url)
+        html = self._safe_request(url)
+        title = None
+        price = None
+
+        if html:
+            soup = BeautifulSoup(html, 'html.parser')
+            title = self._extract_title(soup)
+            price = self._extract_price(soup)
+
+        return {
+            'url': url,
+            'title': title,
+            'price': price,
+        }
+
+
+    def update_product(self, product: dict):
+        url = product['url']
+        html = self._safe_request(url)
+        title = None
+        price = None
+
+        if html:
+            soup = BeautifulSoup(html, 'html.parser')
+            title = self._extract_title(soup)
+            price = self._extract_price(soup)
+
+        return {
+            'id': product['id'],
+            'url': url,
+            'title': title,
+            'price': price,
+        }
 
 
     def _build_search_url(self, search_term, page_number=1):
@@ -94,23 +128,6 @@ class Scraper:
                 links.append(href)
 
         return links
-
-
-    def _process_product_page(self, url):
-        html = self._safe_request(url)
-        title = None
-        price = None
-
-        if html:
-            soup = BeautifulSoup(html, 'html.parser')
-            title = self._extract_title(soup)
-            price = self._extract_price(soup)
-
-        return {
-            'url': url,
-            'title': title,
-            'price': price,
-        }
 
 
     def _extract_title(self, soup):
