@@ -66,22 +66,22 @@ class ProductRepository:
             self.db.rollback()
             raise e
 
-    def update_by_url(self, url: str, product_data: dict):
-        product = self.get_by_url(url)
-        if not product:
-            return None
-        try:
-            for key, value in product_data.items():
-                setattr(product, key, value)
-            product.updated_at = datetime.now(UTC)
-            self.db.commit()
-            self.db.refresh(product)
-            if isinstance(product.price, Decimal):
-                product.price = float(product.price)
-            return product
-        except Exception as e:
-            self.db.rollback()
-            raise e
+    # def update_by_url(self, url: str, product_data: dict):
+    #     product = self.get_by_url(url)
+    #     if not product:
+    #         return None
+    #     try:
+    #         for key, value in product_data.items():
+    #             setattr(product, key, value)
+    #         product.updated_at = datetime.now(UTC)
+    #         self.db.commit()
+    #         self.db.refresh(product)
+    #         if isinstance(product.price, Decimal):
+    #             product.price = float(product.price)
+    #         return product
+    #     except Exception as e:
+    #         self.db.rollback()
+    #         raise e
 
     def delete(self, product_id: int):
         product = self.get_by_id(product_id)

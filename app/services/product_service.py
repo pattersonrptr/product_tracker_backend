@@ -28,20 +28,20 @@ class ProductService:
         product = self.repository.get_by_url(url) or []
         return product
 
-    def get_products_older_than(self, days: int):
-        cutoff_date = datetime.now(UTC) - timedelta(days=days)
-        products = self.repository.get_products_older_than(cutoff_date) or []
-        return products
+    # def get_products_older_than(self, days: int):
+    #     cutoff_date = datetime.now(UTC) - timedelta(days=days)
+    #     products = self.repository.get_products_older_than(cutoff_date) or []
+    #     return products
 
     def update_product(self, product_id: int, product_data: dict):
         if 'url' in product_data and isinstance(product_data['url'], HttpUrl):
             product_data['url'] = str(product_data['url'])
         return self.repository.update(product_id, product_data)
 
-    def update_product_by_url(self, url: str, product_data: dict):
-        if 'url' in product_data and isinstance(product_data['url'], HttpUrl):
-            product_data['url'] = str(product_data['url'])
-        return self.repository.update_by_url(url, product_data)
+    # def update_product_by_url(self, url: str, product_data: dict):
+    #     if 'url' in product_data and isinstance(product_data['url'], HttpUrl):
+    #         product_data['url'] = str(product_data['url'])
+    #     return self.repository.update_by_url(url, product_data)
 
     def delete_product(self, product_id: int):
         return self.repository.delete(product_id)
