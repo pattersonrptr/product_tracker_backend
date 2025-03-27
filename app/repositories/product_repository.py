@@ -42,12 +42,12 @@ class ProductRepository:
             product.price = float(product.price)
         return product
 
-    def get_products_older_than(self, cutoff_date: datetime):
-        products = self.db.query(Product).filter(Product.updated_at < cutoff_date).all()
-        for product in products:
-            if isinstance(product.price, Decimal):
-                product.price = float(product.price)
-        return products
+    # def get_products_older_than(self, cutoff_date: datetime):
+    #     products = self.db.query(Product).filter(Product.updated_at < cutoff_date).all()
+    #     for product in products:
+    #         if isinstance(product.price, Decimal):
+    #             product.price = float(product.price)
+    #     return products
 
     def update(self, product_id: int, product_data: dict):
         product = self.get_by_id(product_id)

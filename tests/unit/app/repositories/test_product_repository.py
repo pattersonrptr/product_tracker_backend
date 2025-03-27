@@ -6,7 +6,6 @@ from app.repositories.product_repository import ProductRepository
 from app.models.product_models import Product
 
 
-
 @pytest.fixture
 def mock_db():
     db = Mock()
@@ -149,48 +148,9 @@ def test_get_by_url_not_found(product_repository, mock_db):
     filter_call = query_mock.filter.call_args[0][0]
     assert str(filter_call) == str(Product.url == url)
 
-def test_get_products_older_than_found(product_repository, mock_db):
-    cutoff_date = datetime.now(UTC)
-    mock_product = Product(url="http://example.com", title="Product", price=100.0, updated_at=datetime(2022, 1, 1, tzinfo=UTC))
-
-    query_mock = Mock()
-    filter_mock = Mock()
-    query_mock.filter.return_value = filter_mock
-    filter_mock.all.return_value = [mock_product]
-    mock_db.query.return_value = query_mock
-
-    result = product_repository.get_products_older_than(cutoff_date)
-
-    mock_db.query.assert_called_once_with(Product)
-    query_mock.filter.assert_called_once_with(ANY)
-    filter_mock.all.assert_called_once()
-    assert result == [mock_product]
-
-    filter_call = query_mock.filter.call_args[0][0]
-    assert str(filter_call) == str(Product.updated_at < cutoff_date)
-
-def test_get_products_older_than_not_found(product_repository, mock_db):
-    cutoff_date = datetime.now(UTC)
-
-    query_mock = Mock()
-    filter_mock = Mock()
-    query_mock.filter.return_value = filter_mock
-    filter_mock.all.return_value = []
-    mock_db.query.return_value = query_mock
-
-    result = product_repository.get_products_older_than(cutoff_date)
-
-    mock_db.query.assert_called_once_with(Product)
-    query_mock.filter.assert_called_once_with(ANY)
-    filter_mock.all.assert_called_once()
-    assert result == []
-
-    filter_call = query_mock.filter.call_args[0][0]
-    assert str(filter_call) == str(Product.updated_at < cutoff_date)
-
 def test_update_product_success(product_repository, mock_db):
     product_id = 1
-    update_data = {"title": "New title", "price": 150.0}
+    update_data = {"title": "New title", "price": 150.0, "url": "https://www.testurl.com"}
     mock_product = Product(id=product_id, url="http://example.com", title="Old Product", price=100.0)
 
     product_repository.get_by_id = Mock(return_value=mock_product)
@@ -200,6 +160,7 @@ def test_update_product_success(product_repository, mock_db):
     result = product_repository.update(product_id, update_data)
 
     product_repository.get_by_id.assert_called_once_with(product_id)
+    assert mock_product.url == update_data["url"]
     assert mock_product.title == update_data["title"]
     assert mock_product.price == update_data["price"]
     mock_db.commit.assert_called_once()
