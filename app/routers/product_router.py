@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status, APIRouter
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List
 
 from app.schemas.product_schema import (
     ProductCreate,
@@ -14,11 +14,9 @@ from app.schemas.product_schema import (
 )
 from app.use_cases.product_use_cases import (
     CreateProduct,
-    # GetProducts,
     GetProductById,
     UpdateProduct,
     DeleteProduct,
-    # GetProductByUrl,
     FilterProducts,
     SearchProducts,
     GetProductStats,
@@ -41,13 +39,6 @@ def get_product_service(db: Session = Depends(get_db)):
     repository = ProductRepository(db)
     return ProductService(repository)
 
-# @router.get("/products/", response_model=List[ProductResponse])
-# def get_products(
-#     url: Optional[str] = None,
-#     product_service: ProductService = Depends(get_product_service)
-# ):
-#     return GetProducts(product_service).execute(url)
-
 @router.get("/products/", response_model=List[ProductResponse])
 def filter_products(
     filter: ProductFilter = Depends(),
@@ -65,13 +56,6 @@ def get_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
-
-# @router.get("/products/urls/old/", response_model=List[ProductResponse])
-# def get_old_product_urls(
-#     days: int = 30,
-#     product_service: ProductService = Depends(get_product_service)
-# ):
-#     return GetOldProductUrls(product_service).execute(days)
 
 @router.get("/products/search/", response_model=List[ProductResponse])
 def search_products(
@@ -119,17 +103,6 @@ def update_product(
     if not updated_product:
         raise HTTPException(status_code=404, detail="Product not found")
     return updated_product
-
-# @router.put("/products/url/{url:path}", response_model=ProductResponse)
-# def update_product_by_url(
-#     url: str,
-#     product_data: ProductUpdate,
-#     product_service: ProductService = Depends(get_product_service)
-# ):
-#     updated_product = UpdateProductByUrl(product_service).execute(url, product_data.model_dump(exclude_unset=True))
-#     if not updated_product:
-#         raise HTTPException(status_code=404, detail="Product not found")
-#     return updated_product
 
 @router.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_product(
