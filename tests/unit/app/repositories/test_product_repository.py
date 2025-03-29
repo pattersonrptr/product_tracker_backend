@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 from unittest.mock import Mock, ANY
 from sqlalchemy.exc import IntegrityError
@@ -232,3 +234,279 @@ def test_delete_product_database_error(product_repository, mock_db):
         product_repository.delete(product_id)
 
     mock_db.rollback.assert_called_once()
+
+def test_search_products(product_repository, mock_db):
+    query = "test"
+    mock_product1 = Product(id=1, title="Test Product 1", price=10.0)
+    mock_product2 = Product(id=2, title="Test Product 2", price=20.0)
+
+    query_mock = Mock()
+    filter_mock = Mock()
+    query_mock.filter.return_value = filter_mock
+    filter_mock.all.return_value = [mock_product1, mock_product2]
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.search_products(query)
+
+    mock_db.query.assert_called_once_with(Product)
+    query_mock.filter.assert_called_once()
+    filter_mock.all.assert_called_once()
+
+    assert result == [mock_product1, mock_product2]
+
+    for product in result:
+        assert isinstance(product.price, float)
+
+def test_filter_products_with_url(product_repository, mock_db):
+    filter_data = {"url": "example.com"}
+    mock_product = Product(id=1, url="http://example.com", title="Product", price=10.0)
+
+    query_mock = Mock()
+    query_mock.filter.return_value = query_mock
+    query_mock.all.return_value = [mock_product]
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.filter_products(filter_data)
+
+    mock_db.query.assert_called_once_with(Product)
+    query_mock.filter.assert_called_once()
+    query_mock.all.assert_called_once()
+    assert result == [mock_product]
+
+    for product in result:
+        if hasattr(product, 'price'):
+            assert isinstance(product.price, float)
+
+def test_filter_products_with_price_range(product_repository, mock_db):
+    filter_data = {"min_price": 10.0, "max_price": 20.0}
+    mock_product1 = Product(id=1, title="Product 1", price=10.0)
+    mock_product2 = Product(id=2, title="Product 2", price=15.0)
+
+    query_mock = Mock()
+    query_mock.filter.return_value = query_mock
+    query_mock.all.return_value = [mock_product1, mock_product2]
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.filter_products(filter_data)
+
+    mock_db.query.assert_called_once_with(Product)
+    assert query_mock.filter.call_count == 2
+    query_mock.all.assert_called_once()
+    assert result == [mock_product1, mock_product2]
+
+    filter_calls = [str(call[0][0]).lower() for call in query_mock.filter.call_args_list]
+
+    assert any(">=" in call for call in filter_calls)
+    assert any("<=" in call for call in filter_calls)
+    assert all("price" in call for call in filter_calls)
+
+def test_filter_products_with_date_filters(product_repository, mock_db):
+    test_date = datetime(2023, 1, 1, tzinfo=UTC)
+    filter_data = {
+        "created_after": test_date,
+        "updated_before": test_date
+    }
+
+    query_mock = Mock()
+    query_mock.filter.return_value = query_mock
+    query_mock.all.return_value = []
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.filter_products(filter_data)
+
+    mock_db.query.assert_called_once_with(Product)
+    assert query_mock.filter.call_count == 2
+    query_mock.all.assert_called_once()
+    assert result == []
+
+    filter_calls = [str(call[0][0]).lower() for call in query_mock.filter.call_args_list]
+
+    assert any("created_at" in call and ">=" in call for call in filter_calls)
+    assert any("updated_at" in call and "<=" in call for call in filter_calls)
+
+def test_get_product_stats(product_repository, mock_db):
+    mock_stats = Mock()
+    mock_stats.total_products = 2
+    mock_stats.average_price = Decimal('15.0')
+    mock_stats.min_price = Decimal('10.0')
+    mock_stats.max_price = Decimal('20.0')
+
+    query_mock = Mock()
+    query_mock.first.return_value = mock_stats
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.get_product_stats()
+
+    mock_db.query.assert_called_once()
+    query_mock.first.assert_called_once()
+    assert result == {
+        "total_products": 2,
+        "average_price": 15.0,
+        "min_price": 10.0,
+        "max_price": 20.0
+    }
+
+def test_get_minimal_products(product_repository, mock_db):
+    mock_products = [
+        Mock(id=1, title="Product 1", price=Decimal('10.0')),
+        Mock(id=2, title="Product 2", price=Decimal('20.0'))
+    ]
+
+    query_mock = Mock()
+    query_mock.all.return_value = mock_products
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.get_minimal_products()
+
+    mock_db.query.assert_called_once_with(Product.id, Product.title, Product.price)
+    query_mock.all.assert_called_once()
+    assert result == [
+        {"id": 1, "title": "Product 1", "price": 10.0},
+        {"id": 2, "title": "Product 2", "price": 20.0}
+    ]
+
+
+def test_get_all_products_with_decimal_prices(product_repository, mock_db):
+    # Configura produtos com preços Decimal
+    from decimal import Decimal
+    mock_product1 = Product(id=1, title="Product 1", price=Decimal('10.50'))
+    mock_product2 = Product(id=2, title="Product 2", price=Decimal('20.75'))
+
+    mock_db.query.return_value.all.return_value = [mock_product1, mock_product2]
+
+    result = product_repository.get_all()
+
+    # Verifica se os preços foram convertidos para float
+    assert isinstance(result[0].price, float)
+    assert result[0].price == 10.5
+    assert isinstance(result[1].price, float)
+    assert result[1].price == 20.75
+
+
+def test_get_by_id_with_decimal_price(product_repository, mock_db):
+    from decimal import Decimal
+    mock_product = Product(id=1, title="Product", price=Decimal('15.99'))
+
+    query_mock = Mock()
+    filter_mock = Mock()
+    query_mock.filter.return_value = filter_mock
+    filter_mock.first.return_value = mock_product
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.get_by_id(1)
+
+    assert isinstance(result.price, float)
+    assert result.price == 15.99
+
+
+def test_get_by_url_with_decimal_price(product_repository, mock_db):
+    from decimal import Decimal
+    mock_product = Product(id=1, url="http://test.com", title="Product", price=Decimal('12.34'))
+
+    query_mock = Mock()
+    filter_mock = Mock()
+    query_mock.filter.return_value = filter_mock
+    filter_mock.first.return_value = mock_product
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.get_by_url("http://test.com")
+
+    assert isinstance(result.price, float)
+    assert result.price == 12.34
+
+
+def test_update_with_decimal_price(product_repository, mock_db):
+    from decimal import Decimal
+    mock_product = Product(id=1, title="Product", price=Decimal('10.0'))
+    update_data = {"price": Decimal('15.0')}
+
+    product_repository.get_by_id = Mock(return_value=mock_product)
+    mock_db.commit = Mock()
+    mock_db.refresh = Mock()
+
+    result = product_repository.update(1, update_data)
+
+    assert isinstance(result.price, float)
+    assert result.price == 15.0
+
+
+def test_search_products_with_decimal_prices(product_repository, mock_db):
+    from decimal import Decimal
+    mock_product = Product(id=1, title="Test", price=Decimal('9.99'))
+
+    query_mock = Mock()
+    filter_mock = Mock()
+    query_mock.filter.return_value = filter_mock
+    filter_mock.all.return_value = [mock_product]
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.search_products("test")
+
+    assert isinstance(result[0].price, float)
+    assert result[0].price == 9.99
+
+
+def test_filter_products_with_decimal_prices(product_repository, mock_db):
+    from decimal import Decimal
+    mock_product = Product(id=1, title="Product", price=Decimal('19.99'))
+
+    query_mock = Mock()
+    query_mock.filter.return_value = query_mock
+    query_mock.all.return_value = [mock_product]
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.filter_products({"min_price": 10.0})
+
+    assert isinstance(result[0].price, float)
+    assert result[0].price == 19.99
+
+
+def test_filter_products_with_title(product_repository, mock_db):
+    filter_data = {"title": "test"}
+    mock_product = Product(id=1, title="Test Product", price=10.0)
+
+    query_mock = Mock()
+    query_mock.filter.return_value = query_mock
+    query_mock.all.return_value = [mock_product]
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.filter_products(filter_data)
+
+    mock_db.query.assert_called_once_with(Product)
+    assert query_mock.filter.call_count == 1
+    query_mock.all.assert_called_once()
+    assert result == [mock_product]
+
+
+def test_filter_products_with_created_before(product_repository, mock_db):
+    test_date = datetime(2023, 1, 1, tzinfo=UTC)
+    filter_data = {"created_before": test_date}
+
+    query_mock = Mock()
+    query_mock.filter.return_value = query_mock
+    query_mock.all.return_value = []
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.filter_products(filter_data)
+
+    mock_db.query.assert_called_once_with(Product)
+    assert query_mock.filter.call_count == 1
+    query_mock.all.assert_called_once()
+    assert result == []
+
+
+def test_filter_products_with_updated_after(product_repository, mock_db):
+    test_date = datetime(2023, 1, 1, tzinfo=UTC)
+    filter_data = {"updated_after": test_date}
+
+    query_mock = Mock()
+    query_mock.filter.return_value = query_mock
+    query_mock.all.return_value = []
+    mock_db.query.return_value = query_mock
+
+    result = product_repository.filter_products(filter_data)
+
+    mock_db.query.assert_called_once_with(Product)
+    assert query_mock.filter.call_count == 1
+    query_mock.all.assert_called_once()
+    assert result == []

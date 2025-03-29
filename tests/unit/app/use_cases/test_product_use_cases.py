@@ -4,7 +4,7 @@ from app.use_cases.product_use_cases import (
     CreateProduct,
     DeleteProduct,
     GetProductById,
-    UpdateProduct,
+    UpdateProduct, FilterProducts, SearchProducts, GetProductStats, GetMinimalProducts,
 )
 from app.services.product_service import ProductService
 
@@ -20,11 +20,31 @@ def mock_product_service():
     service.get_all_products = AsyncMock()
     service.update_product = AsyncMock()
     service.update_product_by_url = AsyncMock()
+    service.filter_products = AsyncMock()
+    service.search_products = AsyncMock()
+    service.get_product_stats = AsyncMock()
+    service.get_minimal_products = AsyncMock()
     return service
 
 @pytest.fixture
 def create_product_uc(mock_product_service):
     return CreateProduct(mock_product_service)
+
+@pytest.fixture
+def filter_products_uc(mock_product_service):
+    return FilterProducts(mock_product_service)
+
+@pytest.fixture
+def search_products_uc(mock_product_service):
+    return SearchProducts(mock_product_service)
+
+@pytest.fixture
+def get_product_stats_uc(mock_product_service):
+    return GetProductStats(mock_product_service)
+
+@pytest.fixture
+def get_minimal_products_uc(mock_product_service):
+    return GetMinimalProducts(mock_product_service)
 
 @pytest.fixture
 def delete_product_uc(mock_product_service):
@@ -86,4 +106,53 @@ async def test_update_product_execute_success(update_product_uc, mock_product_se
     result = await update_product_uc.execute(product_id, product_data)
 
     mock_product_service.update_product.assert_awaited_once_with(product_id, product_data)
+    assert result == expected_result
+
+
+@pytest.mark.asyncio
+async def test_filter_products_execute_success(filter_products_uc, mock_product_service):
+    filter_data = {"min_price": 100}
+    expected_result = [{"id": 2, "name": "Premium Product", "price": 199.99}]
+
+    mock_product_service.filter_products.return_value = expected_result
+    result = await filter_products_uc.execute(filter_data)
+
+    mock_product_service.filter_products.assert_awaited_once_with(filter_data)
+    assert result == expected_result
+
+
+@pytest.mark.asyncio
+async def test_search_products_execute_success(search_products_uc, mock_product_service):
+    query = "special"
+    expected_result = [{"id": 3, "name": "Special Edition", "price": 299.99}]
+
+    mock_product_service.search_products.return_value = expected_result
+    result = await search_products_uc.execute(query)
+
+    mock_product_service.search_products.assert_awaited_once_with(query)
+    assert result == expected_result
+
+
+@pytest.mark.asyncio
+async def test_get_product_stats_execute_success(get_product_stats_uc, mock_product_service):
+    expected_result = {"total": 5, "average_price": 199.99}
+
+    mock_product_service.get_product_stats.return_value = expected_result
+    result = await get_product_stats_uc.execute()
+
+    mock_product_service.get_product_stats.assert_awaited_once()
+    assert result == expected_result
+
+
+@pytest.mark.asyncio
+async def test_get_minimal_products_execute_success(get_minimal_products_uc, mock_product_service):
+    expected_result = [
+        {"id": 1, "name": "Basic Product"},
+        {"id": 2, "name": "Premium Product"}
+    ]
+
+    mock_product_service.get_minimal_products.return_value = expected_result
+    result = await get_minimal_products_uc.execute()
+
+    mock_product_service.get_minimal_products.assert_awaited_once()
     assert result == expected_result

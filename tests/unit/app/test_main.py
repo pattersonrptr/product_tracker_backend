@@ -1,11 +1,10 @@
 from datetime import datetime
 from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from pydantic import HttpUrl
 
 from app.main import app
-from app.services.product_service import ProductService
 from app.schemas.product_schema import ProductResponse
 from app.use_cases.product_use_cases import FilterProducts
 
