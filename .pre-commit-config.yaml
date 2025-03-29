@@ -39,6 +39,8 @@ repos:
     hooks:
       - id: run-unit-tests
         name: Rodar Testes Unitários
-        entry: pytest --maxfail=1 --disable-warnings -q
+        entry: pytest tests/ --maxfail=1
         language: system
+        pass_filenames: false
+        always_run: true
         types: [python]
