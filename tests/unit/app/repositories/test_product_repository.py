@@ -1,11 +1,12 @@
+from datetime import UTC, datetime
 from decimal import Decimal
+from unittest.mock import ANY, Mock
 
 import pytest
-from unittest.mock import Mock, ANY
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime, UTC
-from app.repositories.product_repository import ProductRepository
+
 from app.models.product_models import Product
+from app.repositories.product_repository import ProductRepository
 
 
 @pytest.fixture
@@ -19,9 +20,11 @@ def mock_db():
     db.rollback = Mock()
     return db
 
+
 @pytest.fixture
 def product_repository(mock_db):
     return ProductRepository(mock_db)
+
 
 def test_create_product_success(product_repository, mock_db):
     test_data = {"url": "http://example.com", "title": "Test Product", "price": 99.99}
@@ -40,16 +43,20 @@ def test_create_product_success(product_repository, mock_db):
     mock_db.refresh.assert_called_once_with(added_product)
     assert result == added_product
 
+
 def test_create_product_with_integrity_error(product_repository, mock_db):
     test_data = {"url": "http://example.com", "title": "Test Product", "price": 99.99}
 
-    mock_db.add.side_effect = IntegrityError("Unique constraint failed", params={}, orig=Exception())
+    mock_db.add.side_effect = IntegrityError(
+        "Unique constraint failed", params={}, orig=Exception()
+    )
     mock_db.rollback = Mock()
 
     with pytest.raises(IntegrityError):
         product_repository.create(test_data)
 
     mock_db.rollback.assert_called_once()
+
 
 def test_get_all_products_success(product_repository, mock_db):
     mock_product1 = Product(url="http://product1.com", title="Product 1", price=100.0)
@@ -63,6 +70,7 @@ def test_get_all_products_success(product_repository, mock_db):
     assert result == [mock_product1, mock_product2]
     assert len(result) == 2
 
+
 def test_get_all_products_empty(product_repository, mock_db):
     mock_db.query.return_value.all.return_value = []
 
@@ -72,9 +80,12 @@ def test_get_all_products_empty(product_repository, mock_db):
     assert result == []
     assert len(result) == 0
 
+
 def test_get_by_id_found(product_repository, mock_db):
     product_id = 1
-    mock_product = Product(id=product_id, url="http://product1.com", title="Product 1", price=100.0)
+    mock_product = Product(
+        id=product_id, url="http://product1.com", title="Product 1", price=100.0
+    )
 
     query_mock = Mock()
     filter_mock = Mock()
@@ -91,6 +102,7 @@ def test_get_by_id_found(product_repository, mock_db):
 
     filter_call = query_mock.filter.call_args[0][0]
     assert str(filter_call) == str(Product.id == product_id)
+
 
 def test_get_by_id_not_found(product_repository, mock_db):
     product_id = 999
@@ -110,6 +122,7 @@ def test_get_by_id_not_found(product_repository, mock_db):
 
     filter_call = query_mock.filter.call_args[0][0]
     assert str(filter_call) == str(Product.id == product_id)
+
 
 def test_get_by_url_found(product_repository, mock_db):
     url = "http://example.com"
@@ -131,6 +144,7 @@ def test_get_by_url_found(product_repository, mock_db):
     filter_call = query_mock.filter.call_args[0][0]
     assert str(filter_call) == str(Product.url == url)
 
+
 def test_get_by_url_not_found(product_repository, mock_db):
     url = "http://nonexistent.com"
 
@@ -150,10 +164,17 @@ def test_get_by_url_not_found(product_repository, mock_db):
     filter_call = query_mock.filter.call_args[0][0]
     assert str(filter_call) == str(Product.url == url)
 
+
 def test_update_product_success(product_repository, mock_db):
     product_id = 1
-    update_data = {"title": "New title", "price": 150.0, "url": "https://www.testurl.com"}
-    mock_product = Product(id=product_id, url="http://example.com", title="Old Product", price=100.0)
+    update_data = {
+        "title": "New title",
+        "price": 150.0,
+        "url": "https://www.testurl.com",
+    }
+    mock_product = Product(
+        id=product_id, url="http://example.com", title="Old Product", price=100.0
+    )
 
     product_repository.get_by_id = Mock(return_value=mock_product)
     mock_db.commit = Mock()
@@ -169,6 +190,7 @@ def test_update_product_success(product_repository, mock_db):
     mock_db.refresh.assert_called_once_with(mock_product)
     assert result == mock_product
 
+
 def test_update_product_not_found(product_repository, mock_db):
     product_id = 999
     update_data = {"title": "Non-existent title"}
@@ -182,10 +204,13 @@ def test_update_product_not_found(product_repository, mock_db):
     mock_db.refresh.assert_not_called()
     assert result is None
 
+
 def test_update_product_database_error(product_repository, mock_db):
     product_id = 1
     update_data = {"title": "Database error"}
-    mock_product = Product(id=product_id, url="http://example.com", title="Product", price=100.0)
+    mock_product = Product(
+        id=product_id, url="http://example.com", title="Product", price=100.0
+    )
 
     product_repository.get_by_id = Mock(return_value=mock_product)
     mock_db.commit.side_effect = Exception("Database error")
@@ -196,9 +221,12 @@ def test_update_product_database_error(product_repository, mock_db):
 
     mock_db.rollback.assert_called_once()
 
+
 def test_delete_product_success(product_repository, mock_db):
     product_id = 1
-    mock_product = Product(id=product_id, url="http://example.com", title="Product", price=100.0)
+    mock_product = Product(
+        id=product_id, url="http://example.com", title="Product", price=100.0
+    )
 
     product_repository.get_by_id = Mock(return_value=mock_product)
     mock_db.delete = Mock()
@@ -211,6 +239,7 @@ def test_delete_product_success(product_repository, mock_db):
     mock_db.commit.assert_called_once()
     assert result is True
 
+
 def test_delete_product_not_found(product_repository, mock_db):
     product_id = 999
     product_repository.get_by_id = Mock(return_value=None)
@@ -222,9 +251,12 @@ def test_delete_product_not_found(product_repository, mock_db):
     mock_db.commit.assert_not_called()
     assert result is None
 
+
 def test_delete_product_database_error(product_repository, mock_db):
     product_id = 1
-    mock_product = Product(id=product_id, url="http://example.com", title="Product", price=100.0)
+    mock_product = Product(
+        id=product_id, url="http://example.com", title="Product", price=100.0
+    )
 
     product_repository.get_by_id = Mock(return_value=mock_product)
     mock_db.commit.side_effect = Exception("Database error")
@@ -234,6 +266,7 @@ def test_delete_product_database_error(product_repository, mock_db):
         product_repository.delete(product_id)
 
     mock_db.rollback.assert_called_once()
+
 
 def test_search_products(product_repository, mock_db):
     query = "test"
@@ -257,6 +290,7 @@ def test_search_products(product_repository, mock_db):
     for product in result:
         assert isinstance(product.price, float)
 
+
 def test_filter_products_with_url(product_repository, mock_db):
     filter_data = {"url": "example.com"}
     mock_product = Product(id=1, url="http://example.com", title="Product", price=10.0)
@@ -274,8 +308,9 @@ def test_filter_products_with_url(product_repository, mock_db):
     assert result == [mock_product]
 
     for product in result:
-        if hasattr(product, 'price'):
+        if hasattr(product, "price"):
             assert isinstance(product.price, float)
+
 
 def test_filter_products_with_price_range(product_repository, mock_db):
     filter_data = {"min_price": 10.0, "max_price": 20.0}
@@ -294,18 +329,18 @@ def test_filter_products_with_price_range(product_repository, mock_db):
     query_mock.all.assert_called_once()
     assert result == [mock_product1, mock_product2]
 
-    filter_calls = [str(call[0][0]).lower() for call in query_mock.filter.call_args_list]
+    filter_calls = [
+        str(call[0][0]).lower() for call in query_mock.filter.call_args_list
+    ]
 
     assert any(">=" in call for call in filter_calls)
     assert any("<=" in call for call in filter_calls)
     assert all("price" in call for call in filter_calls)
 
+
 def test_filter_products_with_date_filters(product_repository, mock_db):
     test_date = datetime(2023, 1, 1, tzinfo=UTC)
-    filter_data = {
-        "created_after": test_date,
-        "updated_before": test_date
-    }
+    filter_data = {"created_after": test_date, "updated_before": test_date}
 
     query_mock = Mock()
     query_mock.filter.return_value = query_mock
@@ -319,17 +354,20 @@ def test_filter_products_with_date_filters(product_repository, mock_db):
     query_mock.all.assert_called_once()
     assert result == []
 
-    filter_calls = [str(call[0][0]).lower() for call in query_mock.filter.call_args_list]
+    filter_calls = [
+        str(call[0][0]).lower() for call in query_mock.filter.call_args_list
+    ]
 
     assert any("created_at" in call and ">=" in call for call in filter_calls)
     assert any("updated_at" in call and "<=" in call for call in filter_calls)
 
+
 def test_get_product_stats(product_repository, mock_db):
     mock_stats = Mock()
     mock_stats.total_products = 2
-    mock_stats.average_price = Decimal('15.0')
-    mock_stats.min_price = Decimal('10.0')
-    mock_stats.max_price = Decimal('20.0')
+    mock_stats.average_price = Decimal("15.0")
+    mock_stats.min_price = Decimal("10.0")
+    mock_stats.max_price = Decimal("20.0")
 
     query_mock = Mock()
     query_mock.first.return_value = mock_stats
@@ -343,13 +381,14 @@ def test_get_product_stats(product_repository, mock_db):
         "total_products": 2,
         "average_price": 15.0,
         "min_price": 10.0,
-        "max_price": 20.0
+        "max_price": 20.0,
     }
+
 
 def test_get_minimal_products(product_repository, mock_db):
     mock_products = [
-        Mock(id=1, title="Product 1", price=Decimal('10.0')),
-        Mock(id=2, title="Product 2", price=Decimal('20.0'))
+        Mock(id=1, title="Product 1", price=Decimal("10.0")),
+        Mock(id=2, title="Product 2", price=Decimal("20.0")),
     ]
 
     query_mock = Mock()
@@ -362,15 +401,16 @@ def test_get_minimal_products(product_repository, mock_db):
     query_mock.all.assert_called_once()
     assert result == [
         {"id": 1, "title": "Product 1", "price": 10.0},
-        {"id": 2, "title": "Product 2", "price": 20.0}
+        {"id": 2, "title": "Product 2", "price": 20.0},
     ]
 
 
 def test_get_all_products_with_decimal_prices(product_repository, mock_db):
     # Configura produtos com preços Decimal
     from decimal import Decimal
-    mock_product1 = Product(id=1, title="Product 1", price=Decimal('10.50'))
-    mock_product2 = Product(id=2, title="Product 2", price=Decimal('20.75'))
+
+    mock_product1 = Product(id=1, title="Product 1", price=Decimal("10.50"))
+    mock_product2 = Product(id=2, title="Product 2", price=Decimal("20.75"))
 
     mock_db.query.return_value.all.return_value = [mock_product1, mock_product2]
 
@@ -385,7 +425,8 @@ def test_get_all_products_with_decimal_prices(product_repository, mock_db):
 
 def test_get_by_id_with_decimal_price(product_repository, mock_db):
     from decimal import Decimal
-    mock_product = Product(id=1, title="Product", price=Decimal('15.99'))
+
+    mock_product = Product(id=1, title="Product", price=Decimal("15.99"))
 
     query_mock = Mock()
     filter_mock = Mock()
@@ -401,7 +442,10 @@ def test_get_by_id_with_decimal_price(product_repository, mock_db):
 
 def test_get_by_url_with_decimal_price(product_repository, mock_db):
     from decimal import Decimal
-    mock_product = Product(id=1, url="http://test.com", title="Product", price=Decimal('12.34'))
+
+    mock_product = Product(
+        id=1, url="http://test.com", title="Product", price=Decimal("12.34")
+    )
 
     query_mock = Mock()
     filter_mock = Mock()
@@ -417,8 +461,9 @@ def test_get_by_url_with_decimal_price(product_repository, mock_db):
 
 def test_update_with_decimal_price(product_repository, mock_db):
     from decimal import Decimal
-    mock_product = Product(id=1, title="Product", price=Decimal('10.0'))
-    update_data = {"price": Decimal('15.0')}
+
+    mock_product = Product(id=1, title="Product", price=Decimal("10.0"))
+    update_data = {"price": Decimal("15.0")}
 
     product_repository.get_by_id = Mock(return_value=mock_product)
     mock_db.commit = Mock()
@@ -432,7 +477,8 @@ def test_update_with_decimal_price(product_repository, mock_db):
 
 def test_search_products_with_decimal_prices(product_repository, mock_db):
     from decimal import Decimal
-    mock_product = Product(id=1, title="Test", price=Decimal('9.99'))
+
+    mock_product = Product(id=1, title="Test", price=Decimal("9.99"))
 
     query_mock = Mock()
     filter_mock = Mock()
@@ -448,7 +494,8 @@ def test_search_products_with_decimal_prices(product_repository, mock_db):
 
 def test_filter_products_with_decimal_prices(product_repository, mock_db):
     from decimal import Decimal
-    mock_product = Product(id=1, title="Product", price=Decimal('19.99'))
+
+    mock_product = Product(id=1, title="Product", price=Decimal("19.99"))
 
     query_mock = Mock()
     query_mock.filter.return_value = query_mock

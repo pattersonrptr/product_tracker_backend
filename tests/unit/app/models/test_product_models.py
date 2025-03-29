@@ -1,10 +1,12 @@
 from datetime import datetime
-from sqlalchemy import Integer, String, Numeric, DateTime
+
+from sqlalchemy import DateTime, Integer, Numeric, String
+
 from app.models.product_models import Product
 
 
 def test_product_table_name():
-    assert Product.__tablename__ == 'product'
+    assert Product.__tablename__ == "product"
 
 
 def test_id_column():
@@ -49,6 +51,7 @@ def test_created_at_default_value():
 
     default_value = created_at_column.default
     if default_value.is_callable:
+
         class FakeContext:
             def __init__(self):
                 self.current_parameters = {}

@@ -1,7 +1,7 @@
 from datetime import datetime
-from fastapi.testclient import TestClient
 from unittest.mock import MagicMock, patch
 
+from fastapi.testclient import TestClient
 from pydantic import HttpUrl
 
 from app.main import app
@@ -11,7 +11,9 @@ from app.use_cases.product_use_cases import FilterProducts
 
 def test_product_router_included():
     routes = [route.path for route in app.routes]
-    assert any(route.startswith("/products") for route in routes), "Route /products not found"
+    assert any(
+        route.startswith("/products") for route in routes
+    ), "Route /products not found"
 
 
 def test_product_endpoint():
@@ -31,13 +33,15 @@ def test_product_endpoint():
             price=149.99,
             created_at=datetime(2024, 5, 20, 11, 0),
             updated_at=datetime(2024, 5, 20, 11, 0),
-        )
+        ),
     ]
 
     mock_filter_use_case = MagicMock(spec=FilterProducts)
     mock_filter_use_case.execute.return_value = mock_data
 
-    with patch('app.routers.product_router.FilterProducts', return_value=mock_filter_use_case):
+    with patch(
+        "app.routers.product_router.FilterProducts", return_value=mock_filter_use_case
+    ):
         client = TestClient(app)
 
         response = client.get("/products/", params={})
@@ -59,8 +63,9 @@ def test_product_endpoint():
                 "price": 149.99,
                 "created_at": "2024-05-20T11:00:00",
                 "updated_at": "2024-05-20T11:00:00",
-            }
+            },
         ]
+
 
 def test_docs_endpoint():
     client = TestClient(app)
