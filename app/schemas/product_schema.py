@@ -62,10 +62,13 @@ class ProductUpdate(BaseModel):
 
 class ProductFilter(BaseModel):
     title: Optional[str] = None
+    url: Optional[str] = None
     min_price: Optional[float] = Field(default=None, gt=0)
     max_price: Optional[float] = Field(default=None, gt=0)
     created_after: Optional[date] = None
     created_before: Optional[date] = None
+    updated_after: Optional[date] = None
+    updated_before: Optional[date] = None
 
 class ProductBulkCreate(BaseModel):
     products: List[ProductCreate]
