@@ -39,7 +39,7 @@ repos:
     hooks:
       - id: run-unit-tests
         name: Rodar Testes Unitários
-        entry: pytest tests/ --maxfail=1
+        entry: pytest tests/ --maxfail=1 -vv
         language: system
         pass_filenames: false
         always_run: true
