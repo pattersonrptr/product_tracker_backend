@@ -1,6 +1,4 @@
 import os
-import random
-import time
 from datetime import datetime, timedelta
 
 import requests
@@ -12,12 +10,6 @@ from scrapers.olx.scraper import Scraper
 broker_url = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
 
 app = Celery(main="scrapers", broker=broker_url, backend="redis://redis:6379/0")
-
-# app.conf.update(
-#     task_concurrency=16,
-#     worker_prefetch_multiplier=10,
-#     worker_heartbeat=120,
-# )
 
 SEARCHES = ["livro python"]
 

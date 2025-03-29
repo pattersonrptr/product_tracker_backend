@@ -8,8 +8,6 @@ import cloudscraper
 import requests  # TODO: check if requests is still needed
 from bs4 import BeautifulSoup
 
-from app.models import Product
-
 
 class Scraper:
     def __init__(self, api_url=None):

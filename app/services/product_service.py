@@ -1,9 +1,5 @@
-from datetime import UTC, datetime, timedelta
-from decimal import Decimal
-
 from pydantic import HttpUrl
 
-from app.models import Product
 from app.repositories.product_repository import ProductRepository
 
 

@@ -167,7 +167,6 @@ class TestScraper(unittest.TestCase):
         self.assertEqual(mock_get.call_count, 3)
 
     def test_extract_links(self):
-        soup = BeautifulSoup(self.mock_html, "html.parser")
         links = self.scraper._extract_links(self.mock_html)
 
         self.assertEqual(len(links), 2)
