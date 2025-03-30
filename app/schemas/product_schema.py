@@ -1,8 +1,9 @@
-from pydantic import BaseModel, HttpUrl, Field, ConfigDict, field_validator
-from datetime import datetime, date
-from typing import Optional, List
 import re
+from datetime import date, datetime
 from decimal import Decimal
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 
 def parse_price(value):
@@ -24,6 +25,7 @@ def parse_price(value):
     except ValueError:
         raise ValueError("Invalid format for float conversion")
 
+
 class ProductBase(BaseModel):
     url: HttpUrl
     title: str = Field(min_length=1)
@@ -35,13 +37,15 @@ class ProductBase(BaseModel):
         validate_default=True,
     )
 
-    @field_validator('price', mode='before')
+    @field_validator("price", mode="before")
     @classmethod
     def parse_decimal(cls, value):
         return parse_price(value)
 
+
 class ProductCreate(ProductBase):
     pass
+
 
 class ProductResponse(ProductBase):
     id: int
@@ -50,15 +54,17 @@ class ProductResponse(ProductBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ProductUpdate(BaseModel):
     url: Optional[HttpUrl] = None
     title: Optional[str] = Field(default=None, min_length=1)
     price: Optional[float] = Field(default=None, gt=0)
 
-    @field_validator('price', mode='before')
+    @field_validator("price", mode="before")
     @classmethod
     def parse_decimal(cls, value):
         return parse_price(value)
+
 
 class ProductFilter(BaseModel):
     title: Optional[str] = None
@@ -70,24 +76,28 @@ class ProductFilter(BaseModel):
     updated_after: Optional[date] = None
     updated_before: Optional[date] = None
 
+
 class ProductBulkCreate(BaseModel):
     products: List[ProductCreate]
 
-    @field_validator('products')
+    @field_validator("products")
     @classmethod
     def check_non_empty_list(cls, value):
         if not value:
             raise ValueError("The products list cannot be empty")
         return value
 
+
 class ProductSearch(BaseModel):
     query: str
+
 
 class ProductStats(BaseModel):
     total_products: int
     average_price: float
     min_price: float
     max_price: float
+
 
 class ProductPartialResponse(BaseModel):
     id: int

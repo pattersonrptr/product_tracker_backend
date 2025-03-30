@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import './App.css';
+import "./App.css";
+
+import React, { useEffect, useState } from "react";
 
 function App() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:8000/products/')
+    fetch("http://localhost:8000/products/")
       .then((response) => response.json())
       .then((data) => setProducts(data))
-      .catch((error) => console.error('Error when fetching products:', error));
+      .catch((error) => console.error("Error when fetching products:", error));
   }, []);
 
   return (
@@ -18,10 +19,11 @@ function App() {
         <ul>
           {products.map((product) => (
             <li key={product.id}>
-              # {product.id} - <a href={product.url}>{product.title}</a> - R$ {product.price}
+              # {product.id} - <a href={product.url}>{product.title}</a>- R${" "}
+              {product.price}{" "}
             </li>
           ))}
-        </ul>
+        </ul>{" "}
       </header>
     </div>
   );

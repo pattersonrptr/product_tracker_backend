@@ -24,6 +24,7 @@ services:
       - redis
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
+      - PYTHONPATH=/app
     command: ./start.sh
 
   scraper:

@@ -1,11 +1,14 @@
 """
 Data Access Layer
 """
+
+from datetime import UTC, datetime
+from decimal import Decimal
+
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
 from app.models.product_models import Product
-from datetime import datetime, UTC
-from decimal import Decimal
 
 
 class ProductRepository:
@@ -72,9 +75,9 @@ class ProductRepository:
             raise e
 
     def search_products(self, query: str):
-        products = self.db.query(Product).filter(
-            Product.title.ilike(f"%{query}%")
-        ).all()
+        products = (
+            self.db.query(Product).filter(Product.title.ilike(f"%{query}%")).all()
+        )
 
         for product in products:
             if isinstance(product.price, Decimal):
@@ -84,29 +87,35 @@ class ProductRepository:
     def filter_products(self, filter_data: dict):
         query = self.db.query(Product)
 
-        if 'url' in filter_data and filter_data['url']:
+        if "url" in filter_data and filter_data["url"]:
             query = query.filter(Product.url.ilike(f"%{filter_data['url']}%"))
 
-        if 'title' in filter_data and filter_data['title']:
+        if "title" in filter_data and filter_data["title"]:
             query = query.filter(Product.title.ilike(f"%{filter_data['title']}%"))
 
-        if 'min_price' in filter_data and filter_data['min_price'] is not None:
-            query = query.filter(Product.price >= filter_data['min_price'])
+        if "min_price" in filter_data and filter_data["min_price"] is not None:
+            query = query.filter(Product.price >= filter_data["min_price"])
 
-        if 'max_price' in filter_data and filter_data['max_price'] is not None:
-            query = query.filter(Product.price <= filter_data['max_price'])
+        if "max_price" in filter_data and filter_data["max_price"] is not None:
+            query = query.filter(Product.price <= filter_data["max_price"])
 
-        if 'created_after' in filter_data and filter_data['created_after'] is not None:
-            query = query.filter(Product.created_at >= filter_data['created_after'])
+        if "created_after" in filter_data and filter_data["created_after"] is not None:
+            query = query.filter(Product.created_at >= filter_data["created_after"])
 
-        if 'created_before' in filter_data and filter_data['created_before'] is not None:
-            query = query.filter(Product.created_at <= filter_data['created_before'])
+        if (
+            "created_before" in filter_data
+            and filter_data["created_before"] is not None
+        ):
+            query = query.filter(Product.created_at <= filter_data["created_before"])
 
-        if 'updated_after' in filter_data and filter_data['updated_after'] is not None:
-            query = query.filter(Product.updated_at >= filter_data['updated_after'])
+        if "updated_after" in filter_data and filter_data["updated_after"] is not None:
+            query = query.filter(Product.updated_at >= filter_data["updated_after"])
 
-        if 'updated_before' in filter_data and filter_data['updated_before'] is not None:
-            query = query.filter(Product.updated_at <= filter_data['updated_before'])
+        if (
+            "updated_before" in filter_data
+            and filter_data["updated_before"] is not None
+        ):
+            query = query.filter(Product.updated_at <= filter_data["updated_before"])
 
         products = query.all()
         for product in products:
@@ -119,7 +128,7 @@ class ProductRepository:
             func.count(Product.id).label("total_products"),
             func.avg(Product.price).label("average_price"),
             func.min(Product.price).label("min_price"),
-            func.max(Product.price).label("max_price")
+            func.max(Product.price).label("max_price"),
         ).first()
 
         return {

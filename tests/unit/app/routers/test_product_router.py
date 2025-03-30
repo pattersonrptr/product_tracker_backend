@@ -1,15 +1,17 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
-from fastapi.testclient import TestClient
+
 import pytest
+from fastapi.testclient import TestClient
 from pydantic import HttpUrl
 from sqlalchemy.orm.session import Session
+
 from app.main import app
 from app.repositories.product_repository import ProductRepository
 from app.schemas.product_schema import (
+    ProductPartialResponse,
     ProductResponse,
     ProductStats,
-    ProductPartialResponse,
 )
 from app.services.product_service import ProductService
 
@@ -17,6 +19,7 @@ from app.services.product_service import ProductService
 @pytest.fixture
 def mock_product_service():
     return MagicMock()
+
 
 @pytest.fixture
 def client(mock_product_service):
@@ -28,6 +31,7 @@ def client(mock_product_service):
     app.dependency_overrides[get_product_service] = override_get_product_service
     yield TestClient(app)
     app.dependency_overrides.clear()
+
 
 def test_filter_products(client, mock_product_service):
     mock_product = ProductResponse(
@@ -47,6 +51,7 @@ def test_filter_products(client, mock_product_service):
     assert data[0]["title"] == "Test Product"
     mock_product_service.filter_products.assert_called_once_with({"title": "Test"})
 
+
 def test_get_product_exists(client, mock_product_service):
     mock_product = ProductResponse(
         id=1,
@@ -64,12 +69,14 @@ def test_get_product_exists(client, mock_product_service):
     assert data["id"] == 1
     mock_product_service.get_product_by_id.assert_called_once_with(1)
 
+
 def test_get_product_not_found(client, mock_product_service):
     mock_product_service.get_product_by_id.return_value = None
 
     response = client.get("/products/999")
     assert response.status_code == 404
     assert response.json()["detail"] == "Product not found"
+
 
 def test_search_products(client, mock_product_service):
     mock_product = ProductResponse(
@@ -88,6 +95,7 @@ def test_search_products(client, mock_product_service):
     assert len(data) == 1
     mock_product_service.search_products.assert_called_once_with("Test")
 
+
 def test_get_product_stats(client, mock_product_service):
     mock_stats = ProductStats(
         total_products=5,
@@ -103,6 +111,7 @@ def test_get_product_stats(client, mock_product_service):
     assert data["total_products"] == 5
     assert data["average_price"] == 30.0
 
+
 # Testes para GET /products/minimal/
 def test_get_minimal_products(client, mock_product_service):
     mock_minimal = [
@@ -115,9 +124,7 @@ def test_get_minimal_products(client, mock_product_service):
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
-    assert all(
-        "id" in item and "title" in item and "price" in item for item in data
-    )
+    assert all("id" in item and "title" in item and "price" in item for item in data)
 
 
 def test_create_product(client, mock_product_service):
@@ -137,25 +144,24 @@ def test_create_product(client, mock_product_service):
     )
     mock_product_service.create_product.return_value = mock_product
 
-    response = client.post("/products/", json={
-        "url": str(product_data["url"]),
-        "title": "New Product",
-        "price": 29.99
-    })
+    response = client.post(
+        "/products/",
+        json={"url": str(product_data["url"]), "title": "New Product", "price": 29.99},
+    )
 
     assert response.status_code == 201
     assert response.json()["id"] == 1
 
-    mock_product_service.create_product.assert_called_once_with({
-        "url": HttpUrl("http://example.com"),
-        "title": "New Product",
-        "price": 29.99
-    })
+    mock_product_service.create_product.assert_called_once_with(
+        {"url": HttpUrl("http://example.com"), "title": "New Product", "price": 29.99}
+    )
+
 
 def test_create_product_invalid_data(client):
     invalid_data = {"url": "invalid", "title": "", "price": -5}
     response = client.post("/products/", json=invalid_data)
     assert response.status_code == 422
+
 
 def test_bulk_create_products(client, mock_product_service):
     products_data = {
@@ -184,10 +190,12 @@ def test_bulk_create_products(client, mock_product_service):
     assert data[0]["id"] == 1
     assert mock_product_service.create_product.call_count == 2
 
+
 def test_bulk_create_empty_list(client):
     invalid_data = {"products": []}
     response = client.post("/products/bulk/", json=invalid_data)
     assert response.status_code == 422
+
 
 def test_update_product(client, mock_product_service):
     updated_data = {"title": "Updated Title"}
@@ -207,11 +215,13 @@ def test_update_product(client, mock_product_service):
     assert data["title"] == "Updated Title"
     mock_product_service.update_product.assert_called_once_with(1, updated_data)
 
+
 def test_update_product_not_found(client, mock_product_service):
     mock_product_service.update_product.return_value = None
 
     response = client.put("/products/999", json={"title": "New Title"})
     assert response.status_code == 404
+
 
 def test_delete_product(client, mock_product_service):
     mock_product_service.delete_product.return_value = True
@@ -220,14 +230,17 @@ def test_delete_product(client, mock_product_service):
     assert response.status_code == 204
     mock_product_service.delete_product.assert_called_once_with(1)
 
+
 def test_delete_product_not_found(client, mock_product_service):
     mock_product_service.delete_product.return_value = False
 
     response = client.delete("/products/999")
     assert response.status_code == 404
 
+
 def test_get_db_dependency():
     from app.routers.product_router import get_db
+
     generator = get_db()
 
     try:
@@ -240,9 +253,11 @@ def test_get_db_dependency():
         except StopIteration:
             pass
 
+
 def test_get_product_service_dependency():
-    from app.routers.product_router import get_product_service
     from sqlalchemy.orm import Session
+
+    from app.routers.product_router import get_product_service
 
     mock_db = MagicMock(spec=Session)
     service = get_product_service(db=mock_db)

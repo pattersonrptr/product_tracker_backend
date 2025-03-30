@@ -1,13 +1,14 @@
 import os
-import time
 import random
-import requests
+import time
 
+import requests
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException
 
 from scrapers.olx.webdriver import WebDriver
+
 
 class Scraper:
     def __init__(self, api_url=None):
@@ -32,11 +33,7 @@ class Scraper:
     def send_to_api(self, item):
         """Envia os dados do anúncio para a API FastAPI"""
         try:
-            response = requests.post(
-                f"{self.api_url}/products/",
-                json=item,
-                timeout=10
-            )
+            response = requests.post(f"{self.api_url}/products/", json=item, timeout=10)
             if response.status_code == 201:
                 print(f"Anúncio salvo com sucesso: {item['title']}")
             else:
@@ -47,8 +44,7 @@ class Scraper:
     def close_modal_if_exists(self):
         try:
             close_modal_button = self.driver.find_element(
-                By.CLASS_NAME,
-                "olx-modal__close-button"
+                By.CLASS_NAME, "olx-modal__close-button"
             )
             close_modal_button.click()
             print("Modal fechado.")
@@ -73,11 +69,12 @@ class Scraper:
 
         time.sleep(random.uniform(5, 10))
 
-
     def capture_item_links(self):
         products_links = []
         try:
-            products = self.driver.find_elements(By.CLASS_NAME, "olx-ad-card__link-wrapper")
+            products = self.driver.find_elements(
+                By.CLASS_NAME, "olx-ad-card__link-wrapper"
+            )
             for product in products:
                 link = product.get_attribute("href")
                 if link:
@@ -104,8 +101,7 @@ class Scraper:
         time.sleep(random.uniform(5, 10))
         try:
             title_element = self.driver.find_element(
-                By.CSS_SELECTOR,
-                "h1[data-ds-component='DS-Text'].ad__sc-45jt43-0"
+                By.CSS_SELECTOR, "h1[data-ds-component='DS-Text'].ad__sc-45jt43-0"
             )
             title = title_element.text
         except NoSuchElementException:
@@ -113,8 +109,7 @@ class Scraper:
 
         try:
             price_element = self.driver.find_element(
-                By.CSS_SELECTOR,
-                "h2.olx-text:nth-child(2)"
+                By.CSS_SELECTOR, "h2.olx-text:nth-child(2)"
             )
             price = price_element.text.replace("R$ ", "")
         except NoSuchElementException:

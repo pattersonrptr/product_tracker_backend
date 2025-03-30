@@ -1,25 +1,39 @@
+from unittest.mock import AsyncMock, Mock, create_autospec
+
 import pytest
 from pydantic import HttpUrl
-from app.services.product_service import ProductService
+
 from app.repositories.product_repository import ProductRepository
-from unittest.mock import Mock, AsyncMock, create_autospec
+from app.services.product_service import ProductService
 
 
 @pytest.fixture
 def mock_repository():
     repo = create_autospec(ProductRepository, instance=True)
 
-    for method in ['create', 'get_all', 'get_by_id', 'get_products_older_than', 'update',
-                  'update_by_url', 'delete', 'filter_products', 'search_products',
-                  'get_product_stats', 'get_minimal_products']:
+    for method in [
+        "create",
+        "get_all",
+        "get_by_id",
+        "get_products_older_than",
+        "update",
+        "update_by_url",
+        "delete",
+        "filter_products",
+        "search_products",
+        "get_product_stats",
+        "get_minimal_products",
+    ]:
         setattr(repo, method, AsyncMock())
 
     repo.get_by_url = Mock()
     return repo
 
+
 @pytest.fixture
 def product_service(mock_repository):
     return ProductService(mock_repository)
+
 
 @pytest.mark.asyncio
 async def test_create_product_success(product_service, mock_repository):
@@ -31,11 +45,13 @@ async def test_create_product_success(product_service, mock_repository):
     mock_repository.create.assert_awaited_once_with(test_data)
     assert result == expected_result
 
+
 @pytest.mark.asyncio
 async def test_create_product_database_error(product_service, mock_repository):
     mock_repository.create.side_effect = Exception("DB error")
     with pytest.raises(Exception, match="DB error"):
         await product_service.create_product({"name": "Product X"})
+
 
 @pytest.mark.asyncio
 async def test_create_product_with_http_url(product_service, mock_repository):
@@ -46,7 +62,9 @@ async def test_create_product_with_http_url(product_service, mock_repository):
     mock_repository.create.return_value = expected_result
     result = await product_service.create_product(test_data)
 
-    mock_repository.create.assert_awaited_once_with({"url": str(url), "name": "Product X", "price": 99.99})
+    mock_repository.create.assert_awaited_once_with(
+        {"url": str(url), "name": "Product X", "price": 99.99}
+    )
     assert result == expected_result
 
 
@@ -87,10 +105,7 @@ async def test_get_product_stats(product_service, mock_repository):
 
 @pytest.mark.asyncio
 async def test_get_minimal_products(product_service, mock_repository):
-    expected_result = [
-        {"id": 1, "name": "Product X"},
-        {"id": 2, "name": "Product Y"}
-    ]
+    expected_result = [{"id": 1, "name": "Product X"}, {"id": 2, "name": "Product Y"}]
 
     mock_repository.get_minimal_products.return_value = expected_result
     result = await product_service.get_minimal_products()
@@ -98,11 +113,12 @@ async def test_get_minimal_products(product_service, mock_repository):
     mock_repository.get_minimal_products.assert_awaited_once()
     assert result == expected_result
 
+
 @pytest.mark.asyncio
 async def test_get_all_products_success(product_service, mock_repository):
     expected_result = [
         {"id": 1, "name": "Product X", "price": 99.99},
-        {"id": 2, "name": "Product Y", "price": 149.99}
+        {"id": 2, "name": "Product Y", "price": 149.99},
     ]
 
     mock_repository.get_all.return_value = expected_result
@@ -111,11 +127,13 @@ async def test_get_all_products_success(product_service, mock_repository):
     mock_repository.get_all.assert_awaited_once()
     assert result == expected_result
 
+
 @pytest.mark.asyncio
 async def test_get_all_products_empty(product_service, mock_repository):
     mock_repository.get_all.return_value = []
     result = await product_service.get_all_products()
     assert result == []
+
 
 @pytest.mark.asyncio
 async def test_get_product_by_id_success(product_service, mock_repository):
@@ -127,6 +145,7 @@ async def test_get_product_by_id_success(product_service, mock_repository):
     mock_repository.get_by_id.assert_awaited_once_with(product_id)
     assert result == expected_result
 
+
 @pytest.mark.asyncio
 async def test_get_product_by_id_not_found(product_service, mock_repository):
     product_id = 999
@@ -135,6 +154,7 @@ async def test_get_product_by_id_not_found(product_service, mock_repository):
 
     mock_repository.get_by_id.assert_awaited_once_with(product_id)
     assert result is None
+
 
 @pytest.mark.asyncio
 async def test_get_product_by_url_found(product_service, mock_repository):
@@ -146,6 +166,7 @@ async def test_get_product_by_url_found(product_service, mock_repository):
 
     assert result == expected_result
 
+
 @pytest.mark.asyncio
 async def test_get_product_by_url_not_found(product_service, mock_repository):
     url = "https://nonexistent.com"
@@ -154,6 +175,7 @@ async def test_get_product_by_url_not_found(product_service, mock_repository):
     mock_repository.get_by_url.assert_called_once_with(url)
 
     assert result == []
+
 
 @pytest.mark.asyncio
 async def test_update_product_success(product_service, mock_repository):
@@ -166,6 +188,7 @@ async def test_update_product_success(product_service, mock_repository):
     mock_repository.update.assert_awaited_once_with(product_id, update_data)
     assert result == expected_result
 
+
 @pytest.mark.asyncio
 async def test_update_product_not_found(product_service, mock_repository):
     product_id = 999
@@ -177,6 +200,7 @@ async def test_update_product_not_found(product_service, mock_repository):
     mock_repository.update.assert_awaited_once_with(product_id, update_data)
     assert result is None
 
+
 @pytest.mark.asyncio
 async def test_update_product_with_http_url(product_service, mock_repository):
     product_id = 1
@@ -187,8 +211,11 @@ async def test_update_product_with_http_url(product_service, mock_repository):
     mock_repository.update.return_value = expected_result
     result = await product_service.update_product(product_id, update_data)
 
-    mock_repository.update.assert_awaited_once_with(product_id, {"url": str(url), "name": "Updated Product"})
+    mock_repository.update.assert_awaited_once_with(
+        product_id, {"url": str(url), "name": "Updated Product"}
+    )
     assert result == expected_result
+
 
 @pytest.mark.asyncio
 async def test_delete_product_success(product_service, mock_repository):
@@ -198,6 +225,7 @@ async def test_delete_product_success(product_service, mock_repository):
 
     mock_repository.delete.assert_awaited_once_with(product_id)
     assert result is True
+
 
 @pytest.mark.asyncio
 async def test_delete_product_not_found(product_service, mock_repository):

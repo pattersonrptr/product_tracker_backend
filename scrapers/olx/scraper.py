@@ -1,13 +1,12 @@
-import os
-import time
-import random
 import logging
-import requests     # TODO: check if requests is still needed
-import cloudscraper
+import os
+import random
+import time
 from urllib.parse import quote_plus
-from bs4 import BeautifulSoup
 
-from app.models import Product
+import cloudscraper
+import requests  # TODO: check if requests is still needed
+from bs4 import BeautifulSoup
 
 
 class Scraper:
@@ -17,10 +16,10 @@ class Scraper:
         env_api_url = os.getenv("API_URL", "")
         self.api_url = api_url or (env_api_url if env_api_url else "web:8000")
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
-            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-            'DNT': '1',
-            'Sec-GPC': '1',
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
+            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "DNT": "1",
+            "Sec-GPC": "1",
         }
         self.timeouts = (5, 15)  # (connect, read)
         self.session.headers.update(self.headers)
@@ -59,32 +58,32 @@ class Scraper:
         price = None
 
         if html:
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
             title = self._extract_title(soup)
             price = self._extract_price(soup)
 
         return {
-            'url': url,
-            'title': title,
-            'price': price,
+            "url": url,
+            "title": title,
+            "price": price,
         }
 
     def update_product(self, product: dict):
-        url = product['url']
+        url = product["url"]
         html = self._safe_request(url)
         title = None
         price = None
 
         if html:
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
             title = self._extract_title(soup)
             price = self._extract_price(soup)
 
         return {
-            'id': product['id'],
-            'url': url,
-            'title': title,
-            'price': price,
+            "id": product["id"],
+            "url": url,
+            "title": title,
+            "price": price,
         }
 
     def _build_search_url(self, search_term, page_number=1):
@@ -95,15 +94,13 @@ class Scraper:
         for attempt in range(max_retries):
             try:
                 response = self.session.get(
-                    url,
-                    timeout=self.timeouts,
-                    allow_redirects=True
+                    url, timeout=self.timeouts, allow_redirects=True
                 )
                 response.raise_for_status()
                 return response.text
 
             except requests.exceptions.HTTPError as e:
-                status_code = getattr(e.response, 'status_code', 'unknown')
+                status_code = getattr(e.response, "status_code", "unknown")
                 print(f"HTTP error {status_code} em {url}")
             except requests.exceptions.RequestException as e:
                 print(f"Connection error: {str(e)}")
@@ -119,11 +116,11 @@ class Scraper:
         return None
 
     def _extract_links(self, html_content):
-        soup = BeautifulSoup(html_content, 'html.parser')
+        soup = BeautifulSoup(html_content, "html.parser")
         links = []
 
-        for a in soup.select('section.olx-ad-card--horizontal > a'):
-            href = a.get('href', '').split('#')[0]
+        for a in soup.select("section.olx-ad-card--horizontal > a"):
+            href = a.get("href", "").split("#")[0]
             if href and href not in links:
                 links.append(href)
 
@@ -131,16 +128,18 @@ class Scraper:
 
     def _extract_title(self, soup):
         try:
-            return soup.find('span', {'class': 'olx-text--title-medium'}).get_text(strip=True)
+            return soup.find("span", {"class": "olx-text--title-medium"}).get_text(
+                strip=True
+            )
         except AttributeError:
             return "Title not found"
 
     def _extract_price(self, soup):
         try:
             price_text = soup.find(
-                'span', {'class': 'olx-text olx-text--title-large olx-text--block'}
+                "span", {"class": "olx-text olx-text--title-large olx-text--block"}
             ).get_text(strip=True)
-            return price_text.replace('R$', '').strip()
+            return price_text.replace("R$", "").strip()
         except AttributeError:
             return "Price not found"
 
@@ -153,15 +152,15 @@ class Scraper:
         for item in items:
             try:
                 response = requests.post(
-                    f"{self.api_url}/products/",
-                    json=item,
-                    timeout=10
+                    f"{self.api_url}/products/", json=item, timeout=10
                 )
                 if response.status_code == 201:
                     success_count += 1
                 else:
-                    title = item.get('title', 'Unknown Item')
-                    logging.error(f"Error sending {title}: {response.status_code} - {response.text}")
+                    title = item.get("title", "Unknown Item")
+                    logging.error(
+                        f"Error sending {title}: {response.status_code} - {response.text}"
+                    )
             except Exception as e:
                 logging.error(f"Send failure: {str(e)}")
 
