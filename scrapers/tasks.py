@@ -1,14 +1,13 @@
 import os
-from datetime import datetime, timedelta
-
 import requests
+
+from datetime import datetime, timedelta
 from celery import Celery, chord, group
 from celery.schedules import crontab
 
 from scrapers.olx.scraper import Scraper
 
 broker_url = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
-
 app = Celery(main="scrapers", broker=broker_url, backend="redis://redis:6379/0")
 
 SEARCHES = ["livro python"]

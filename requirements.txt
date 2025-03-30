@@ -24,12 +24,14 @@ click-didyoumean==0.3.1
 click-plugins==1.1.1
 click-repl==0.3.0
 cloudscraper==1.2.71
+colorama==0.4.6
 comm==0.2.2
 coverage==7.7.0
 debugpy==1.8.13
 decorator==5.2.1
 defusedxml==0.7.1
 distlib==0.3.9
+docopt==0.6.2
 executing==2.2.0
 fastapi==0.115.8
 fastjsonschema==2.21.1
@@ -106,6 +108,7 @@ pytest==8.3.5
 pytest-asyncio==0.25.3
 pytest-cov==6.0.0
 pytest-mock==3.14.0
+pytest-watch==4.2.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-json-logger==3.2.1
@@ -145,6 +148,7 @@ urllib3==2.3.0
 uvicorn==0.34.0
 vine==5.1.0
 virtualenv==20.29.3
+watchdog==6.0.0
 wcwidth==0.2.13
 webcolors==24.11.1
 webencodings==0.5.1
