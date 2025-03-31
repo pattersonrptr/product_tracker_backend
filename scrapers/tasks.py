@@ -1,4 +1,6 @@
 import os
+from datetime import datetime, timedelta
+
 import requests
 
 from celery import Celery, group, chord
@@ -94,11 +96,64 @@ def save_products(results):
 
     return f"✅ {created} new products created"
 
-# TODO: Implement update and test tasks.
+@app.task(name="scrapers.tasks.run_scraper_update")
+def run_scraper_update(scraper_name: str):
+    print("Updating products by URLs")
+
+    cutoff_date = (datetime.today() - timedelta(days=30)).date()
+    api_url = (
+        f"{os.getenv('API_URL', 'http://web:8000')}/products/?updated_before={cutoff_date}"
+    )
+    response = requests.get(api_url)
+    products = []
+
+    if response.status_code == 200 and response.json():
+        products = response.json()
+
+    return chord(
+        update_product.s(product, scraper_name).set(countdown=10) for product in products
+    )(update_products.s())
+
+@app.task(name="scrapers.tasks.update_product")
+def update_product(product: dict, scraper_name: str):
+    print(f"🛒 Scraping URL: {product['url']}")
+
+    adapter = get_scraper_adapter(scraper_name)
+
+    try:
+        product_data = adapter.update_product(product)
+        return {"status": "success", "data": product_data}
+    except Exception as e:
+        return {"status": "error", "url": product["url"], "message": str(e)}
+
+@app.task(name="scrapers.tasks.update_products")
+def update_products(results):
+    successful = [r["data"] for r in results if r["status"] == "success"]
+    print(f"💾 Updating {len(successful)} products")
+
+    updated = 0
+
+    for product in successful:
+        api_url = f"{os.getenv('API_URL', 'web:8000')}/products/{product['id']}"
+        response = requests.put(api_url, json=product, timeout=10)
+
+        if response.status_code == 200:
+            updated += 1
+
+    return f"✅ {updated} products updated"
+
+
 # TODO: Too much logic in the tasks, maybe moving too a separated file could be be better, and helps unit testing.
 # TODO: Unit test these tasks.
 # TODO: Call Celery beat update tasks.
 
+# TODO: Some OLX tasks are not collecting the price, collect the phrase 'Price not found' instead, which causes
+#  'Unprocessable Entity' Error.
+#  Possible solutions:
+#  1 - Force task to fail, so it will be shown as Failed status in Flower, then you can debug;
+#  2 - Save product with Zero value for price when price is not found;
+#  3 - Change Model and Schema to accept None as price, but never accept saving as a string 'Price not found'.
+#  Use the same solution for Enjoei Scraper.
 
 app.conf.beat_schedule = {
     "run_olx_searches_daily": {
@@ -111,10 +166,16 @@ app.conf.beat_schedule = {
         "schedule": crontab(hour="01", minute="00"),
         "args": ("enjoei",),
     },
-    # "run_olx_scraper_update_daily": {
-    #     "task": "scrapers.tasks.run_olx_scraper_update",
-    #     "schedule": crontab(hour="02", minute="00"),
-    # },
+    "run_olx_scraper_update_daily": {
+        "task": "scrapers.tasks.run_scraper_update",
+        "schedule": crontab(hour="02", minute="00"),
+        "args": ("olx",),
+    },
+    "run_enjoei_scraper_update_daily": {
+        "task": "scrapers.tasks.run_scraper_update",
+        "schedule": crontab(hour="03", minute="00"),
+        "args": ("enjoei",),
+    },
 }
 
 app.conf.timezone = "America/Sao_Paulo"
