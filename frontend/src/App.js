@@ -6,12 +6,10 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Sistema de Gerenciamento de Produtos</h1>
+        <h1>Price Monitoring</h1>
       </header>
       <div className="App-body">
-        <aside className="App-sidebar">
-          {/* Sidebar ficará vazia por enquanto */}
-        </aside>
+        <aside className="App-sidebar">{/* Sidebar empty for now */}</aside>
         <main className="App-main">
           <ProductList />
         </main>
