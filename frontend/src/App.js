@@ -1,30 +1,24 @@
+import React from "react";
+import ProductList from "./components/ProductList";
 import "./App.css";
 
-import React, { useEffect, useState } from "react";
-
 function App() {
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    fetch("http://localhost:8000/products/")
-      .then((response) => response.json())
-      .then((data) => setProducts(data))
-      .catch((error) => console.error("Error when fetching products:", error));
-  }, []);
-
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Lista de Produtos</h1>
-        <ul>
-          {products.map((product) => (
-            <li key={product.id}>
-              # {product.id} - <a href={product.url}>{product.title}</a>- R${" "}
-              {product.price}{" "}
-            </li>
-          ))}
-        </ul>{" "}
+        <h1>Sistema de Gerenciamento de Produtos</h1>
       </header>
+      <div className="App-body">
+        <aside className="App-sidebar">
+          {/* Sidebar ficará vazia por enquanto */}
+        </aside>
+        <main className="App-main">
+          <ProductList />
+        </main>
+      </div>
+      <footer className="App-footer">
+        &copy; {new Date().getFullYear()} Sistema de Produtos
+      </footer>
     </div>
   );
 }

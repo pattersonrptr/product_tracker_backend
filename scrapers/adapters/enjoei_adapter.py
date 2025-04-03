@@ -20,15 +20,15 @@ class EnjoeiAdapter(BaseScraperAdapter):
     def scrape_product(self, url: str) -> dict:
         response = self.scraper.get_product_data(url)
         data = response.json()
-        price_dict = data.get('fallback_pricing', {}).get('price', {})
+        price_dict = data.get("fallback_pricing", {}).get("price", {})
 
         # TODO: When trying to save with price 0 got an error '422 Unprocessable entity', probably because the schema
         #  expect a number not None. Need to handle this in the save() task not here.
         #  Then here I should stop assigning 0
-        price = price_dict.get('listed') or price_dict.get('sale') or '0'
+        price = price_dict.get("listed") or price_dict.get("sale") or "0"
 
         return {
-            "url": url,    #TODO: Returning Enjoei API product URL, but need to return the URL that appears in browser
+            "url": url,  # TODO: Returning Enjoei API product URL, but need to return the URL that appears in browser
             "title": data.get("title"),
             "price": price,
         }
