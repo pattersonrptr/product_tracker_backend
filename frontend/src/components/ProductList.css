@@ -88,7 +88,7 @@
   color: white;
   border: none;
   padding: 5px 10px;
-  margin-right: 10px; /* Adiciona margem entre os botões */
+  margin-right: 10px;
   cursor: pointer;
   border-radius: 5px;
 }

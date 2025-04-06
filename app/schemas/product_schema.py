@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
@@ -26,44 +26,58 @@ def parse_price(value):
         raise ValueError("Invalid format for float conversion")
 
 
-class ProductBase(BaseModel):
+class JSONAPIBase(BaseModel):
+    id: Optional[int] = None
+    type: str
+
+    class Config:
+        orm_mode = True
+
+
+class ProductAttributes(BaseModel):
     url: HttpUrl
     title: str = Field(min_length=1)
     price: float = Field(gt=0)
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        extra="forbid",
-        validate_default=True,
-    )
-
     @field_validator("price", mode="before")
     @classmethod
     def parse_decimal(cls, value):
         return parse_price(value)
 
 
-class ProductCreate(ProductBase):
-    pass
+class ProductCreate(JSONAPIBase):
+    type: str = "products"
+    attributes: ProductAttributes
+
+    def model_dump(self, *args, **kwargs):
+        data = super().model_dump(*args, **kwargs)
+        data.pop("type", None)  # Removing type field - will use this later
+        attributes = data.pop("attributes", {})  # Same here
+        data.update(attributes)
+        return data
 
 
-class ProductResponse(ProductBase):
+class ProductResponse(JSONAPIBase):
     id: int
+    type: str = "products"
+    attributes: ProductAttributes
     created_at: datetime
     updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        orm_mode = True
+        from_attributes = True
 
 
 class ProductUpdate(BaseModel):
-    url: Optional[HttpUrl] = None
-    title: Optional[str] = Field(default=None, min_length=1)
-    price: Optional[float] = Field(default=None, gt=0)
+    attributes: Optional[ProductAttributes] = None
 
-    @field_validator("price", mode="before")
-    @classmethod
-    def parse_decimal(cls, value):
-        return parse_price(value)
+    def model_dump(self, *args, **kwargs):
+        data = super().model_dump(*args, **kwargs)
+        if "attributes" in data and "url" in data["attributes"]:
+            # Converte HttpUrl para string
+            data["attributes"]["url"] = str(data["attributes"]["url"])
+        return data
 
 
 class ProductFilter(BaseModel):
@@ -78,9 +92,9 @@ class ProductFilter(BaseModel):
 
 
 class ProductBulkCreate(BaseModel):
-    products: List[ProductCreate]
+    data: List[ProductCreate]
 
-    @field_validator("products")
+    @field_validator("data")
     @classmethod
     def check_non_empty_list(cls, value):
         if not value:
@@ -101,5 +115,10 @@ class ProductStats(BaseModel):
 
 class ProductPartialResponse(BaseModel):
     id: int
+    type: str = "products"
     title: str
     price: float
+
+    class Config:
+        orm_mode = True
+        from_attributes = True

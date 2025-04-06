@@ -4,7 +4,7 @@ from app.repositories.product_repository import ProductRepository
 
 
 class ProductService:
-    def __init__(self, repository: ProductRepository):
+    def __init__(self, repository):
         self.repository = repository
 
     def create_product(self, product_data: dict):
@@ -16,18 +16,15 @@ class ProductService:
         products = self.repository.get_all() or []
         return products
 
-    def get_product_by_id(self, product_id: int):
-        product = self.repository.get_by_id(product_id)
-        return product
+    def get_product_by_id(self, product_id):
+        return self.repository.get_by_id(product_id)
 
     def get_product_by_url(self, url):
         product = self.repository.get_by_url(url) or []
         return product
 
-    def update_product(self, product_id: int, product_data: dict):
-        if "url" in product_data and isinstance(product_data["url"], HttpUrl):
-            product_data["url"] = str(product_data["url"])
-        return self.repository.update(product_id, product_data)
+    def update_product(self, product):
+        return self.repository.update(product)
 
     def delete_product(self, product_id: int):
         return self.repository.delete(product_id)

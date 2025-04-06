@@ -43,74 +43,85 @@ def get_product_service(db: Session = Depends(get_db)):
     return ProductService(repository)
 
 
-@router.get("/products/", response_model=List[ProductResponse])
+def json_api_response(data, meta=None):
+    response = {"data": data}
+    if meta:
+        response["meta"] = meta
+    return response
+
+
+@router.get("/products/")
 def filter_products(
     filter: ProductFilter = Depends(),
     product_service: ProductService = Depends(get_product_service),
 ):
     filter_use_case = FilterProducts(product_service)
-    return filter_use_case.execute(filter.model_dump(exclude_none=True))
+    products = filter_use_case.execute(filter.model_dump(exclude_none=True))
+    return json_api_response([product for product in products])
 
 
-@router.get("/products/{product_id}", response_model=ProductResponse)
+@router.get("/products/{product_id}")
 def get_product(
     product_id: int, product_service: ProductService = Depends(get_product_service)
 ):
     product = GetProductById(product_service).execute(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    return product
+    print("product: ", product, type(product))
+    return json_api_response(product)
 
 
-@router.get("/products/search/", response_model=List[ProductResponse])
+@router.get("/products/search/")
 def search_products(
     search: ProductSearch = Depends(),
     product_service: ProductService = Depends(get_product_service),
 ):
     search_use_case = SearchProducts(product_service)
-    return search_use_case.execute(search.query)
+    products = search_use_case.execute(search.query)
+    return json_api_response([product for product in products])
 
 
-@router.get("/products/stats/", response_model=ProductStats)
+@router.get("/products/stats/")
 def get_product_stats(product_service: ProductService = Depends(get_product_service)):
     stats_use_case = GetProductStats(product_service)
-    return stats_use_case.execute()
+    stats = stats_use_case.execute()
+    return json_api_response(stats)
 
 
-@router.get("/products/minimal/", response_model=List[ProductPartialResponse])
+@router.get("/products/minimal/")
 def get_minimal_products(
     product_service: ProductService = Depends(get_product_service),
 ):
     minimal_use_case = GetMinimalProducts(product_service)
-    return minimal_use_case.execute()
+    products = minimal_use_case.execute()
+    return json_api_response([product for product in products])
 
 
-@router.post(
-    "/products/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/products/", status_code=status.HTTP_201_CREATED)
 def create_product(
     product_data: ProductCreate,
     product_service: ProductService = Depends(get_product_service),
 ):
-    return CreateProduct(product_service).execute(product_data.model_dump())
+    product = CreateProduct(product_service).execute(product_data.model_dump())
+    print("product: ", product, type(product))
+    return json_api_response(product)
 
 
-@router.post(
-    "/products/bulk/",
-    response_model=List[ProductResponse],
-    status_code=status.HTTP_201_CREATED,
-)
+@router.post("/products/bulk/", status_code=status.HTTP_201_CREATED)
 def bulk_create_products(
     bulk_data: ProductBulkCreate,
     product_service: ProductService = Depends(get_product_service),
 ):
-    return [
-        CreateProduct(product_service).execute(product.model_dump())
-        for product in bulk_data.products
-    ]
+    products = []
+    for product_data in bulk_data.data:
+        created_product = CreateProduct(product_service).execute(
+            product_data.model_dump()
+        )
+        products.append(created_product)
+    return json_api_response(products)
 
 
-@router.put("/products/{product_id}", response_model=ProductResponse)
+@router.put("/products/{product_id}")
 def update_product(
     product_id: int,
     product_data: ProductUpdate,
@@ -121,7 +132,7 @@ def update_product(
     )
     if not updated_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    return updated_product
+    return json_api_response(updated_product)
 
 
 @router.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -131,3 +142,4 @@ def delete_product(
     deleted = DeleteProduct(product_service).execute(product_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Product not found")
+    return json_api_response(None)
