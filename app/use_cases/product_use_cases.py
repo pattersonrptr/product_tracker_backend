@@ -3,8 +3,7 @@ Application Layer
 """
 
 from app.services.product_service import ProductService
-from sqlalchemy.orm import Query
-from app.schemas.product_schema import ProductPartialResponse
+from app.schemas.product_schema import ProductResponse
 
 
 class CreateProduct:
@@ -54,7 +53,7 @@ class FilterProducts:
 
     def execute(self, filters: dict):
         products = self.product_service.filter_products(filters)
-        return [ProductPartialResponse.from_orm(product) for product in products]
+        return [ProductResponse.model_validate(product) for product in products]
 
 
 class SearchProducts:

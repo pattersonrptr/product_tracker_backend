@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -9,10 +7,7 @@ from app.schemas.product_schema import (
     ProductBulkCreate,
     ProductCreate,
     ProductFilter,
-    ProductPartialResponse,
-    ProductResponse,
     ProductSearch,
-    ProductStats,
     ProductUpdate,
 )
 from app.services.product_service import ProductService
@@ -67,7 +62,6 @@ def get_product(
     product = GetProductById(product_service).execute(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    print("product: ", product, type(product))
     return json_api_response(product)
 
 

@@ -1,9 +1,9 @@
 import re
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional, Union
+from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 
 def parse_price(value):
@@ -57,12 +57,21 @@ class ProductCreate(JSONAPIBase):
         return data
 
 
-class ProductResponse(JSONAPIBase):
+class ProductResponse(BaseModel):
     id: int
+    title: str
+    url: str
+    price: float
     type: str = "products"
-    attributes: ProductAttributes
-    created_at: datetime
-    updated_at: datetime
+    created_at: str
+    updated_at: Optional[str]
+
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def convert_datetime_to_str(cls, value):
+        if isinstance(value, datetime):
+            return value.isoformat()  # Convert datetime to ISO 8601 string
+        return value
 
     class Config:
         orm_mode = True

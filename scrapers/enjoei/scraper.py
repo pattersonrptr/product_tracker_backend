@@ -2,39 +2,48 @@ import os
 import cloudscraper
 
 from requests import Response
+from cloudscraper import requests
 
-# TODO: Maybe could be useful to add the method safe_request()
+from scrapers.base.scraper import Scraper
 
 
-class Scraper:
-    def __init__(self, api_url=None):
+class EnjoeiScraper(Scraper):
+    def __init__(self):
         self.BASE_URL = "https://enjusearch.enjoei.com.br"
         self.session = cloudscraper.create_scraper()
-        env_api_url = os.getenv("API_URL", "")
-        self.api_url = api_url or (env_api_url if env_api_url else "web:8000")
+        self.api_url = os.getenv("API_URL", "web:8000")
         self.headers = {
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
             "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
             "DNT": "1",
             "Sec-GPC": "1",
         }
-        self.timeouts = (5, 15)  # (connect, read)
         self.session.headers.update(self.headers)
 
-    def search(self, term: str, after: str = None) -> Response:
+    def _make_request(self, url: str) -> object:
+        try:
+            response = self.session.get(url, allow_redirects=True)
+            response.raise_for_status()
+            return response.text
+
+        except requests.exceptions.HTTPError as e:
+            status_code = getattr(e.response, "status_code", "unknown")
+            print(f"HTTP error {status_code} em {url}")
+
+        except requests.exceptions.RequestException as e:
+            print(f"Connection error: {str(e)}")
+
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+
+        return None
+
+    def _get_search_data(self, term: str, after: str = None) -> Response:
         params = {
-            "browser_id": "07176e90-ef8c-4a5a-976b-b68d3a42fdeb-1742160795598",
-            "city": "atibaia",
-            "first": "30",
-            "new_buyer": "false",
-            "operation_name": "searchProducts",
+            "first": "1000",  # originally "'first': 30" - pagination, so I decided to retrieve the first 1000
             "query_id": "7d3ea67171219db36dfcf404acab5807",
-            "search_context": "products_search",
-            "search_id": "d89a6bf8-7b44-4e94-a4ff-2dd8e70930f4-1743294487254",
-            "shipping_range": "near_regions",
-            "state": "sp",
+            "search_id": "88d3a54e-085a-46bc-a1f8-9726ee34424a-1743974498480",
             "term": term,
-            "user_id": "34906900",
         }
 
         if after:
@@ -46,7 +55,7 @@ class Scraper:
             params=params,
         )
 
-    def extract_links(self, data: dict) -> tuple:
+    def _extract_links(self, data: dict) -> tuple:
         urls = []
         cursor = None
         result_pages_url = "https://pages.enjoei.com.br/products"
@@ -72,5 +81,30 @@ class Scraper:
 
         return urls, cursor
 
-    def get_product_data(self, url: str) -> Response:
-        return self.session.get(url, headers=self.headers)
+    def search(self, search_term: str) -> list[str]:
+        all_urls = []
+        cursor = None
+        while True:
+            response = self._get_search_data(term=search_term, after=cursor)
+            urls, cursor = self._extract_links(response.json())
+            all_urls.extend(urls)
+            if not cursor:
+                break
+        return all_urls
+
+    def scrape_data(self, url: str) -> dict:
+        response = self.session.get(url)
+        data = response.json()
+        url = data["canonical_url"]
+        price_dict = data.get("fallback_pricing", {}).get("price", {})
+        price = price_dict.get("listed") or price_dict.get("sale") or "0"
+
+        return {
+            "url": url,
+            "title": data.get("title"),
+            "price": price,
+        }
+
+    def update_data(self, product: dict) -> dict:
+        updated_data = self.scrape_data(product["url"])
+        return {**product, **updated_data}
