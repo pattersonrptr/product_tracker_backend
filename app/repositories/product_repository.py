@@ -12,7 +12,7 @@ from app.models.product_models import Product
 
 
 class ProductRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db):
         self.db = db
 
     def create(self, product_data: dict):
@@ -33,11 +33,8 @@ class ProductRepository:
                 product.price = float(product.price)
         return products
 
-    def get_by_id(self, product_id: int):
-        product = self.db.query(Product).filter(Product.id == product_id).first()
-        if product and isinstance(product.price, Decimal):
-            product.price = float(product.price)
-        return product
+    def get_by_id(self, product_id):
+        return self.db.query(Product).filter(Product.id == product_id).first()
 
     def get_by_url(self, url):
         product = self.db.query(Product).filter(Product.url == url).first()
@@ -45,22 +42,11 @@ class ProductRepository:
             product.price = float(product.price)
         return product
 
-    def update(self, product_id: int, product_data: dict):
-        product = self.get_by_id(product_id)
-        if not product:
-            return None
-        try:
-            for key, value in product_data.items():
-                setattr(product, key, value)
-            product.updated_at = datetime.now(UTC)
-            self.db.commit()
-            self.db.refresh(product)
-            if isinstance(product.price, Decimal):
-                product.price = float(product.price)
-            return product
-        except Exception as e:
-            self.db.rollback()
-            raise e
+    def update(self, product):
+        self.db.add(product)
+        self.db.commit()
+        self.db.refresh(product)
+        return product
 
     def delete(self, product_id: int):
         product = self.get_by_id(product_id)

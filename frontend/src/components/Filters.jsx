@@ -1,6 +1,12 @@
 import React from "react";
 
 const Filters = ({ filters, onSearchChange, onFilterChange }) => {
+  const handleNumberInputChange = (e) => {
+    const { name, value } = e.target;
+    const sanitizedValue = value === "" || parseFloat(value) >= 0 ? value : 0;
+    onFilterChange({ target: { name, value: sanitizedValue } });
+  };
+
   return (
     <div className="filters">
       <div className="filter-group">
@@ -9,7 +15,7 @@ const Filters = ({ filters, onSearchChange, onFilterChange }) => {
           id="search-product"
           type="text"
           placeholder="Ex: Smartphone"
-          value={filters.title}
+          value={filters.title || ""}
           onChange={onSearchChange}
         />
       </div>
@@ -21,8 +27,8 @@ const Filters = ({ filters, onSearchChange, onFilterChange }) => {
           type="number"
           placeholder="0"
           name="min_price"
-          value={filters.min_price}
-          onChange={onFilterChange}
+          value={filters.min_price || ""}
+          onChange={handleNumberInputChange}
         />
       </div>
 
@@ -33,8 +39,8 @@ const Filters = ({ filters, onSearchChange, onFilterChange }) => {
           type="number"
           placeholder="1000"
           name="max_price"
-          value={filters.max_price}
-          onChange={onFilterChange}
+          value={filters.max_price || ""}
+          onChange={handleNumberInputChange}
         />
       </div>
 
@@ -44,7 +50,7 @@ const Filters = ({ filters, onSearchChange, onFilterChange }) => {
           id="created-after"
           type="date"
           name="created_after"
-          value={filters.created_after}
+          value={filters.created_after || ""}
           onChange={onFilterChange}
         />
       </div>
@@ -55,7 +61,7 @@ const Filters = ({ filters, onSearchChange, onFilterChange }) => {
           id="created-before"
           type="date"
           name="created_before"
-          value={filters.created_before}
+          value={filters.created_before || ""}
           onChange={onFilterChange}
         />
       </div>
@@ -66,7 +72,7 @@ const Filters = ({ filters, onSearchChange, onFilterChange }) => {
           id="updated-after"
           type="date"
           name="updated_after"
-          value={filters.updated_after}
+          value={filters.updated_after || ""}
           onChange={onFilterChange}
         />
       </div>
@@ -77,22 +83,22 @@ const Filters = ({ filters, onSearchChange, onFilterChange }) => {
           id="updated-before"
           type="date"
           name="updated_before"
-          value={filters.updated_before}
+          value={filters.updated_before || ""}
           onChange={onFilterChange}
         />
       </div>
 
-      <div className="filter-group">
+      {/* <div className="filter-group">
         <label htmlFor="url-filter">Product URL</label>
         <input
           id="url-filter"
           type="text"
           placeholder="https://example.com/product"
           name="url"
-          value={filters.url}
+          value={filters.url || ""}
           onChange={onFilterChange}
         />
-      </div>
+      </div> */}
     </div>
   );
 };

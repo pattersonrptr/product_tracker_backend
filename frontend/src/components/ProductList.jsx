@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Pagination from "./Pagination";
@@ -12,10 +12,16 @@ const ProductList = () => {
   const [totalProducts, setTotalProducts] = useState(0);
   const itemsPerPage = 50;
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
+      const validFilters = Object.fromEntries(
+        Object.entries(filters).filter(
+          ([_, value]) => value !== undefined && value !== ""
+        )
+      );
+
       const params = new URLSearchParams({
-        ...filters,
+        ...validFilters,
         limit: itemsPerPage,
         offset: (page - 1) * itemsPerPage,
       });
@@ -23,14 +29,16 @@ const ProductList = () => {
       const response = await fetch(`http://localhost:8000/products/?${params}`);
       if (response.ok) {
         const data = await response.json();
-        setProducts(data);
+        setProducts(data.data || []);
       } else {
         console.error("Failed to fetch products");
+        setProducts([]);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
+      setProducts([]);
     }
-  };
+  }, [filters, page, itemsPerPage]);
 
   const fetchStats = async () => {
     try {
@@ -115,28 +123,42 @@ const ProductList = () => {
           </tr>
         </thead>
         <tbody>
-          {products.map((product) => (
-            <tr key={product.id}>
-              <td>{product.id}</td>
-              <td>
-                <a href={product.url} target="_blank" rel="noopener noreferrer">
-                  {product.title}
-                </a>
-              </td>
-              <td>{product.price}</td>
-              <td>{formatDate(product.created_at)}</td>
-              <td>{formatDate(product.updated_at)}</td>
-              <td>
-                <button className="update-button">Update</button>
-                <button
-                  className="delete-button"
-                  onClick={() => confirmDelete(product.id)}
-                >
-                  Delete
-                </button>
-              </td>
+          {Array.isArray(products) ? (
+            products.map((product) => (
+              <tr key={product.id}>
+                <td>#{product.id}</td>
+                <td>
+                  <a
+                    href={product.url || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {product.title || "No Title"}
+                  </a>
+                </td>
+                <td>{product.price || "N/A"}</td>
+                <td>
+                  {product.created_at ? formatDate(product.created_at) : "N/A"}
+                </td>
+                <td>
+                  {product.updated_at ? formatDate(product.updated_at) : "N/A"}
+                </td>
+                <td>
+                  <button className="update-button">Update</button>
+                  <button
+                    className="delete-button"
+                    onClick={() => confirmDelete(product.id)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="6">No products available</td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
 

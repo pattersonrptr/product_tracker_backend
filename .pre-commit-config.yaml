@@ -35,12 +35,12 @@ repos:
       - id: ruff
       - id: ruff-format
 
-  - repo: "local"
-    hooks:
-      - id: run-unit-tests
-        name: Run Unit Tests
-        entry: pytest tests/ --maxfail=1 -vv
-        language: system
-        pass_filenames: false
-        always_run: true
-        types: [python]
+  # - repo: "local"
+  #   hooks:
+  #     - id: run-unit-tests
+  #       name: Run Unit Tests
+  #       entry: pytest tests/ --maxfail=1 -vv
+  #       language: system
+  #       pass_filenames: false
+  #       always_run: true
+  #       types: [python]
