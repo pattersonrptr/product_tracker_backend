@@ -6,8 +6,9 @@ import requests
 from celery import Celery, group, chord
 from celery.schedules import crontab
 
-from scrapers.adapters.olx_adapter import OLXAdapter
-from scrapers.adapters.enjoei_adapter import EnjoeiAdapter
+from scrapers.base.scraper import Scraper
+from scrapers.enjoei.scraper import EnjoeiScraper
+from scrapers.olx.scraper import OLXScraper
 
 broker_url = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
 app = Celery(main="scrapers", broker=broker_url, backend="redis://redis:6379/0")
@@ -15,31 +16,35 @@ app = Celery(main="scrapers", broker=broker_url, backend="redis://redis:6379/0")
 SEARCHES = ["livros python"]
 
 
-def get_scraper_adapter(scraper_name: str):
+def get_scraper(scraper_name: str) -> Scraper:
     if scraper_name == "olx":
-        return OLXAdapter()
+        return OLXScraper()
     elif scraper_name == "enjoei":
-        return EnjoeiAdapter()
+        return EnjoeiScraper()
     else:
         raise ValueError(f"Unknown scraper: {scraper_name}")
 
+
 @app.task(name="scrapers.tasks.run_scraper_searches")
 def run_scraper_searches(scraper_name: str = "olx"):
-    return group(
-        run_search.s(search, scraper_name) for search in SEARCHES
-    )()
+    return group(run_search.s(search, scraper_name) for search in SEARCHES)()
+
 
 @app.task(name="scrapers.tasks.run_search")
 def run_search(search: str, scraper_name: str):
     print(f"🔎 Searching term: {search} with {scraper_name}")
-    adapter = get_scraper_adapter(scraper_name)
+    scraper = get_scraper(scraper_name)
 
     try:
-        urls = adapter.search_products(search)
         api_url = f"{os.getenv('API_URL', 'http://web:8000')}/products/"
         response = requests.get(api_url)
+
         existing_products = response.json() if response.status_code == 200 else []
-        existing_urls = {p["url"] for p in existing_products}
+        existing_urls = {
+            p["url"] for p in existing_products if scraper_name in p["url"]
+        }
+
+        urls = scraper.search(search)
         new_urls = list(set(urls) - existing_urls)
 
         print(f"New: {len(new_urls)}")
@@ -47,7 +52,10 @@ def run_search(search: str, scraper_name: str):
         print(f"Found {len(urls)} URLs, {len(new_urls)} are new")
 
         process_url_list.apply_async(
-            args=[{"status": "success", "search": search, "urls": new_urls}, scraper_name],
+            args=[
+                {"status": "success", "search": search, "urls": new_urls},
+                scraper_name,
+            ],
             countdown=10,
         )
         return {"status": "success", "search": search, "urls": new_urls}
@@ -60,19 +68,22 @@ def process_url_list(result, scraper_name: str):
     print(f"📥 Processing {len(result['urls'])} URLs of {result['search']}")
 
     return chord(
-        scrape_product_page.s(url, scraper_name).set(countdown=10) for url in result["urls"]
+        scrape_product_page.s(url, scraper_name).set(countdown=10)
+        for url in result["urls"]
     )(save_products.s())
+
 
 @app.task(name="scrapers.tasks.scrape_product_page")
 def scrape_product_page(url: str, scraper_name: str):
     print(f"🛒 Get products data for{url} with {scraper_name}")
-    adapter = get_scraper_adapter(scraper_name)
+    scraper = get_scraper(scraper_name)
 
     try:
-        product_data = adapter.scrape_product(url)
+        product_data = scraper.scrape_data(url)
         return {"status": "success", "data": product_data}
     except Exception as e:
         return {"status": "error", "url": url, "message": str(e)}
+
 
 @app.task(name="scrapers.tasks.save_products")
 def save_products(results):
@@ -96,14 +107,13 @@ def save_products(results):
 
     return f"✅ {created} new products created"
 
+
 @app.task(name="scrapers.tasks.run_scraper_update")
 def run_scraper_update(scraper_name: str):
     print("Updating products by URLs")
 
     cutoff_date = (datetime.today() - timedelta(days=30)).date()
-    api_url = (
-        f"{os.getenv('API_URL', 'http://web:8000')}/products/?updated_before={cutoff_date}"
-    )
+    api_url = f"{os.getenv('API_URL', 'http://web:8000')}/products/?updated_before={cutoff_date}"
     response = requests.get(api_url)
     products = []
 
@@ -111,20 +121,23 @@ def run_scraper_update(scraper_name: str):
         products = response.json()
 
     return chord(
-        update_product.s(product, scraper_name).set(countdown=10) for product in products
+        update_product.s(product, scraper_name).set(countdown=10)
+        for product in products
     )(update_products.s())
+
 
 @app.task(name="scrapers.tasks.update_product")
 def update_product(product: dict, scraper_name: str):
     print(f"🛒 Scraping URL: {product['url']}")
 
-    adapter = get_scraper_adapter(scraper_name)
+    scraper = get_scraper(scraper_name)
 
     try:
-        product_data = adapter.update_product(product)
+        product_data = scraper.update_data(product)
         return {"status": "success", "data": product_data}
     except Exception as e:
         return {"status": "error", "url": product["url"], "message": str(e)}
+
 
 @app.task(name="scrapers.tasks.update_products")
 def update_products(results):
@@ -142,18 +155,6 @@ def update_products(results):
 
     return f"✅ {updated} products updated"
 
-
-# TODO: Too much logic in the tasks, maybe moving too a separated file could be be better, and helps unit testing.
-# TODO: Unit test these tasks.
-# TODO: Call Celery beat update tasks.
-
-# TODO: Some OLX tasks are not collecting the price, collect the phrase 'Price not found' instead, which causes
-#  'Unprocessable Entity' Error.
-#  Possible solutions:
-#  1 - Force task to fail, so it will be shown as Failed status in Flower, then you can debug;
-#  2 - Save product with Zero value for price when price is not found;
-#  3 - Change Model and Schema to accept None as price, but never accept saving as a string 'Price not found'.
-#  Use the same solution for Enjoei Scraper.
 
 app.conf.beat_schedule = {
     "run_olx_searches_daily": {

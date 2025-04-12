@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Pagination from "./Pagination";
@@ -12,10 +12,16 @@ const ProductList = () => {
   const [totalProducts, setTotalProducts] = useState(0);
   const itemsPerPage = 50;
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
+      const validFilters = Object.fromEntries(
+        Object.entries(filters).filter(
+          ([_, value]) => value !== undefined && value !== ""
+        )
+      );
+
       const params = new URLSearchParams({
-        ...filters,
+        ...validFilters,
         limit: itemsPerPage,
         offset: (page - 1) * itemsPerPage,
       });
@@ -26,11 +32,13 @@ const ProductList = () => {
         setProducts(data);
       } else {
         console.error("Failed to fetch products");
+        setProducts([]);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
+      setProducts([]);
     }
-  };
+  }, [filters, page, itemsPerPage]);
 
   const fetchStats = async () => {
     try {
