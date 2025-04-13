@@ -4,7 +4,15 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from app.models.product_models import Base
+
+
+from app.models import (
+    Base,
+    Product,  # noqa: F401
+    SourceWebsite,  # noqa: F401
+    PriceHistory,  # noqa: F401
+    SearchConfig,  # noqa: F401
+)
 
 # Add projects's root directory
 # sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

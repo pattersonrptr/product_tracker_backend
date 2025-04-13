@@ -6,6 +6,7 @@ import requests
 from celery import Celery, group, chord
 from celery.schedules import crontab
 
+from app.models import SearchConfig
 from scrapers.base.scraper import Scraper
 from scrapers.enjoei.scraper import EnjoeiScraper
 from scrapers.olx.scraper import OLXScraper
@@ -13,7 +14,18 @@ from scrapers.olx.scraper import OLXScraper
 broker_url = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
 app = Celery(main="scrapers", broker=broker_url, backend="redis://redis:6379/0")
 
-SEARCHES = ["livros python"]
+
+def get_active_searches():
+    from app.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        return [
+            search.search_term
+            for search in db.query(SearchConfig).filter(SearchConfig.is_active).all()
+        ]
+    finally:
+        db.close()
 
 
 def get_scraper(scraper_name: str) -> Scraper:
@@ -27,7 +39,8 @@ def get_scraper(scraper_name: str) -> Scraper:
 
 @app.task(name="scrapers.tasks.run_scraper_searches")
 def run_scraper_searches(scraper_name: str = "olx"):
-    return group(run_search.s(search, scraper_name) for search in SEARCHES)()
+    active_searches = get_active_searches()
+    return group(run_search.s(search, scraper_name) for search in active_searches)()
 
 
 @app.task(name="scrapers.tasks.run_search")
@@ -154,6 +167,31 @@ def update_products(results):
             updated += 1
 
     return f"✅ {updated} products updated"
+
+
+# def get_dynamic_schedule():
+#     from app.database import SessionLocal
+#     db = SessionLocal()
+#     try:
+#         schedules = {}
+#         searches = db.query(SearchConfig).filter(SearchConfig.is_active == True).all()
+#
+#         for idx, search in enumerate(searches):
+#             schedules[f"run_search_{search.id}"] = {
+#                 "task": "scrapers.tasks.run_scraper_searches",
+#                 "schedule": crontab(
+#                     hour=search.preferred_time.hour,
+#                     minute=search.preferred_time.minute,
+#                     day_of_week=f'*/{search.frequency_days}'
+#                 ),
+#                 "args": (search.source_websites),
+#             }
+#         return schedules
+#     finally:
+#         db.close()
+#
+#
+# app.conf.beat_schedule = get_dynamic_schedule()
 
 
 app.conf.beat_schedule = {

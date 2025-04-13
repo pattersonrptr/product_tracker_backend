@@ -1,9 +1,49 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, time
 from app.models.product_models import ProductCondition
 
 
 def get_fixtures():
     return {
+        # "users": [
+        #     {
+        #         "id": 1,
+        #         "username": "admin",
+        #         "email": "admin@example.com",
+        #         "hashed_password": "hashed_password_here"
+        #     },
+        #     {
+        #         "id": 2,
+        #         "username": "user1",
+        #         "email": "user1@example.com",
+        #         "hashed_password": "hashed_password_here"
+        #     }
+        # ],
+        "search_configs": [
+            {
+                "id": 1,
+                "search_term": "iphone 13",
+                "is_active": True,
+                "source_websites": ["OLX", "Enjoei"],
+                "frequency_days": 1,
+                "preferred_time": time(9, 0),
+                "search_metadata": {
+                    "min_price": 3000,
+                    "max_price": 5000,
+                    "condition": "used",
+                },
+                "user_id": 1,
+            },
+            {
+                "id": 2,
+                "search_term": "câmera sony",
+                "is_active": True,
+                "source_websites": ["Enjoei"],
+                "frequency_days": 3,
+                "preferred_time": time(14, 30),
+                "search_metadata": {"category": "eletrônicos", "warranty": True},
+                "user_id": None,
+            },
+        ],
         "source_websites": [
             {
                 "id": 1,

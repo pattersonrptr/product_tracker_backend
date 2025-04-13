@@ -5,3 +5,6 @@ docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_upd
 docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_update --args '["enjoei"]'
 
 alembic revision --autogenerate -m "First Migrations" && alembic upgrade head
+
+
+psql -U user -d price_monitor
