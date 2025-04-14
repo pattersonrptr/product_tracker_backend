@@ -115,8 +115,15 @@ const ProductList = () => {
         <thead>
           <tr>
             <th>Product ID</th>
+            {/* <th>Image</th> */}
+            <th>Source</th>
             <th>Title</th>
             <th>Price</th>
+            <th>Condition</th>
+            <th>Seller</th>
+            <th>Location</th>
+            <th>Availability</th>
+            <th>Price History</th>
             <th>Created At</th>
             <th>Updated At</th>
             <th>Actions</th>
@@ -126,12 +133,19 @@ const ProductList = () => {
           {products.map((product) => (
             <tr key={product.id}>
               <td>{product.id}</td>
+              {/* <td>{product.image_urls}</td> */}
+              <td>{product.source_website_id}</td>
               <td>
                 <a href={product.url} target="_blank" rel="noopener noreferrer">
                   {product.title}
                 </a>
               </td>
               <td>{product.price}</td>
+              <td>{product.condition}</td>
+              <td>{product.seller_type}</td>
+              <td>{product.location}</td>
+              <td>{product.is_available}</td>
+              <td>{product.price_history}</td>
               <td>{formatDate(product.created_at)}</td>
               <td>{formatDate(product.updated_at)}</td>
               <td>

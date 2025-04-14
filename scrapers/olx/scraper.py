@@ -51,7 +51,7 @@ class OLXScraper(Scraper):
         except AttributeError:
             return "Price not found"
 
-    def _make_request(self, url: str) -> object:
+    def _make_request(self, url: str) -> str:
         try:
             response = self.session.get(url, allow_redirects=True)
             response.raise_for_status()
@@ -67,7 +67,7 @@ class OLXScraper(Scraper):
         except Exception as e:
             print(f"Unexpected error: {str(e)}")
 
-        return None
+        return ""
 
     def search(self, search_term: str) -> list[str]:
         page_number = 1
@@ -131,3 +131,6 @@ class OLXScraper(Scraper):
             "title": title,
             "price": price,
         }
+
+    def __str__(self):
+        return "OLX Scraper"

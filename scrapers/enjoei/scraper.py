@@ -108,3 +108,6 @@ class EnjoeiScraper(Scraper):
         api_url = f"https://pages.enjoei.com.br/products/{product_code}/v2.json"
         updated_data = self.scrape_data(api_url)
         return {**product, **updated_data}
+
+    def __str__(self):
+        return "Enjoei Scraper"
