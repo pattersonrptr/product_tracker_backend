@@ -1,9 +1,10 @@
-import requests
 import cloudscraper
 
 from bs4 import BeautifulSoup
 from cloudscraper import requests
 from urllib.parse import quote_plus
+
+from scrapers.base.scraper import Scraper
 
 
 class MercadoLivreScraper(Scraper):
