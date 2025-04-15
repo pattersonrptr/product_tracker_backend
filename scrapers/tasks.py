@@ -53,12 +53,14 @@ def process_urls_list(search_results: dict, scraper_name: str):
     scraper_cli = ScraperClient(scraper_name)
     chunks = scraper_cli.split_search_urls(search_results, 100)
 
-    return group(
+    task_group = group(
         chord(
             scrape_product_page.s(url, scraper_name).set(countdown=5) for url in chunk
         )(save_products.s())
         for chunk in chunks
-    )()
+    )
+
+    return task_group.apply_async()
 
 
 @app.task(name="scrapers.tasks.scrape_product_page")
@@ -140,7 +142,7 @@ def update_products(results):
 #
 # app.conf.beat_schedule = get_dynamic_schedule()
 
-
+# TODO: Check erro in Celery Beat Container - see the logs
 app.conf.beat_schedule = {
     "run_olx_searches_daily": {
         "task": "scrapers.tasks.run_scraper_searches",

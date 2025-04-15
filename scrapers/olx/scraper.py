@@ -73,10 +73,10 @@ class OLXScraper(Scraper):
         page_number = 1
         has_next = True
         all_links = []
+        search_url = self._build_search_url(search_term, page_number)
 
         while has_next:
             try:
-                search_url = self._build_search_url(search_term, page_number)
                 html = self._make_request(search_url)
 
                 if not html:
@@ -109,6 +109,7 @@ class OLXScraper(Scraper):
             price = self._extract_price(soup)
 
         return {
+            "source": "olx",
             "url": url,
             "title": title,
             "price": price,

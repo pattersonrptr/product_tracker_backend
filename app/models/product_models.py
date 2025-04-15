@@ -48,6 +48,7 @@ class Product(Base):
     # Ad metadata
     condition = Column(SQLAlchemyEnum(ProductCondition), default=ProductCondition.USED)
     seller_type = Column(String(20))  # 'individual' or 'store'
+    # TODO: Remove it, use source_website_id
     source = Column(String(20))  # 'olx', 'enjoei', etc
     is_available = Column(Boolean, default=True)
 

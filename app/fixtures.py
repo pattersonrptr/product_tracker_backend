@@ -23,7 +23,7 @@ def get_fixtures():
                 "id": 1,
                 "search_term": "iphone 13",
                 "is_active": True,
-                "source_websites": ["OLX", "Enjoei"],
+                "source_websites": ["olx", "enjoei"],
                 "frequency_days": 1,
                 "preferred_time": time(9, 0),
                 "search_metadata": {
@@ -37,7 +37,7 @@ def get_fixtures():
                 "id": 2,
                 "search_term": "câmera sony",
                 "is_active": True,
-                "source_websites": ["Enjoei"],
+                "source_websites": ["enjoei"],
                 "frequency_days": 3,
                 "preferred_time": time(14, 30),
                 "search_metadata": {"category": "eletrônicos", "warranty": True},
@@ -53,13 +53,13 @@ def get_fixtures():
             },
             {
                 "id": 2,
-                "name": "Enjoei",
+                "name": "enjoei",
                 "base_url": "https://www.enjoei.com.br",
                 "is_active": True,
             },
             {
                 "id": 3,
-                "name": "Mercado Livre",
+                "name": "mercado_livre",
                 "base_url": "https://www.mercadolivre.com.br",
                 "is_active": False,
             },

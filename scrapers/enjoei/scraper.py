@@ -98,6 +98,7 @@ class EnjoeiScraper(Scraper):
         price = price_dict.get("listed") or price_dict.get("sale") or "0"
 
         return {
+            "source": "enjoei",
             "url": url,
             "title": data.get("title"),
             "price": price,

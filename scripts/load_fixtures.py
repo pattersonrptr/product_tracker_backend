@@ -1,6 +1,11 @@
 from app.fixtures import get_fixtures
 from app.database import SessionLocal
-from app.models import SourceWebsite, Product, PriceHistory, SearchConfig  # , User
+from app.models import (  # User,
+    SourceWebsite,
+    Product,
+    PriceHistory,
+    SearchConfig,
+)
 
 
 def load_fixtures():

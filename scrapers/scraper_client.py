@@ -2,6 +2,7 @@ from itertools import islice
 
 from scrapers.base.scraper import Scraper
 from scrapers.enjoei.scraper import EnjoeiScraper
+from scrapers.mercado_livre.scraper import MercadoLivreScraper
 from scrapers.olx.scraper import OLXScraper
 
 
@@ -10,6 +11,7 @@ class ScraperClient:
         self.valid_scrapers = {
             "olx": OLXScraper,
             "enjoei": EnjoeiScraper,
+            "mercado_livre": MercadoLivreScraper,
         }
         self.scraper = self.get_scraper(scraper_name)
 
