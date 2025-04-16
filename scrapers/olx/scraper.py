@@ -88,12 +88,12 @@ class OLXScraper(Scraper):
                     break
 
                 all_links.extend(links)
-                # print(f"Links collected: {len(all_links)}")
                 page_number += 1
+                search_url = self._build_search_url(search_term, page_number)
 
             except Exception as e:
                 print(f"Error on page {page_number}: {str(e)}")
-                print(search_url)
+                print(f"Search URL: {search_url}")
                 break
 
         return all_links
@@ -109,7 +109,6 @@ class OLXScraper(Scraper):
             price = self._extract_price(soup)
 
         return {
-            "source": "olx",
             "url": url,
             "title": title,
             "price": price,

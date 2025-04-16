@@ -9,6 +9,7 @@ from scrapers.base.scraper import Scraper
 class MercadoLivreScraper(Scraper):
     def __init__(self):
         self.BASE_URL = "https://lista.mercadolivre.com.br"
+
         self.session = cloudscraper.create_scraper()
         self.headers = {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -45,11 +46,48 @@ class MercadoLivreScraper(Scraper):
 
         return ""
 
-    def search(self, search_term: str) -> list:
-        search_url = f"{self.BASE_URL}/{search_term}"
-        html = self._make_request(search_url)
+    def _get_next_url(self, html: str) -> str:
+        soup = BeautifulSoup(html, "html.parser")
 
-        return self._extract_links(html)
+        next_button = soup.select_one(
+            "li.andes-pagination__button--next a.andes-pagination__link"
+        )
+
+        if next_button and next_button.has_attr("href"):
+            next_url = next_button["href"]
+            return next_url
+
+        return ""
+
+    def search(self, search_term: str) -> list:
+        page_number = 1
+        has_next = True
+        all_links = []
+        search_url = f"{self.BASE_URL}/{search_term}"
+
+        while has_next:
+            try:
+                html = self._make_request(search_url)
+
+                if not html:
+                    break
+
+                links = self._extract_links(html)
+
+                if not links:
+                    break
+
+                all_links.extend(links)
+                page_number += 1
+                print(f"Page Number {page_number}")
+                search_url = self._get_next_url(html)
+
+            except Exception as e:
+                print(f"Error on page {page_number}: {str(e)}")
+                print(f"Search URL: {search_url}")
+                break
+
+        return all_links
 
     def scrape_data(self, url: str) -> dict:
         html = self._make_request(url)
@@ -58,7 +96,6 @@ class MercadoLivreScraper(Scraper):
         price = self._extract_price(soup)
 
         return {
-            "source": "mercado_livre",
             "title": title,
             "url": url,
             "price": price,
