@@ -1,5 +1,5 @@
 from datetime import datetime, timezone, time
-from app.models.product_models import ProductCondition
+from app.models.product import ProductCondition
 
 
 def get_fixtures():
