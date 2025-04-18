@@ -1,0 +1,16 @@
+graph LR
+    subgraph "API Application (FastAPI)"
+        direction LR
+        Product_Router -- Handles Requests --> Product_Service
+        User_Router -- Handles Requests --> User_Service
+        Search_Router -- Handles Requests --> Search_Service
+        Product_Service -- Uses --> Product_Repository
+        User_Service -- Uses --> User_Repository
+        Search_Service -- Uses --> Search_Repository
+        Product_Repository -- Interacts With --> Database_PostgreSQL
+        User_Repository -- Interacts With --> Database_PostgreSQL
+        Search_Repository -- Interacts With --> Database_PostgreSQL
+        Product_Service -- Publishes Tasks To --> Task_Queue_Celery
+        Search_Service -- Publishes Tasks To --> Task_Queue_Celery
+        Product_Service -- Uses --> Caching_Service_Redis
+    end

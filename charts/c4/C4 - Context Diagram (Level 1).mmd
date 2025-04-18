@@ -1,0 +1,17 @@
+---
+config:
+  layout: fixed
+---
+flowchart LR
+ subgraph Product_Tracker_System["Product_Tracker_System"]
+        Product_Tracking_Backend["Product_Tracking_Backend"]
+        Product_Tracker_Frontend["Product_Tracker_Frontend"]
+  end
+    Product_Tracker_Frontend -- Uses --> Product_Tracking_Backend
+    User["User"] -- Uses --> Product_Tracker_Frontend
+    E-commerce_Website_1["E-commerce_Website_1"] -- Provides_Data_To --> Product_Tracking_Backend
+    E-commerce_Website_2["E-commerce_Website_2"] -- Provides_Data_To --> Product_Tracking_Backend
+    E-commerce_Website_N["E-commerce_Website_N"] -- Provides_Data_To --> Product_Tracking_Backend
+
+
+
