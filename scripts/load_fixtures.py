@@ -25,3 +25,8 @@ def load_fixtures():
         raise e
     finally:
         db.close()
+
+
+if __name__ == "__main__":
+    load_fixtures()
+    print("Fixtures loaded successfully.")
