@@ -6,8 +6,8 @@ from celery.schedules import crontab
 
 from app.models import SearchConfig
 from app.database import SessionLocal
-from scrapers.api_client import ApiClient
-from scrapers.scraper_client import ScraperClient
+from scrapers.product_api_client import ProductApiClient
+from scrapers.scraper_manager import ScraperManager
 
 broker_url = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
 app = Celery(main="scrapers", broker=broker_url, backend="redis://redis:6379/0")
@@ -32,11 +32,11 @@ def run_scraper_searches(scraper_name: str = "olx"):
 
 @app.task(name="scrapers.tasks.run_search")
 def run_search(search: str, scraper_name: str):
-    api_cli = ApiClient()
-    scraper_cli = ScraperClient(scraper_name)
+    api_cli = ProductApiClient()
+    scraper = ScraperManager(scraper_name)
     existing_urls = api_cli.get_existing_product_urls(scraper_name)
-    urls = scraper_cli.get_products_urls(search)
-    new_urls = scraper_cli.get_urls_to_update(existing_urls, urls)
+    urls = scraper.get_products_urls(search)
+    new_urls = scraper.get_urls_to_update(existing_urls, urls)
 
     process_urls_list.apply_async(
         args=[
@@ -50,8 +50,8 @@ def run_search(search: str, scraper_name: str):
 
 @app.task(name="scrapers.tasks.process_urls_list")
 def process_urls_list(search_results: dict, scraper_name: str):
-    scraper_cli = ScraperClient(scraper_name)
-    chunks = scraper_cli.split_search_urls(search_results, 100)
+    scraper = ScraperManager(scraper_name)
+    chunks = scraper.split_search_urls(search_results, 100)
 
     task_group = group(
         chord(
@@ -65,10 +65,10 @@ def process_urls_list(search_results: dict, scraper_name: str):
 
 @app.task(name="scrapers.tasks.scrape_product_page")
 def scrape_product_page(url: str, scraper_name: str):
-    scraper_cli = ScraperClient(scraper_name)
+    scraper = ScraperManager(scraper_name)
 
     try:
-        product_data = scraper_cli.scrape_product(url)
+        product_data = scraper.scrape_product(url)
         return {"status": "success", "data": product_data}
     except Exception as e:
         return {"status": "error", "url": url, "message": str(e)}
@@ -79,7 +79,7 @@ def save_products(results):
     # TODO: Next improvement cold be to save the products in batches
 
     successful = [r["data"] for r in results if r["status"] == "success"]
-    api_client = ApiClient()
+    api_client = ProductApiClient()
     created = api_client.create_new_products(successful)
 
     return {"status": "success", "created": created}
@@ -87,7 +87,7 @@ def save_products(results):
 
 @app.task(name="scrapers.tasks.run_scraper_update")
 def run_scraper_update(scraper_name: str):
-    api_cli = ApiClient()
+    api_cli = ProductApiClient()
     cutoff_date = (datetime.today() - timedelta(days=30)).date()
     products = api_cli.get_products({"updated_before": cutoff_date})
 
@@ -99,10 +99,10 @@ def run_scraper_update(scraper_name: str):
 
 @app.task(name="scrapers.tasks.update_product")
 def update_product(product: dict, scraper_name: str):
-    scraper_cli = ScraperClient(scraper_name)
+    scraper = ScraperManager(scraper_name)
 
     try:
-        product_data = scraper_cli.update_product(product)
+        product_data = scraper.update_product(product)
         return {"status": "success", "data": product_data}
     except Exception as e:
         return {"status": "error", "url": product["url"], "message": str(e)}
@@ -110,7 +110,7 @@ def update_product(product: dict, scraper_name: str):
 
 @app.task(name="scrapers.tasks.update_products")
 def update_products(results):
-    api_cli = ApiClient()
+    api_cli = ProductApiClient()
     successful = [r["data"] for r in results if r["status"] == "success"]
     updated = api_cli.update_product_list(successful)
 

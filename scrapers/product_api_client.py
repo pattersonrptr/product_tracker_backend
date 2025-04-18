@@ -2,7 +2,7 @@ import os
 import requests
 
 
-class ApiClient:
+class ProductApiClient:
     def __init__(self):
         self.base_url = os.getenv("API_URL", "web:8000")
 

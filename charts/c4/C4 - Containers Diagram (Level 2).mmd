@@ -1,0 +1,12 @@
+graph LR
+    subgraph "Product Tracker System"
+        direction LR
+        Web_Application_React -- Calls API --> API_Application_FastAPI
+        API_Application_FastAPI -- Reads/Writes To --> Database_PostgreSQL
+        API_Application_FastAPI -- Sends Tasks To --> Task_Queue_Celery
+        Task_Queue_Celery -- Executes --> Scraping_Service
+        Scraping_Service -- Accesses Data From --> E_commerce_Websites
+        Scraping_Service -- Writes Data To --> Database_PostgreSQL
+        Caching_Service_Redis -- Used By --> API_Application_FastAPI
+    end
+    User -- Uses --> Web_Application_React

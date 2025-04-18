@@ -6,7 +6,7 @@ from scrapers.mercado_livre.scraper import MercadoLivreScraper
 from scrapers.olx.scraper import OLXScraper
 
 
-class ScraperClient:
+class ScraperManager:
     def __init__(self, scraper_name: str):
         self.valid_scrapers = {
             "olx": OLXScraper,
