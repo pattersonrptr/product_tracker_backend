@@ -1,21 +1,4 @@
 services:
-  frontend:
-    container_name: frontend
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true # Optional: Add if changes still aren't detected
-      - NODE_ENV=development # Ensure React runs in development mode
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    depends_on:
-      - web
-
   web:
     build: .
     container_name: web

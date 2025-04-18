@@ -30,6 +30,7 @@ class ProductBase(BaseModel):
     url: HttpUrl
     title: str = Field(min_length=1)
     price: float = Field(gt=0)
+    source: str
 
     model_config = ConfigDict(
         from_attributes=True,

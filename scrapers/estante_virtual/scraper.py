@@ -1,12 +1,14 @@
 import cloudscraper
 
+from scrapers.base.scraper import Scraper
 
-class Scraper:
+
+class Scraper(Scraper):
     def __init__(self, api_url=None):
         self.BASE_URL = "https://www.estantevirtual.com.br"
         self.session = cloudscraper.create_scraper()
 
-    def search_products(self, search_term: str) -> list[str]:
+    def search(self, search_term: str) -> list[str]:
         cookies = {
             "uuid": "19a804b1-521e-4f8c-af59-de098361fe51",
             "__uzma": "6b9119ba-dcac-4abd-a649-88d6adb7c8d1",
@@ -58,7 +60,7 @@ class Scraper:
             headers=headers,
         )
 
-    def get_products_list(self, data: dict) -> list:
+    def _get_products_list(self, data: dict) -> list:
         return [
             {
                 "url": f"{'https://www.estantevirtual.com.br'}{item['productSlug']}",
@@ -68,7 +70,9 @@ class Scraper:
             for item in data["parentSkus"]
         ]
 
-    def update_product(self, product: dict) -> dict:
+    def scrape_data(self, url: str) -> dict: ...
+
+    def update_data(self, product: dict) -> dict:
         # https://www.estantevirtual.com.br/busca/api?q=Python%20e%20Django&searchField=titulo-autor&tipo-de-livro=usado
         # https://www.estantevirtual.com.br/busca/api?q=python&searchField=titulo-autor&page=2&tipo-de-livro=usado
         # https://www.estantevirtual.com.br/pdp-api/api/searchProducts/0GU-8162-000-BK/usado?pageSize=100&page=1&sort=lowest-first

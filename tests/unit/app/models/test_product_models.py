@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, Integer, Numeric, String
 
-from app.models.product_models import Product
+from app.models.product import Product
 
 
 def test_product_table_name():

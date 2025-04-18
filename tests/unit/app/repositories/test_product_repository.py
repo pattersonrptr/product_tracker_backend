@@ -5,7 +5,7 @@ from unittest.mock import ANY, Mock
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from app.models.product_models import Product
+from app.models.product import Product
 from app.repositories.product_repository import ProductRepository
 
 

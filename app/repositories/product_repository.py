@@ -8,7 +8,7 @@ from decimal import Decimal
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models.product_models import Product
+from app.models.product import Product
 
 
 class ProductRepository:
