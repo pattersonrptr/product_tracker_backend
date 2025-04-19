@@ -1,4 +1,6 @@
 import cloudscraper
+import html
+import json
 
 from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
@@ -34,22 +36,14 @@ class OLXScraper(Scraper):
 
         return links
 
-    def _extract_title(self, soup):
-        try:
-            return soup.find("span", {"class": "olx-text--title-medium"}).get_text(
-                strip=True
-            )
-        except AttributeError:
-            return "Title not found"
+    def _extract_json_data(self, soup):
+        script = soup.find("script", {"id": "initial-data"})
 
-    def _extract_price(self, soup):
-        try:
-            price_text = soup.find(
-                "span", {"class": "olx-text olx-text--title-large olx-text--block"}
-            ).get_text(strip=True)
-            return price_text.replace("R$", "").strip()
-        except AttributeError:
-            return "Price not found"
+        if not script:
+            return {}
+
+        decoded_data = html.unescape(script["data-json"])
+        return json.loads(decoded_data).get("ad", {})
 
     def _make_request(self, url: str) -> str:
         try:
@@ -100,37 +94,45 @@ class OLXScraper(Scraper):
 
     def scrape_data(self, url: str) -> dict:
         html = self._make_request(url)
-        title = None
-        price = None
 
-        if html:
-            soup = BeautifulSoup(html, "html.parser")
-            title = self._extract_title(soup)
-            price = self._extract_price(soup)
+        soup = BeautifulSoup(html, "html.parser")
+        json_data = self._extract_json_data(soup)
+
+        title = (json_data.get("subject"),)
+        description = json_data.get("body")
+        source_product_code = f"OLX - {json_data.get('listId')}"
+        price = json_data.get("priceValue")
+        images = json_data.get("images", {})
+        image_url = images[0].get("original", "") if len(images) else ""
+        seller = json_data.get("user", {}).get("name")
+        city = json_data.get("location", {}).get("municipality")
+        state = json_data.get("location", {}).get("uf")
+
+        condition = next(
+            (
+                prop["value"]
+                for prop in json_data.get("properties", [])
+                if prop["name"] == "hobbies_condition"
+            ),
+            None,
+        )
 
         return {
             "url": url,
             "title": title,
+            "description": description,
             "price": price,
+            "image_url": image_url,
+            "source_product_code": source_product_code,
+            "seller": seller,
+            "city": city,
+            "state": state,
+            "condition": condition,
         }
 
     def update_data(self, product: dict) -> dict:
-        url = product["url"]
-        html = self._make_request(url)
-        title = None
-        price = None
-
-        if html:
-            soup = BeautifulSoup(html, "html.parser")
-            title = self._extract_title(soup)
-            price = self._extract_price(soup)
-
-        return {
-            "id": product["id"],
-            "url": url,
-            "title": title,
-            "price": price,
-        }
+        data = self.scrape_data(product["url"])
+        return {**product, **data}
 
     def __str__(self):
         return "OLX Scraper"
