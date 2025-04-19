@@ -63,6 +63,12 @@ def get_fixtures():
                 "base_url": "https://www.mercadolivre.com.br",
                 "is_active": False,
             },
+            {
+                "id": 4,
+                "name": "estante_virtual",
+                "base_url": "https://www.estantevirtual.com.br",
+                "is_active": True,
+            },
         ],
         "products": [
             {
