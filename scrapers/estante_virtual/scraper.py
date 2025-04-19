@@ -1,12 +1,13 @@
-import cloudscraper
 import json
+import cloudscraper
+
 from bs4 import BeautifulSoup
 
 from scrapers.base.scraper import Scraper
 
 
-class Scraper(Scraper):
-    def __init__(self, api_url=None):
+class EstanteVirtualScraper(Scraper):
+    def __init__(self):
         self.BASE_URL = "https://www.estantevirtual.com.br"
 
         self.session = cloudscraper.create_scraper()
@@ -23,6 +24,8 @@ class Scraper(Scraper):
 
         while has_next:
             page_number += 1
+            print(page_number)
+
             params = {
                 "q": search_term,
                 "searchField": "titulo-autor",
@@ -35,7 +38,10 @@ class Scraper(Scraper):
                 headers=self.headers,
             )
 
+            # print(resp.status_code)
+
             if page_number == resp.json().get("totalPages"):
+                print(page_number, resp.json().get("totalPages"))
                 has_next = False
             else:
                 urls = self._get_products_list(resp.json())
@@ -47,34 +53,50 @@ class Scraper(Scraper):
         return [f"{self.BASE_URL}{item['productSlug']}" for item in data["parentSkus"]]
 
     def scrape_data(self, url: str) -> dict:
+        resp = self._fetch_page(url)
+        soup = self._parse_html(resp.content)
+        data = self._extract_initial_state(soup)
+        if not data:
+            return {}
+
+        product_info = self._extract_product_info(data)
+        prices = self._extract_prices(product_info)
+        price = self._get_lowest_price(prices)
+        description = self._extract_description(product_info)
+        seller, location = self._extract_seller_and_location(product_info)
+
+        return {
+            "url": url,
+            "product_name": f"{product_info.get('name', '')} | {product_info.get('author', '')}",
+            "price": f"R$ {price:.2f}" if price else "",
+            "description": description,
+            "seller": seller,
+            "location": location,
+        }
+
+    def _fetch_page(self, url: str):
         resp = self.session.get(url)
         resp.raise_for_status()
+        return resp
 
-        soup = BeautifulSoup(resp.content, "html.parser")
+    def _parse_html(self, content: bytes) -> BeautifulSoup:
+        return BeautifulSoup(content, "html.parser")
 
-        # Find the script tag containing __INITIAL_STATE__
+    def _extract_initial_state(self, soup: BeautifulSoup) -> dict:
         script_tag = soup.find(
             "script", string=lambda t: t and "window.__INITIAL_STATE__" in t
         )
         if not script_tag:
             return {}
-
-        # Extract JSON data from the script
         json_data = script_tag.string.split("=", 1)[1].strip().rstrip(";")
-        data = json.loads(json_data)
+        return json.loads(json_data)
 
-        # Extract product information from JSON
-        product_info = data.get("Product", {})
+    def _extract_product_info(self, data: dict) -> dict:
+        return data.get("Product", {})
+
+    def _extract_prices(self, product_info: dict) -> list:
         grouper = product_info.get("grouper", {})
         group_products = grouper.get("groupProducts", {})
-
-        # Get product name and author
-        product_name = product_info.get("name", "")
-        author = product_info.get("author", "") or product_info.get(
-            "formattedAttributes", {}
-        ).get("author", "")
-
-        # Get prices (new and used)
         prices = []
         for condition in ["novo", "usado"]:
             if condition in group_products:
@@ -82,32 +104,25 @@ class Scraper(Scraper):
                     group_products[condition].get("salePrice", 0) / 100
                 )  # Convert from cents
                 prices.append(price)
+        return prices
 
-        # Get lowest price available
-        price = min(prices) if prices else ""
+    def _get_lowest_price(self, prices: list) -> float:
+        return min(prices) if prices else 0
 
-        # Get description
-        description = product_info.get("currentProduct", {}).get("description", "")
+    def _extract_description(self, product_info: dict) -> str:
+        return product_info.get("currentProduct", {}).get("description", "")
 
-        # Get seller and location from the first available product variant
-        seller = ""
-        location = ""
+    def _extract_seller_and_location(self, product_info: dict) -> tuple:
+        grouper = product_info.get("grouper", {})
+        group_products = grouper.get("groupProducts", {})
         for condition in ["novo", "usado"]:
             if condition in group_products:
                 prices_list = group_products[condition].get("prices", [])
                 if prices_list:
                     seller = prices_list[0].get("sellerName", "")
                     location = prices_list[0].get("city", "")
-                    break
-
-        return {
-            "url": url,
-            "product_name": f"{product_name} | {author}",
-            "price": f"R$ {price:.2f}" if price else "",
-            "description": description,
-            "seller": seller,
-            "location": location,
-        }
+                    return seller, location
+        return "", ""
 
     def update_data(self, product: dict) -> dict:
         data = self.scrape_data(product["url"])
