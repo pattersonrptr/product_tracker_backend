@@ -5,8 +5,8 @@ from bs4 import BeautifulSoup
 from scrapers.base.scraper import Scraper
 
 
-class EstanteVirtualScraper(Scraper):
-    def __init__(self):
+class Scraper(Scraper):
+    def __init__(self, api_url=None):
         self.BASE_URL = "https://www.estantevirtual.com.br"
 
         self.session = cloudscraper.create_scraper()
@@ -17,26 +17,34 @@ class EstanteVirtualScraper(Scraper):
         self.session.headers.update(self.headers)
 
     def search(self, search_term: str) -> list[str]:
-        params = {
-            "q": search_term,
-            "searchField": "titulo-autor",
-        }
+        page_number = 0
+        has_next = True
+        all_links = []
 
-        return self.session.get(
-            f"{self.BASE_URL}/busca/api",
-            params=params,
-            headers=self.headers,
-        )
+        while has_next:
+            page_number += 1
+            params = {
+                "q": search_term,
+                "searchField": "titulo-autor",
+                "page": f"{page_number}",
+            }
+
+            resp = self.session.get(
+                f"{self.BASE_URL}/busca/api",
+                params=params,
+                headers=self.headers,
+            )
+
+            if page_number == resp.json().get("totalPages"):
+                has_next = False
+            else:
+                urls = self._get_products_list(resp.json())
+                all_links.extend(urls)
+
+        return all_links
 
     def _get_products_list(self, data: dict) -> list:
-        return [
-            {
-                "url": f"{self.BASE_URL}{item['productSlug']}",
-                "title": item.get("name"),
-                "price": str(item.get("salePrice") / 100).replace(".", ","),
-            }
-            for item in data["parentSkus"]
-        ]
+        return [f"{self.BASE_URL}{item['productSlug']}" for item in data["parentSkus"]]
 
     def scrape_data(self, url: str) -> dict:
         resp = self.session.get(url)
