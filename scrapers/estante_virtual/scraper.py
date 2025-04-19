@@ -24,7 +24,6 @@ class EstanteVirtualScraper(Scraper):
 
         while has_next:
             page_number += 1
-            print(page_number)
 
             params = {
                 "q": search_term,
@@ -38,10 +37,7 @@ class EstanteVirtualScraper(Scraper):
                 headers=self.headers,
             )
 
-            # print(resp.status_code)
-
             if page_number == resp.json().get("totalPages"):
-                print(page_number, resp.json().get("totalPages"))
                 has_next = False
             else:
                 urls = self._get_products_list(resp.json())
