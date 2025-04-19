@@ -32,7 +32,7 @@ class Product(Base):
     description = Column(String)
     price = Column(Numeric(10, 2))
 
-    # Product code from source website (nullable)
+    # Product code from source website (nullable) - Example: source + '-' + the product code in website = olx-1365326779)
     source_product_code = Column(
         String(50),
         index=True,
@@ -46,9 +46,10 @@ class Product(Base):
 
     # Ad metadata
     condition = Column(SQLAlchemyEnum(ProductCondition), default=ProductCondition.USED)
-    seller_type = Column(String(20))  # 'individual' or 'store'
-    # TODO: Remove it, use source_website_id
-    source = Column(String(20))  # 'olx', 'enjoei', etc
+    seller_type = Column(
+        String(20)
+    )  # 'individual' or 'store' # TODO: change to selller_name
+    source = Column(String(20))  # TODO: Remove this field in future versions
     is_available = Column(Boolean, default=True)
 
     # Images (URLs separated by commas)

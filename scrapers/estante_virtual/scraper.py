@@ -123,3 +123,6 @@ class EstanteVirtualScraper(Scraper):
     def update_data(self, product: dict) -> dict:
         data = self.scrape_data(product["url"])
         return {**product, **data}
+
+    def __str__(self):
+        return "Estante Virtual Scraper"
