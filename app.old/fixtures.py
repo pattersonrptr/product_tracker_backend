@@ -81,7 +81,7 @@ def get_fixtures():
                 "city": "São Paulo",
                 "state": "SP",
                 "condition": ProductCondition.USED,
-                "seller_type": "individual",
+                "seller_name": "individual",
                 "source": "olx",
                 "is_available": True,
                 "image_urls": "https://img1.jpg,https://img2.jpg",

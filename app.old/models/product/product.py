@@ -46,7 +46,7 @@ class Product(Base):
 
     # Ad metadata
     condition = Column(SQLAlchemyEnum(ProductCondition), default=ProductCondition.USED)
-    seller_type = Column(
+    seller_name = Column(
         String(20)
     )  # 'individual' or 'store' # TODO: change to selller_name
     source = Column(String(20))  # TODO: Remove this field in future versions
