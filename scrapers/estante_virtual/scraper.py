@@ -1,81 +1,106 @@
 import cloudscraper
+import json
+from bs4 import BeautifulSoup
 
 from scrapers.base.scraper import Scraper
 
 
-class Scraper(Scraper):
-    def __init__(self, api_url=None):
+class EstanteVirtualScraper(Scraper):
+    def __init__(self):
         self.BASE_URL = "https://www.estantevirtual.com.br"
+
         self.session = cloudscraper.create_scraper()
+        self.headers = {
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0",
+        }
+        self.session.headers.update(self.headers)
 
     def search(self, search_term: str) -> list[str]:
-        cookies = {
-            "uuid": "19a804b1-521e-4f8c-af59-de098361fe51",
-            "__uzma": "6b9119ba-dcac-4abd-a649-88d6adb7c8d1",
-            "__uzmb": "1740803766",
-            "__uzme": "3979",
-            "__uzmc": "311711669662",
-            "__uzmd": "1742179725",
-            "g_state": '{"i_l":0}',
-            "email": "pattersonjunior%40gmail.com",
-            "uname": "PATTERSON",
-            "customerServiceUuid": "19a804b1-521e-4f8c-af59-de098361fe51",
-            "customerServiceUname": "PATTERSON",
-            "croct.cid": "73cf1701-2632-4170-bbc3-2820d538179b",
-            "zipcode": "12950391",
-            "cityCode": "3504107",
-            "uf": "SP",
-            "az_asm_20241212": "96PsaP01l/v2aPhA3cDPYY4sTvDXvTnb3NzMNg5+qt22hUXkdkEbVfRDcmiTtVpdZaNGWN1nLqf34BGk",
-            "az_botm_20241212": "7aab3faf27c85372487e7c80bcaeb1d1",
-            "campaignCode": "ev",
-            "tid": "bc2854ff-4141-4b4d-bdd3-29b3c8e5b911",
-            "SmartHint-Session": "cf1178e0-8976-4121-a291-51e9b75f4a8f",
-        }
-
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "pt-BR,en-US;q=0.8,en;q=0.6,fr;q=0.4,pt;q=0.2",
-            "DNT": "1",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "none",
-            "Sec-Fetch-User": "?1",
-            "Sec-GPC": "1",
-            "Priority": "u=0, i",
-        }
-
         params = {
             "q": search_term,
             "searchField": "titulo-autor",
-            # 'tipo-de-livro': 'usado',
         }
 
         return self.session.get(
             f"{self.BASE_URL}/busca/api",
             params=params,
-            cookies=cookies,
-            headers=headers,
+            headers=self.headers,
         )
 
     def _get_products_list(self, data: dict) -> list:
         return [
             {
-                "url": f"{'https://www.estantevirtual.com.br'}{item['productSlug']}",
+                "url": f"{self.BASE_URL}{item['productSlug']}",
                 "title": item.get("name"),
                 "price": str(item.get("salePrice") / 100).replace(".", ","),
             }
             for item in data["parentSkus"]
         ]
 
-    def scrape_data(self, url: str) -> dict: ...
+    def scrape_data(self, url: str) -> dict:
+        resp = self.session.get(url)
+        resp.raise_for_status()
+
+        soup = BeautifulSoup(resp.content, "html.parser")
+
+        # Find the script tag containing __INITIAL_STATE__
+        script_tag = soup.find(
+            "script", string=lambda t: t and "window.__INITIAL_STATE__" in t
+        )
+        if not script_tag:
+            return {}
+
+        # Extract JSON data from the script
+        json_data = script_tag.string.split("=", 1)[1].strip().rstrip(";")
+        data = json.loads(json_data)
+
+        # Extract product information from JSON
+        product_info = data.get("Product", {})
+        grouper = product_info.get("grouper", {})
+        group_products = grouper.get("groupProducts", {})
+
+        # Get product name and author
+        product_name = product_info.get("name", "")
+        author = product_info.get("author", "") or product_info.get(
+            "formattedAttributes", {}
+        ).get("author", "")
+
+        # Get prices (new and used)
+        prices = []
+        for condition in ["novo", "usado"]:
+            if condition in group_products:
+                price = (
+                    group_products[condition].get("salePrice", 0) / 100
+                )  # Convert from cents
+                prices.append(price)
+
+        # Get lowest price available
+        price = min(prices) if prices else ""
+
+        # Get description
+        description = product_info.get("currentProduct", {}).get("description", "")
+
+        # Get seller and location from the first available product variant
+        seller = ""
+        location = ""
+        for condition in ["novo", "usado"]:
+            if condition in group_products:
+                prices_list = group_products[condition].get("prices", [])
+                if prices_list:
+                    seller = prices_list[0].get("sellerName", "")
+                    location = prices_list[0].get("city", "")
+                    break
+
+        return {
+            "url": url,
+            "product_name": f"{product_name} | {author}",
+            "price": f"R$ {price:.2f}" if price else "",
+            "description": description,
+            "seller": seller,
+            "location": location,
+        }
 
     def update_data(self, product: dict) -> dict:
-        # https://www.estantevirtual.com.br/busca/api?q=Python%20e%20Django&searchField=titulo-autor&tipo-de-livro=usado
-        # https://www.estantevirtual.com.br/busca/api?q=python&searchField=titulo-autor&page=2&tipo-de-livro=usado
-        # https://www.estantevirtual.com.br/pdp-api/api/searchProducts/0GU-8162-000-BK/usado?pageSize=100&page=1&sort=lowest-first
-        # https://www.estantevirtual.com.br/pdp-api/api/searchProducts/14B-6094-000-BK/novo?pageSize=10&page=1&sort=lowest-first
-        # https://www.estantevirtual.com.br/frdmprcsts/1NK-9561-000-01/lazy
-        return {}
+        data = self.scrape_data(product["url"])
+        return {**product, **data}
