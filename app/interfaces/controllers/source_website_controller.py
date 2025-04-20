@@ -87,9 +87,8 @@ def update_source_website(
         get_source_website_repository
     ),
 ):
-    source_website_entity = SourceWebsite(**source_website.dict(exclude_unset=True))
     use_case = UpdateSourceWebsiteUseCase(source_website_repo)
-    updated_source_website = use_case.execute(source_website_id, source_website_entity)
+    updated_source_website = use_case.execute(source_website_id, source_website)
     if not updated_source_website:
         raise HTTPException(status_code=404, detail="Source website not found")
     return updated_source_website

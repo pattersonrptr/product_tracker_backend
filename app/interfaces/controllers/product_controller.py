@@ -1,10 +1,15 @@
+from datetime import datetime
 from typing import List
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.infrastructure.database import get_db
 from app.infrastructure.repositories.product_repository import ProductRepository
+from app.infrastructure.repositories.price_history_repository import (
+    PriceHistoryRepository,
+)
 from app.use_cases.product_use_cases import (
     CreateProductUseCase,
     GetProductByIdUseCase,
@@ -24,7 +29,6 @@ from app.interfaces.schemas.product_schema import (
     ProductUpdate,
     ProductMinimal,
 )
-from app.interfaces.schemas.product_filter import ProductFilter  # Importe o novo schema
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -33,14 +37,22 @@ def get_product_repository(db: Session = Depends(get_db)):
     return ProductRepository(db)
 
 
+def get_price_history_repository(db: Session = Depends(get_db)):
+    return PriceHistoryRepository(db)
+
+
 @router.post("/", response_model=ProductRead, status_code=201)
 def create_product(
-    product: ProductCreate,
+    product_in: ProductCreate,
     product_repo: ProductRepository = Depends(get_product_repository),
+    price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
 ):
-    product_entity = Product(**product.dict())
-    use_case = CreateProductUseCase(product_repo)
-    return use_case.execute(product_entity)
+    product_entity = Product(
+        **product_in.dict(exclude={"price"})
+    )  # Exclui price do Product
+    use_case = CreateProductUseCase(product_repo, price_history_repo)
+    created_product = use_case.execute(product_entity, product_in.price)
+    return created_product
 
 
 @router.get("/{product_id}", response_model=ProductRead)
@@ -74,12 +86,14 @@ def list_products(product_repo: ProductRepository = Depends(get_product_reposito
 @router.put("/{product_id}", response_model=ProductRead)
 def update_product(
     product_id: int,
-    product: ProductUpdate,
+    product_in: ProductUpdate,
     product_repo: ProductRepository = Depends(get_product_repository),
+    price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
 ):
-    product_entity = Product(**product.dict(exclude_unset=True))
-    use_case = UpdateProductUseCase(product_repo)
-    updated_product = use_case.execute(product_id, product_entity)
+    use_case = UpdateProductUseCase(product_repo, price_history_repo)
+    updated_product = use_case.execute(
+        product_id, product_in, product_in.price
+    )  # Passando product_in
     if not updated_product:
         raise HTTPException(status_code=404, detail="Product not found")
     return updated_product
@@ -105,11 +119,28 @@ def search_products(
 
 @router.get("/filter/", response_model=List[ProductRead])
 def filter_products(
-    filters: ProductFilter = Depends(),
+    url: Optional[str] = Query(None),
+    title: Optional[str] = Query(None),
+    min_price: Optional[float] = Query(None),
+    max_price: Optional[float] = Query(None),
+    created_after: Optional[datetime] = Query(None),
+    created_before: Optional[datetime] = Query(None),
+    updated_after: Optional[datetime] = Query(None),
+    updated_before: Optional[datetime] = Query(None),
     product_repo: ProductRepository = Depends(get_product_repository),
 ):
+    filter_params = {
+        "url": url,
+        "title": title,
+        "min_price": min_price,
+        "max_price": max_price,
+        "created_after": created_after,
+        "created_before": created_before,
+        "updated_after": updated_after,
+        "updated_before": updated_before,
+    }
     use_case = FilterProductsUseCase(product_repo)
-    return use_case.execute(filters.dict(exclude_unset=True))
+    return use_case.execute(filter_params)
 
 
 @router.get("/stats/", response_model=dict)

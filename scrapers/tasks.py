@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from celery import Celery, group, chord
 from celery.schedules import crontab
 
+# TODO: Scrapers não deve depender de app - deve ser um projeto separado
 from app.models import SearchConfig
 from app.database import SessionLocal
 from scrapers.product_api_client import ProductApiClient

@@ -1,23 +1,31 @@
-from typing import List, Optional
+from typing import Optional, List
 
 from app.entities.product import Product
+from app.entities.product.price_history import PriceHistory
 from app.interfaces.repositories.product_repository import ProductRepositoryInterface
+from app.interfaces.repositories.price_history_repository import (
+    PriceHistoryRepositoryInterface,
+)
+from app.interfaces.schemas.product_schema import ProductUpdate
 
 
 class CreateProductUseCase:
-    def __init__(self, product_repository: ProductRepositoryInterface):
+    def __init__(
+        self,
+        product_repository: ProductRepositoryInterface,
+        price_history_repository: PriceHistoryRepositoryInterface,
+    ):
         self.product_repository = product_repository
+        self.price_history_repository = price_history_repository
 
-    def execute(self, product: Product) -> Product:
-        # Aqui poderíamos adicionar lógica de negócios antes de criar o produto,
-        # como validações complexas ou enriquecimento de dados específicas da API.
-        # Por exemplo, verificar se já existe um produto com a mesma URL.
-        existing_product = self.product_repository.get_by_url(product.url)
-        if existing_product:
-            # Decidir o que fazer se o produto já existe: atualizar? ignorar?
-            # Por enquanto, vamos apenas retornar o produto existente.
-            return existing_product
-        return self.product_repository.create(product)
+    def execute(self, product: Product, initial_price: float):
+        created_product = self.product_repository.create(product)
+        if created_product is not None and initial_price is not None:
+            price_history_entry = PriceHistory(
+                product_id=created_product.id, price=initial_price
+            )
+            self.price_history_repository.create(price_history_entry)
+        return created_product
 
 
 class GetProductByIdUseCase:
@@ -45,12 +53,39 @@ class ListProductsUseCase:
 
 
 class UpdateProductUseCase:
-    def __init__(self, product_repository: ProductRepositoryInterface):
+    def __init__(
+        self,
+        product_repository: ProductRepositoryInterface,
+        price_history_repository: PriceHistoryRepositoryInterface,
+    ):
         self.product_repository = product_repository
+        self.price_history_repository = price_history_repository
 
-    def execute(self, product_id: int, product: Product) -> Optional[Product]:
-        # Aqui poderíamos adicionar lógica de negócios antes de atualizar o produto.
-        return self.product_repository.update(product_id, product)
+    def execute(
+        self,
+        product_id: int,
+        product_update: ProductUpdate,
+        new_price: Optional[float] = None,
+    ) -> Optional[Product]:
+        existing_product = self.product_repository.get_by_id(product_id)
+        if not existing_product:
+            return None
+
+        # Atualiza os atributos da entidade existente com os dados do schema
+        for key, value in product_update.dict(
+            exclude={"price"}, exclude_unset=True
+        ).items():
+            setattr(existing_product, key, value)
+
+        updated_product = self.product_repository.update(product_id, existing_product)
+
+        if updated_product is not None and new_price is not None:
+            price_history_entry = PriceHistory(
+                product_id=updated_product.id, price=new_price
+            )
+            self.price_history_repository.create(price_history_entry)
+
+        return updated_product
 
 
 class DeleteProductUseCase:

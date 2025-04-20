@@ -5,7 +5,6 @@ from sqlalchemy import (
     Column,
     DateTime,
     Integer,
-    Numeric,
     String,
     ForeignKey,
     Boolean,
@@ -30,7 +29,6 @@ class Product(Base):
     url = Column(String, unique=True, index=True)
     title = Column(String, index=True)
     description = Column(String)
-    price = Column(Numeric(10, 2))
 
     # Product code from source website (nullable) - Example: source + '-' + the product code in website = olx-1365326779)
     source_product_code = Column(
@@ -73,3 +71,10 @@ class Product(Base):
     # Relationships
     price_history = relationship("PriceHistory", back_populates="product")
     source_website = relationship("SourceWebsite", back_populates="products")
+
+    # Property to get the current price from the last price history entry
+    @property
+    def current_price(self):
+        if self.price_history:
+            return self.price_history[-1].price
+        return None
