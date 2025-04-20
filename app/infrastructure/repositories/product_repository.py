@@ -1,9 +1,11 @@
 from datetime import UTC, datetime
 from typing import Optional, List
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.entities.product import Product
+from app.entities.product.price_history import PriceHistory
 from app.interfaces.repositories.product_repository import ProductRepositoryInterface
 
 
@@ -124,13 +126,68 @@ class ProductRepository(ProductRepositoryInterface):
         return query.all()
 
     def get_product_stats(self) -> dict:
-        # A lógica para estatísticas de preço precisará ser adaptada para usar price_history
-        # Isso pode envolver subqueries para obter o preço mais recente de cada produto
-        return {}  # Adapte conforme necessário
+        # Subquery para obter o preço mais recente de cada produto
+        subquery = (
+            self.db.query(
+                PriceHistory.product_id,
+                func.max(PriceHistory.created_at).label("latest_created_at"),
+            )
+            .group_by(PriceHistory.product_id)
+            .subquery()
+        )
 
-    def get_minimal_products(self):  # -> List[dict]:
-        # Aqui também você precisará buscar o preço atual do price_history
-        # Uma forma seria fazer uma query separada ou usar uma subquery
-        return self.db.query(
-            Product.id, Product.title
-        ).all()  # Adapte conforme necessário
+        latest_prices_subquery = (
+            self.db.query(PriceHistory.price)
+            .join(
+                subquery,
+                (PriceHistory.product_id == subquery.c.product_id)
+                & (PriceHistory.created_at == subquery.c.latest_created_at),
+            )
+            .subquery()
+        )
+
+        total_products = self.db.query(func.count(Product.id)).scalar()
+
+        average_price = (
+            self.db.query(func.avg(latest_prices_subquery.c.price)).scalar()
+            if total_products > 0
+            else 0.0
+        )
+        min_price = (
+            self.db.query(func.min(latest_prices_subquery.c.price)).scalar()
+            if total_products > 0
+            else 0.0
+        )
+        max_price = (
+            self.db.query(func.max(latest_prices_subquery.c.price)).scalar()
+            if total_products > 0
+            else 0.0
+        )
+
+        return {
+            "total_products": total_products if total_products is not None else 0,
+            "average_price": float(average_price) if average_price is not None else 0.0,
+            "min_price": float(min_price) if min_price is not None else 0.0,
+            "max_price": float(max_price) if max_price is not None else 0.0,
+        }
+
+    def get_minimal_products(self) -> List[dict]:
+        products = (
+            self.db.query(Product).options(joinedload(Product.price_history)).all()
+        )
+        minimal_products_list = []
+        for product in products:
+            current_price = None
+            if product.price_history:
+                current_price = product.price_history[-1].price
+            minimal_products_list.append(
+                {
+                    "id": product.id,
+                    "title": product.title,
+                    "url": product.url,
+                    "current_price": float(current_price)
+                    if current_price is not None
+                    else None,
+                }
+            )
+        return minimal_products_list
