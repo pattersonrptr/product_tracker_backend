@@ -1,12 +1,12 @@
 from datetime import time
-from dataclasses import dataclass
 from typing import List, Optional
+
+from pydantic import BaseModel
 
 from app.entities.product.source_website import SourceWebsite as SourceWebsiteEntity
 
 
-@dataclass
-class SearchConfig:
+class SearchConfig(BaseModel):
     search_term: str
     is_active: bool = True
     frequency_days: int = 1

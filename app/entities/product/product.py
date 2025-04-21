@@ -1,10 +1,10 @@
-from dataclasses import dataclass
 from datetime import datetime, UTC
 from typing import Optional
 
+from pydantic import BaseModel
 
-@dataclass
-class Product:
+
+class Product(BaseModel):
     url: str
     title: str
     source_website_id: int

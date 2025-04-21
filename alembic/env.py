@@ -9,10 +9,10 @@ from alembic import context
 from app.infrastructure.database_config import Base
 
 from app.infrastructure.database.models.user_model import User  # noqa: F401
+from app.infrastructure.database.models.search_config_model import SearchConfig  # noqa: F401
 from app.infrastructure.database.models.product_model import Product  # noqa: F401
 from app.infrastructure.database.models.source_website_model import SourceWebsite  # noqa: F401
 from app.infrastructure.database.models.price_history_model import PriceHistory  # noqa: F401
-from app.infrastructure.database.models.search_config_model import SearchConfig  # noqa: F401
 from app.infrastructure.database.models.search_execution_log_model import (
     SearchExecutionLog,  # noqa: F401
 )

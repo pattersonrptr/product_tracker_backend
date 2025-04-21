@@ -8,6 +8,9 @@ from app.interfaces.controllers import (
     user_controller,
 )
 
+# TODO: verify if this import is necessary
+from app.infrastructure.database import models  # noqa: F401
+
 app = FastAPI()
 
 app.include_router(product_controller.router)

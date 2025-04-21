@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
 
 from app.use_cases.user_use_cases import UserUseCases
 from app.interfaces.schemas.user_schema import (
@@ -11,10 +12,14 @@ from app.interfaces.schemas.user_schema import (
 )
 from app.infrastructure.database_config import get_db
 from app.infrastructure.repositories.user_repository import UserRepository
-from app.entities import user as UserEntity
+from app.entities.user import User as UserEntity  # Importe a CLASSE User
 
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 router = APIRouter(tags=["users"], prefix="/users")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def get_user_use_cases(db: Session = Depends(get_db)):
@@ -22,11 +27,18 @@ def get_user_use_cases(db: Session = Depends(get_db)):
     return UserUseCases(user_repo)
 
 
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+
 @router.post("/", response_model=User, status_code=201)
 def create_user(
     user_in: UserCreate, use_cases: UserUseCases = Depends(get_user_use_cases)
 ):
-    user = UserEntity.User(**user_in.model_dump())
+    hashed_password = hash_password(user_in.password)
+    user_data = user_in.model_dump(exclude={"password"})
+    user = UserEntity(**user_data, hashed_password=hashed_password)
+    logging.info(f"Tipo da variável 'user' no controller: {type(user)}")
     return use_cases.create_user(user)
 
 
@@ -53,7 +65,8 @@ def update_user(
     existing_user = use_cases.get_user(user_id)
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
-    updated_user = UserEntity.User(**existing_user.__dict__, **user_data)
+    updated_data = {**existing_user.__dict__, **user_data}
+    updated_user = UserEntity(**updated_data)
     return use_cases.update_user(user_id, updated_user)
 
 

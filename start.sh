@@ -7,6 +7,8 @@ done
 
 sleep 5
 
+rm -rf alembic/versions/*
+alembic revision --autogenerate -m "First Migration"
 alembic upgrade head
 
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload

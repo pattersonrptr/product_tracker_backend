@@ -1,10 +1,10 @@
-from dataclasses import dataclass
 from datetime import datetime, UTC
 from typing import Optional
 
+from pydantic import BaseModel
 
-@dataclass
-class PriceHistory:
+
+class PriceHistory(BaseModel):
     product_id: int
     price: float
     created_at: datetime = datetime.now(UTC)

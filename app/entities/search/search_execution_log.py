@@ -1,10 +1,10 @@
 from datetime import datetime, UTC
-from dataclasses import dataclass
 from typing import Optional
 
+from pydantic import BaseModel
 
-@dataclass
-class SearchExecutionLog:
+
+class SearchExecutionLog(BaseModel):
     search_config_id: int
     timestamp: datetime = datetime.now(UTC)
     results_count: Optional[int] = None

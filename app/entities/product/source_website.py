@@ -1,9 +1,9 @@
-from dataclasses import dataclass
 from typing import Optional
 
+from pydantic import BaseModel
 
-@dataclass
-class SourceWebsite:
+
+class SourceWebsite(BaseModel):
     name: str
     base_url: str
     is_active: bool = True
