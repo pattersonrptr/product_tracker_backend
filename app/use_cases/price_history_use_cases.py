@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Optional
 
-from app.entities.product.price_history import PriceHistory
+from app.infrastructure.database.models.price_history_model import PriceHistory
 from app.interfaces.repositories.price_history_repository import (
     PriceHistoryRepositoryInterface,
 )
@@ -20,3 +20,19 @@ class GetPriceHistoryByProductIdUseCase:
 
     def execute(self, product_id: int) -> List[PriceHistory]:
         return self.price_history_repository.get_by_product_id(product_id)
+
+
+class CreateBulkPriceHistoryUseCase:
+    def __init__(self, price_history_repository: PriceHistoryRepositoryInterface):
+        self.price_history_repository = price_history_repository
+
+    def execute(self, price_histories: List[PriceHistory]) -> List[PriceHistory]:
+        return self.price_history_repository.create_bulk(price_histories)
+
+
+class GetLatestPriceUseCase:
+    def __init__(self, price_history_repository: PriceHistoryRepositoryInterface):
+        self.price_history_repository = price_history_repository
+
+    def execute(self, product_id: int) -> Optional[PriceHistory]:
+        return self.price_history_repository.get_latest_price(product_id)

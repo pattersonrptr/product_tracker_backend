@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.infrastructure.database import get_db
+from app.infrastructure.database_config import get_db
 from app.infrastructure.repositories.source_website_repository import (
     SourceWebsiteRepository,
 )
@@ -15,7 +15,7 @@ from app.use_cases.source_website_use_cases import (
     UpdateSourceWebsiteUseCase,
     DeleteSourceWebsiteUseCase,
 )
-from app.entities.product.source_website import SourceWebsite
+from app.infrastructure.database.models.source_website_model import SourceWebsite
 from app.interfaces.schemas.source_website_schema import (
     SourceWebsiteCreate,
     SourceWebsiteRead,

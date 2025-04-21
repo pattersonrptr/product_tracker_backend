@@ -14,7 +14,7 @@ from alembic import context
 #     SearchConfig,  # noqa: F401
 # )
 
-from app.infrastructure.database import Base
+from app.infrastructure.database_config import Base
 
 from app.entities.product import Product, SourceWebsite, PriceHistory  # noqa: F401
 

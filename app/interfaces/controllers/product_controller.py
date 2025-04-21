@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.infrastructure.database import get_db
+from app.infrastructure.database_config import get_db
 from app.infrastructure.repositories.product_repository import ProductRepository
 from app.infrastructure.repositories.price_history_repository import (
     PriceHistoryRepository,
@@ -30,6 +30,7 @@ from app.interfaces.schemas.product_schema import (
     ProductMinimal,
 )
 
+
 router = APIRouter(prefix="/products", tags=["products"])
 
 
@@ -47,9 +48,7 @@ def create_product(
     product_repo: ProductRepository = Depends(get_product_repository),
     price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
 ):
-    product_entity = Product(
-        **product_in.dict(exclude={"price"})
-    )  # Exclui price do Product
+    product_entity = Product(**product_in.model_dump(exclude={"price"}))
     use_case = CreateProductUseCase(product_repo, price_history_repo)
     created_product = use_case.execute(product_entity, product_in.price)
     return created_product

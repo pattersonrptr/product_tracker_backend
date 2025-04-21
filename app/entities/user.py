@@ -4,8 +4,11 @@ from typing import Optional
 
 
 @dataclass
-class PriceHistory:
-    product_id: int
-    price: float
+class User:
+    username: str
+    email: str
+    hashed_password: str
+    is_active: bool = True
     created_at: datetime = datetime.now(UTC)
+    updated_at: datetime = datetime.now(UTC)
     id: Optional[int] = None

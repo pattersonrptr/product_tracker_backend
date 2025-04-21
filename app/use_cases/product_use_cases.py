@@ -1,7 +1,7 @@
 from typing import Optional, List
 
 from app.entities.product import Product
-from app.entities.product.price_history import PriceHistory
+from app.infrastructure.database.models.price_history_model import PriceHistory
 from app.interfaces.repositories.product_repository import ProductRepositoryInterface
 from app.interfaces.repositories.price_history_repository import (
     PriceHistoryRepositoryInterface,

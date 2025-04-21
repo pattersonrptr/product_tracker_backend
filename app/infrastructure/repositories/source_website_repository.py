@@ -2,7 +2,10 @@ from typing import Optional, List
 
 from sqlalchemy.orm import Session
 
-from app.entities.product.source_website import SourceWebsite
+from app.infrastructure.database.models.source_website_model import (
+    SourceWebsite as SourceWebsiteModel,
+)
+from app.entities.product import source_website as SourceWebsiteEntity
 from app.interfaces.repositories.source_website_repository import (
     SourceWebsiteRepositoryInterface,
 )
@@ -12,32 +15,55 @@ class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, source_website: SourceWebsite) -> SourceWebsite:
+    def create(
+        self, source_website: SourceWebsiteEntity.SourceWebsite
+    ) -> SourceWebsiteEntity.SourceWebsite:
         try:
-            self.db.add(source_website)
+            db_source_website = SourceWebsiteModel(**source_website.__dict__)
+            self.db.add(db_source_website)
             self.db.commit()
-            self.db.refresh(source_website)
-            return source_website
+            self.db.refresh(db_source_website)
+            return SourceWebsiteEntity.SourceWebsite(**db_source_website.__dict__)
         except Exception as e:
             self.db.rollback()
             raise e
 
-    def get_by_id(self, source_website_id: int) -> Optional[SourceWebsite]:
-        return (
-            self.db.query(SourceWebsite)
-            .filter(SourceWebsite.id == source_website_id)
+    def get_by_id(
+        self, source_website_id: int
+    ) -> Optional[SourceWebsiteEntity.SourceWebsite]:
+        db_source_website = (
+            self.db.query(SourceWebsiteModel)
+            .filter(SourceWebsiteModel.id == source_website_id)
             .first()
         )
+        return (
+            SourceWebsiteEntity.SourceWebsite(**db_source_website.__dict__)
+            if db_source_website
+            else None
+        )
 
-    def get_by_name(self, name: str) -> Optional[SourceWebsite]:
-        return self.db.query(SourceWebsite).filter(SourceWebsite.name == name).first()
+    def get_by_name(self, name: str) -> Optional[SourceWebsiteEntity.SourceWebsite]:
+        db_source_website = (
+            self.db.query(SourceWebsiteModel)
+            .filter(SourceWebsiteModel.name == name)
+            .first()
+        )
+        return (
+            SourceWebsiteEntity.SourceWebsite(**db_source_website.__dict__)
+            if db_source_website
+            else None
+        )
 
-    def get_all(self) -> List[SourceWebsite]:
-        return self.db.query(SourceWebsite).all()
+    def get_all(self) -> List[SourceWebsiteEntity.SourceWebsite]:
+        db_source_websites = self.db.query(SourceWebsiteModel).all()
+        return [
+            SourceWebsiteEntity.SourceWebsite(**db_sw.__dict__)
+            for db_sw in db_source_websites
+        ]
 
     def update(
-        self, source_website_id: int, source_website: SourceWebsite
-    ) -> Optional[SourceWebsite]:
+        self, source_website_id: int, source_website: SourceWebsiteEntity.SourceWebsite
+    ) -> Optional[SourceWebsiteEntity.SourceWebsite]:
         db_source_website = self.get_by_id(source_website_id)
         if not db_source_website:
             return None
@@ -47,7 +73,7 @@ class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
                     setattr(db_source_website, key, value)
             self.db.commit()
             self.db.refresh(db_source_website)
-            return db_source_website
+            return SourceWebsiteEntity.SourceWebsite(**db_source_website.__dict__)
         except Exception as e:
             self.db.rollback()
             raise e

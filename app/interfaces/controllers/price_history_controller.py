@@ -1,17 +1,19 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.infrastructure.database import get_db
+from app.infrastructure.database_config import get_db
 from app.infrastructure.repositories.price_history_repository import (
     PriceHistoryRepository,
 )
 from app.use_cases.price_history_use_cases import (
     CreatePriceHistoryUseCase,
     GetPriceHistoryByProductIdUseCase,
+    CreateBulkPriceHistoryUseCase,
+    GetLatestPriceUseCase,
 )
-from app.entities.product.price_history import PriceHistory
+from app.infrastructure.database.models.price_history_model import PriceHistory
 from app.interfaces.schemas.price_history_schema import (
     PriceHistoryCreate,
     PriceHistoryRead,
@@ -29,7 +31,7 @@ def create_price_history(
     price_history: PriceHistoryCreate,
     price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
 ):
-    price_history_entity = PriceHistory(**price_history.dict())
+    price_history_entity = PriceHistory(**price_history.model_dump())
     use_case = CreatePriceHistoryUseCase(price_history_repo)
     return use_case.execute(price_history_entity)
 
@@ -42,3 +44,23 @@ def get_price_history_by_product(
     use_case = GetPriceHistoryByProductIdUseCase(price_history_repo)
     history = use_case.execute(product_id)
     return history
+
+
+@router.post("/bulk/", response_model=List[PriceHistoryRead], status_code=201)
+def create_bulk_price_history(
+    price_histories: List[PriceHistoryCreate],
+    price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
+):
+    price_history_entities = [PriceHistory(**ph.model_dump()) for ph in price_histories]
+    use_case = CreateBulkPriceHistoryUseCase(price_history_repo)
+    return use_case.execute(price_history_entities)
+
+
+@router.get("/product/{product_id}/latest", response_model=Optional[PriceHistoryRead])
+def get_latest_price(
+    product_id: int,
+    price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
+):
+    use_case = GetLatestPriceUseCase(price_history_repo)
+    latest_price = use_case.execute(product_id)
+    return latest_price

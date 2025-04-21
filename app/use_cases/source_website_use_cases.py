@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from app.entities.product.source_website import SourceWebsite
+from app.infrastructure.database.models.source_website_model import SourceWebsite
 from app.interfaces.repositories.source_website_repository import (
     SourceWebsiteRepositoryInterface,
 )

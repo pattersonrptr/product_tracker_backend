@@ -1,80 +1,23 @@
-from datetime import UTC, datetime
-from enum import Enum
-
-from sqlalchemy import (
-    Column,
-    DateTime,
-    Integer,
-    String,
-    ForeignKey,
-    Boolean,
-    JSON,
-)
-from sqlalchemy import Enum as SQLAlchemyEnum
-from sqlalchemy.orm import relationship
-
-from app.infrastructure.database import Base
+from dataclasses import dataclass
+from datetime import datetime, UTC
+from typing import Optional
 
 
-class ProductCondition(str, Enum):
-    NEW = "new"
-    USED = "used"
-    REFURBISHED = "refurbished"
-
-
-class Product(Base):
-    __tablename__ = "products"
-
-    id = Column(Integer, primary_key=True, index=True)
-    url = Column(String, unique=True, index=True)
-    title = Column(String, index=True)
-    description = Column(String)
-
-    # Product code from source website (nullable) - Example: source + '-' + the product code in website = olx-1365326779)
-    source_product_code = Column(
-        String(50),
-        index=True,
-        nullable=True,
-        comment="Unique identifier from the source website (if available)",
-    )
-
-    # Location
-    city = Column(String)
-    state = Column(String)
-
-    # Ad metadata
-    condition = Column(SQLAlchemyEnum(ProductCondition), default=ProductCondition.USED)
-    seller_name = Column(String(20))
-    is_available = Column(Boolean, default=True)
-
-    # Images (URLs separated by commas)
-    image_urls = Column(String)
-
-    # Important dates
-    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
-    updated_at = Column(
-        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
-    )
-    last_notified_at = Column(DateTime)  # For price alerts
-
-    # Improved source tracking (replaces previous 'source' field)
-    source_website_id = Column(
-        Integer,
-        ForeignKey("source_websites.id"),
-        index=True,
-        comment="Foreign key to source website configuration",
-    )
-    source_metadata = Column(
-        JSON, nullable=True, comment="Additional source-specific data in JSON format"
-    )
-
-    # Relationships
-    price_history = relationship("PriceHistory", back_populates="product")
-    source_website = relationship("SourceWebsite", back_populates="products")
-
-    # Property to get the current price from the last price history entry
-    @property
-    def current_price(self):
-        if self.price_history:
-            return self.price_history[-1].price
-        return None
+@dataclass
+class Product:
+    url: str
+    title: str
+    source_website_id: int
+    description: Optional[str] = None
+    source_product_code: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    condition: Optional[str] = None
+    seller_name: Optional[str] = None
+    is_available: bool = True
+    image_urls: Optional[str] = None
+    last_notified_at: Optional[datetime] = None
+    source_metadata: Optional[dict] = None
+    created_at: datetime = datetime.now(UTC)
+    updated_at: datetime = datetime.now(UTC)
+    id: Optional[int] = None
