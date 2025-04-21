@@ -37,18 +37,21 @@ def create_search_config(
     source_websites = []
     if search_config_in.source_websites:
         source_website_repo = SourceWebsiteRepository(use_cases.search_config_repo.db)
-        for sw_schema in search_config_in.source_websites:
-            db_sw = source_website_repo.get_by_id(sw_schema.id)
+        for sw_id in search_config_in.source_websites:
+            db_sw = source_website_repo.get_by_id(sw_id)
             if db_sw:
                 source_websites.append(db_sw)
             else:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Source website with id {sw_schema.id} not found",
+                    detail=f"Source website with id {sw_id} not found",
                 )
 
     search_config = SearchConfigEntity.SearchConfig(
-        **search_config_in.model_dump(), source_websites=source_websites
+        **search_config_in.model_dump(
+            exclude={"source_websites"}
+        ),  # Excluímos para evitar passar duas vezes
+        source_websites=source_websites,
     )
     return use_cases.create_search_config(search_config)
 
@@ -77,21 +80,22 @@ def update_search_config(
     search_config_in: SearchConfigUpdate,
     use_cases: SearchConfigUseCases = Depends(get_search_config_use_cases),
 ):
-    source_websites = []
+    source_websites_models = []
     if search_config_in.source_websites:
         source_website_repo = SourceWebsiteRepository(use_cases.search_config_repo.db)
-        for sw_schema in search_config_in.source_websites:
-            db_sw = source_website_repo.get_by_id(sw_schema.id)
+        for sw_id in search_config_in.source_websites:
+            db_sw = source_website_repo.get_by_id(sw_id)
             if db_sw:
-                source_websites.append(db_sw)
+                source_websites_models.append(db_sw)
             else:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Source website with id {sw_schema.id} not found",
+                    detail=f"Source website with id {sw_id} not found",
                 )
 
     search_config = SearchConfigEntity.SearchConfig(
-        **search_config_in.model_dump(), source_websites=source_websites
+        **search_config_in.model_dump(exclude={"source_websites"}),
+        source_websites=source_websites_models,
     )
     updated_config = use_cases.update_search_config(search_config_id, search_config)
     if not updated_config:

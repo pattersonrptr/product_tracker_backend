@@ -15,12 +15,12 @@ from app.use_cases.source_website_use_cases import (
     UpdateSourceWebsiteUseCase,
     DeleteSourceWebsiteUseCase,
 )
-from app.infrastructure.database.models.source_website_model import SourceWebsite
 from app.interfaces.schemas.source_website_schema import (
     SourceWebsiteCreate,
     SourceWebsiteRead,
     SourceWebsiteUpdate,
 )
+from app.entities.product.source_website import SourceWebsite as SourceWebsiteEntity
 
 router = APIRouter(prefix="/source_websites", tags=["source_websites"])
 
@@ -36,7 +36,7 @@ def create_source_website(
         get_source_website_repository
     ),
 ):
-    source_website_entity = SourceWebsite(**source_website.dict())
+    source_website_entity = SourceWebsiteEntity(**source_website.model_dump())
     use_case = CreateSourceWebsiteUseCase(source_website_repo)
     return use_case.execute(source_website_entity)
 

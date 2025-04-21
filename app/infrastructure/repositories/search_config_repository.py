@@ -23,17 +23,27 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
         self, search_config: SearchConfigEntity.SearchConfig
     ) -> SearchConfigEntity.SearchConfig:
         try:
-            db_search_config = SearchConfigModel(**search_config.__dict__)
+            # Crie o db_search_config sem os source_websites inicialmente
+            search_config_data = {
+                k: v
+                for k, v in search_config.model_dump().items()
+                if k != "source_websites"
+            }
+            db_search_config = SearchConfigModel(**search_config_data)
+
             # Adicionar os SourceWebsites relacionados
             if search_config.source_websites:
-                db_search_config.source_websites.extend(
-                    [
+                db_source_websites = []
+                for sw_entity in search_config.source_websites:
+                    db_sw = (
                         self.db.query(SourceWebsiteModel)
-                        .filter(SourceWebsiteModel.id == sw.id)
+                        .filter(SourceWebsiteModel.id == sw_entity.id)
                         .first()
-                        for sw in search_config.source_websites
-                    ]
-                )
+                    )
+                    if db_sw:
+                        db_source_websites.append(db_sw)
+                db_search_config.source_websites.extend(db_source_websites)
+
             self.db.add(db_search_config)
             self.db.commit()
             self.db.refresh(db_search_config)
@@ -53,11 +63,20 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
             .filter(SearchConfigModel.id == search_config_id)
             .first()
         )
-        return (
-            SearchConfigEntity.SearchConfig(**db_search_config.__dict__)
-            if db_search_config
-            else None
-        )
+        if db_search_config:
+            source_websites_entities = [
+                SourceWebsiteEntity.SourceWebsite(**sw.__dict__)
+                for sw in db_search_config.source_websites
+            ]
+            return SearchConfigEntity.SearchConfig(
+                **{
+                    k: v
+                    for k, v in db_search_config.__dict__.items()
+                    if k not in ["_sa_instance_state", "source_websites"]
+                },
+                source_websites=source_websites_entities,
+            )
+        return None
 
     def get_all(self) -> List[SearchConfigEntity.SearchConfig]:
         db_search_configs = (
@@ -67,19 +86,35 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
             .options(joinedload(SearchConfigModel.search_execution_logs))
             .all()
         )
-        return [
-            SearchConfigEntity.SearchConfig(**db_sc.__dict__)
-            for db_sc in db_search_configs
-        ]
+        search_configs = []
+        for db_sc in db_search_configs:
+            source_websites_entities = [
+                SourceWebsiteEntity.SourceWebsite(**sw.__dict__)
+                for sw in db_sc.source_websites
+            ]
+            search_config_entity = SearchConfigEntity.SearchConfig(
+                **{
+                    k: v
+                    for k, v in db_sc.__dict__.items()
+                    if k not in ["_sa_instance_state", "source_websites"]
+                },
+                source_websites=source_websites_entities,
+            )
+            search_configs.append(search_config_entity)
+        return search_configs
 
     def update(
         self, search_config_id: int, search_config: SearchConfigEntity.SearchConfig
     ) -> Optional[SearchConfigEntity.SearchConfig]:
-        db_search_config = self.get_by_id(search_config_id)
+        db_search_config = (
+            self.db.query(SearchConfigModel)
+            .filter(SearchConfigModel.id == search_config_id)
+            .first()
+        )
         if not db_search_config:
             return None
         try:
-            for key, value in search_config.__dict__.items():
+            for key, value in search_config.model_dump().items():
                 if key not in [
                     "id",
                     "user",
@@ -88,13 +123,12 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
                 ]:
                     setattr(db_search_config, key, value)
 
-            # Atualizar os SourceWebsites relacionados
             db_search_config.source_websites.clear()
             if search_config.source_websites:
-                for sw in search_config.source_websites:
+                for sw_entity in search_config.source_websites:
                     db_sw = (
                         self.db.query(SourceWebsiteModel)
-                        .filter(SourceWebsiteModel.id == sw.id)
+                        .filter(SourceWebsiteModel.id == sw_entity.id)
                         .first()
                     )
                     if db_sw:
@@ -102,13 +136,17 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
 
             self.db.commit()
             self.db.refresh(db_search_config)
-            return SearchConfigEntity.SearchConfig(**db_search_config.__dict__)
+            return self.get_by_id(search_config_id)
         except Exception as e:
             self.db.rollback()
             raise e
 
     def delete(self, search_config_id: int) -> bool:
-        db_search_config = self.get_by_id(search_config_id)
+        db_search_config = (
+            self.db.query(SearchConfigModel)
+            .filter(SearchConfigModel.id == search_config_id)
+            .first()
+        )
         if not db_search_config:
             return False
         try:
@@ -128,10 +166,22 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
             .filter(SearchConfigModel.user_id == user_id)
             .all()
         )
-        return [
-            SearchConfigEntity.SearchConfig(**db_sc.__dict__)
-            for db_sc in db_search_configs
-        ]
+        search_configs = []
+        for db_sc in db_search_configs:
+            source_websites_entities = [
+                SourceWebsiteEntity.SourceWebsite(**sw.__dict__)
+                for sw in db_sc.source_websites
+            ]
+            search_config_entity = SearchConfigEntity.SearchConfig(
+                **{
+                    k: v
+                    for k, v in db_sc.__dict__.items()
+                    if k not in ["_sa_instance_state", "source_websites"]
+                },
+                source_websites=source_websites_entities,
+            )
+            search_configs.append(search_config_entity)
+        return search_configs
 
     def get_by_source_website(
         self, source_website: SourceWebsiteEntity.SourceWebsite
@@ -144,7 +194,19 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
             .filter(SourceWebsiteModel.id == source_website.id)
             .all()
         )
-        return [
-            SearchConfigEntity.SearchConfig(**db_sc.__dict__)
-            for db_sc in db_search_configs
-        ]
+        search_configs = []
+        for db_sc in db_search_configs:
+            source_websites_entities = [
+                SourceWebsiteEntity.SourceWebsite(**sw.__dict__)
+                for sw in db_sc.source_websites
+            ]
+            search_config_entity = SearchConfigEntity.SearchConfig(
+                **{
+                    k: v
+                    for k, v in db_sc.__dict__.items()
+                    if k not in ["_sa_instance_state", "source_websites"]
+                },
+                source_websites=source_websites_entities,
+            )
+            search_configs.append(search_config_entity)
+        return search_configs

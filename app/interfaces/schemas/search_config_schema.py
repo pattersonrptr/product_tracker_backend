@@ -14,16 +14,20 @@ class SearchConfigBase(BaseModel):
     frequency_days: int = 1
     preferred_time: time = time(0, 0)
     search_metadata: Optional[dict] = None
-    source_websites: Optional[List[SourceWebsiteSchema]] = None
+    source_websites: Optional[List[SourceWebsiteSchema]] = (
+        None  # Agora esperamos uma lista de SourceWebsiteSchema
+    )
     user_id: Optional[int] = None
 
 
 class SearchConfigCreate(SearchConfigBase):
-    pass
+    source_websites: Optional[List[int]] = None  # Para receber IDs na criação
 
 
 class SearchConfigUpdate(SearchConfigBase):
-    pass
+    source_websites: Optional[List[int]] = (
+        None  # Manter como lista de IDs para atualização
+    )
 
 
 class SearchConfigInDBBase(SearchConfigBase):
@@ -34,7 +38,9 @@ class SearchConfigInDBBase(SearchConfigBase):
 
 
 class SearchConfig(SearchConfigInDBBase):
-    pass
+    source_websites: Optional[List[SourceWebsiteSchema]] = (
+        None  # Garante que o schema final também use SourceWebsiteSchema
+    )
 
 
 class SearchConfigSearchResults(BaseModel):

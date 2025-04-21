@@ -18,6 +18,7 @@ from app.interfaces.schemas.price_history_schema import (
     PriceHistoryCreate,
     PriceHistoryRead,
 )
+from app.entities.product.price_history import PriceHistory as PriceHistoryEntity
 
 router = APIRouter(prefix="/price_history", tags=["price_history"])
 
@@ -31,7 +32,7 @@ def create_price_history(
     price_history: PriceHistoryCreate,
     price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
 ):
-    price_history_entity = PriceHistory(**price_history.model_dump())
+    price_history_entity = PriceHistoryEntity(**price_history.model_dump())
     use_case = CreatePriceHistoryUseCase(price_history_repo)
     return use_case.execute(price_history_entity)
 

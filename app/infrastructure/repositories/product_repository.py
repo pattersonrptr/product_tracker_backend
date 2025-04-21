@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 from typing import Optional, List
 
 from sqlalchemy import func
@@ -6,12 +5,16 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.infrastructure.database.models.product_model import (
     Product as ProductModel,
-)  # Importe o model SQLAlchemy
+)
 from app.infrastructure.database.models.price_history_model import (
     PriceHistory as PriceHistoryModel,
 )
-from app.entities.product import product as ProductEntity  # Importe a entidade pura
+from app.entities.product import product as ProductEntity
 from app.interfaces.repositories.product_repository import ProductRepositoryInterface
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 class ProductRepository(ProductRepositoryInterface):
@@ -19,6 +22,8 @@ class ProductRepository(ProductRepositoryInterface):
         self.db = db
 
     def create(self, product: ProductEntity.Product) -> ProductEntity.Product:
+        logging.info(f"Tipo da variável 'product' no repository: {type(product)}")
+        logging.info(f"Conteúdo da variável 'product' no repository: {product}")
         try:
             db_product = ProductModel(
                 **product.__dict__
@@ -68,19 +73,34 @@ class ProductRepository(ProductRepositoryInterface):
     def update(
         self, product_id: int, product: ProductEntity.Product
     ) -> Optional[ProductEntity.Product]:
-        db_product = self.get_by_id(product_id)
-        if not db_product:
-            return None
         try:
-            for key, value in product.__dict__.items():
-                if key not in ["id", "created_at"]:
-                    setattr(db_product, key, value)
-            db_product.updated_at = datetime.now(UTC)
-            self.db.commit()
-            self.db.refresh(db_product)
-            return ProductEntity.Product(
-                **db_product.__dict__
-            )  # Converta para entidade
+            db_product = (
+                self.db.query(ProductModel)
+                .filter(ProductModel.id == product_id)
+                .first()
+            )
+            if db_product:
+                logging.info(
+                    f"Tipo de db_product ANTES da atualização: {type(db_product)}"
+                )
+                logging.info(
+                    f"Conteúdo de db_product ANTES da atualização: {db_product.__dict__}"
+                )
+                for key, value in product.__dict__.items():
+                    if hasattr(db_product, key):
+                        setattr(db_product, key, value)
+                self.db.commit()
+                logging.info(f"Tipo de db_product ANTES do refresh: {type(db_product)}")
+                logging.info(
+                    f"Conteúdo de db_product ANTES do refresh: {db_product.__dict__}"
+                )
+                self.db.refresh(db_product)
+                logging.info(f"Tipo de db_product APÓS o refresh: {type(db_product)}")
+                logging.info(
+                    f"Conteúdo de db_product APÓS o refresh: {db_product.__dict__}"
+                )
+                return ProductEntity.Product(**db_product.__dict__)
+            return None
         except Exception as e:
             self.db.rollback()
             raise e

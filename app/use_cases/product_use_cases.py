@@ -1,12 +1,17 @@
 from typing import Optional, List
 
 from app.entities.product import Product
-from app.infrastructure.database.models.price_history_model import PriceHistory
+from app.entities.product.price_history import PriceHistory as PriceHistoryEntity
 from app.interfaces.repositories.product_repository import ProductRepositoryInterface
 from app.interfaces.repositories.price_history_repository import (
     PriceHistoryRepositoryInterface,
 )
 from app.interfaces.schemas.product_schema import ProductUpdate
+from app.entities.product import product as ProductEntity
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 class CreateProductUseCase:
@@ -18,10 +23,14 @@ class CreateProductUseCase:
         self.product_repository = product_repository
         self.price_history_repository = price_history_repository
 
-    def execute(self, product: Product, initial_price: float):
+    def execute(self, product: ProductEntity.Product, initial_price: float):
+        logging.info(f"Tipo da variável 'product' no use case: {type(product)}")
+        logging.info(
+            f"Conteúdo da variável 'product' no use case: {product.__dict__ if hasattr(product, '__dict__') else product}"
+        )
         created_product = self.product_repository.create(product)
         if created_product is not None and initial_price is not None:
-            price_history_entry = PriceHistory(
+            price_history_entry = PriceHistoryEntity(
                 product_id=created_product.id, price=initial_price
             )
             self.price_history_repository.create(price_history_entry)
@@ -80,7 +89,7 @@ class UpdateProductUseCase:
         updated_product = self.product_repository.update(product_id, existing_product)
 
         if updated_product is not None and new_price is not None:
-            price_history_entry = PriceHistory(
+            price_history_entry = PriceHistoryEntity(
                 product_id=updated_product.id, price=new_price
             )
             self.price_history_repository.create(price_history_entry)

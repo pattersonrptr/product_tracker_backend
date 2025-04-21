@@ -22,13 +22,17 @@ from app.use_cases.product_use_cases import (
     GetProductStatsUseCase,
     GetMinimalProductsUseCase,
 )
-from app.entities.product import Product
 from app.interfaces.schemas.product_schema import (
     ProductCreate,
     ProductRead,
     ProductUpdate,
     ProductMinimal,
 )
+from app.entities.product.product import Product as ProductEntity
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -48,7 +52,13 @@ def create_product(
     product_repo: ProductRepository = Depends(get_product_repository),
     price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
 ):
-    product_entity = Product(**product_in.model_dump(exclude={"price"}))
+    product_entity = ProductEntity(**product_in.model_dump(exclude={"price"}))
+    logging.info(
+        f"Tipo da variável 'product_entity' no controller: {type(product_entity)}"
+    )
+    logging.info(
+        f"Conteúdo da variável 'product_entity' no controller: {product_entity.__dict__}"
+    )
     use_case = CreateProductUseCase(product_repo, price_history_repo)
     created_product = use_case.execute(product_entity, product_in.price)
     return created_product

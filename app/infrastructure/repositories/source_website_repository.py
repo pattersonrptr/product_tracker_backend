@@ -10,6 +10,10 @@ from app.interfaces.repositories.source_website_repository import (
     SourceWebsiteRepositoryInterface,
 )
 
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 
 class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
     def __init__(self, db: Session):
@@ -18,15 +22,17 @@ class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
     def create(
         self, source_website: SourceWebsiteEntity.SourceWebsite
     ) -> SourceWebsiteEntity.SourceWebsite:
-        try:
-            db_source_website = SourceWebsiteModel(**source_website.__dict__)
-            self.db.add(db_source_website)
-            self.db.commit()
-            self.db.refresh(db_source_website)
-            return SourceWebsiteEntity.SourceWebsite(**db_source_website.__dict__)
-        except Exception as e:
-            self.db.rollback()
-            raise e
+        logging.info(
+            f"Tipo da variável 'source_website' no repository: {type(source_website)}"
+        )
+        logging.info(
+            f"Conteúdo da variável 'source_website' no repository: {source_website}"
+        )
+        db_source_website = SourceWebsiteModel(**source_website.model_dump())
+        self.db.add(db_source_website)
+        self.db.commit()
+        self.db.refresh(db_source_website)
+        return SourceWebsiteEntity.SourceWebsite(**db_source_website.__dict__)
 
     def get_by_id(
         self, source_website_id: int
@@ -64,26 +70,35 @@ class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
     def update(
         self, source_website_id: int, source_website: SourceWebsiteEntity.SourceWebsite
     ) -> Optional[SourceWebsiteEntity.SourceWebsite]:
-        db_source_website = self.get_by_id(source_website_id)
-        if not db_source_website:
+        db_source_website_model = (
+            self.db.query(SourceWebsiteModel)
+            .filter(SourceWebsiteModel.id == source_website_id)
+            .first()
+        )
+        if not db_source_website_model:
             return None
         try:
-            for key, value in source_website.__dict__.items():
-                if key != "id":
-                    setattr(db_source_website, key, value)
+            for key, value in source_website.model_dump(
+                exclude_unset=True
+            ).items():  # Use model_dump aqui
+                setattr(db_source_website_model, key, value)
             self.db.commit()
-            self.db.refresh(db_source_website)
-            return SourceWebsiteEntity.SourceWebsite(**db_source_website.__dict__)
+            self.db.refresh(db_source_website_model)
+            return SourceWebsiteEntity.SourceWebsite(**db_source_website_model.__dict__)
         except Exception as e:
             self.db.rollback()
             raise e
 
     def delete(self, source_website_id: int) -> bool:
-        db_source_website = self.get_by_id(source_website_id)
-        if not db_source_website:
+        db_source_website_model = (
+            self.db.query(SourceWebsiteModel)
+            .filter(SourceWebsiteModel.id == source_website_id)
+            .first()
+        )
+        if not db_source_website_model:
             return False
         try:
-            self.db.delete(db_source_website)
+            self.db.delete(db_source_website_model)
             self.db.commit()
             return True
         except Exception as e:

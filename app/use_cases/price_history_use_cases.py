@@ -1,9 +1,9 @@
 from typing import List, Optional
 
-from app.infrastructure.database.models.price_history_model import PriceHistory
 from app.interfaces.repositories.price_history_repository import (
     PriceHistoryRepositoryInterface,
 )
+from app.entities.product.price_history import PriceHistory
 
 
 class CreatePriceHistoryUseCase:
