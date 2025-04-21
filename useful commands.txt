@@ -4,7 +4,7 @@ docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_sea
 docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_update --args '["olx"]'
 docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_update --args '["enjoei"]'
 
-alembic revision --autogenerate -m "migration" && alembic upgrade head
+alembic revision --autogenerate -m "First Migration" && alembic upgrade head
 
 psql -U user -d price_monitor
 
