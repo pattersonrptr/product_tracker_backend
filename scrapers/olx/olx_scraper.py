@@ -76,6 +76,7 @@ class OLXScraper(ScraperInterface):
         soup = BeautifulSoup(html, "html.parser")
         json_data = self._extract_json_data(soup)
 
+        # TODO: find cleaner way to extract this data
         title = json_data.get("subject")
         description = json_data.get("body")
         source_product_code = f"OLX - {json_data.get('listId')}"
