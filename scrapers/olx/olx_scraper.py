@@ -113,7 +113,6 @@ class OLXScraper(ScraperInterface):
 
     def update_data(self, product: Dict[str, Any]) -> Dict[str, Any]:
         data = self.scrape_data(product["url"])
-
         if "id" in product:
             data["id"] = product["id"]
         return data
