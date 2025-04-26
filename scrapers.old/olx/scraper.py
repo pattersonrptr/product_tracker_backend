@@ -6,7 +6,7 @@ from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
 from cloudscraper import requests
 
-from scrapers.base.scraper import Scraper
+from product_scrapers.interfaces.scraper_interface import Scraper
 
 
 class OLXScraper(Scraper):

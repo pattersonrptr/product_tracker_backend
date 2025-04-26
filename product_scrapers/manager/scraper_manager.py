@@ -1,19 +1,52 @@
+# Exemplo de como chamar a task:
+# ScraperManager.run_full_scraper_task.delay("notebook", "mercado_livre")
+
+
+# from product_scrapers.interfaces.scraper_interface import ScraperInterface
+#
+#
+# class ScraperManager:
+#     def __init__(self, scraper: ScraperInterface):
+#         """
+#         Usage example:
+#             scraper = ScraperFactory.create_scraper("olx")
+#
+#             # Manager usa a interface, não importa o tipo específico
+#             manager = ScraperManager(scraper)
+#             result = manager.run_scraper()
+#         """
+#         self.scraper = scraper
+#
+#     def run_scraper(self):
+#         print("🔍 Buscando links...")
+#         links = self.scraper.search("search term")
+#
+#         print("🧠 Realizando scraping...")
+#         scraped = self.scraper.scrape_data("")
+#
+#         print("🔄 Atualizando resultado...")
+#         result = self.scraper.update_data({"links": links})
+#
+#         return result
+
+
 import os
 from datetime import datetime, timedelta
 
 from celery import Celery, group, chord
 from celery.schedules import crontab
-
-# TODO: Scrapers não deve depender de app - deve ser um projeto separado
-from app.models import SearchConfig
-from app.database import SessionLocal
-from product_scrapers.product_api_client import ProductApiClient
-from product_scrapers.scraper_manager import ScraperManager
+#
+# # TODO: Scrapers não deve depender de app - deve ser um projeto separado
+# from app.models import SearchConfig
+# from app.database import SessionLocal
+# from product_scrapers.product_api_client import ProductApiClient
+# from product_scrapers.scraper_manager import ScraperManager
 
 broker_url = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
 app = Celery(main="product_scrapers", broker=broker_url, backend="redis://redis:6379/0")
 
 
+# TODO: jogar isso na API client
 def get_active_searches():
     db = SessionLocal()
     try:
@@ -116,55 +149,3 @@ def update_products(results):
     updated = api_cli.update_product_list(successful)
 
     return {"status": "success", "updated_count": updated}
-
-
-# TODO: Uncomment this function to enable dynamic scheduling - Obs: needs somes fixes
-# def get_dynamic_schedule():
-#     from app.database import SessionLocal
-#     db = SessionLocal()
-#     try:
-#         schedules = {}
-#         searches = db.query(SearchConfig).filter(SearchConfig.is_active == True).all()
-#
-#         for idx, search in enumerate(searches):
-#             schedules[f"run_search_{search.id}"] = {
-#                 "task": "product_scrapers.tasks.run_scraper_searches",
-#                 "schedule": crontab(
-#                     hour=search.preferred_time.hour,
-#                     minute=search.preferred_time.minute,
-#                     day_of_week=f'*/{search.frequency_days}'
-#                 ),
-#                 "args": (search.source_websites),
-#             }
-#         return schedules
-#     finally:
-#         db.close()
-#
-#
-# app.conf.beat_schedule = get_dynamic_schedule()
-
-# TODO: Check erro in Celery Beat Container - see the logs
-app.conf.beat_schedule = {
-    "run_olx_searches_daily": {
-        "task": "product_scrapers.tasks.run_scraper_searches",
-        "schedule": crontab(hour="00", minute="00"),
-        "args": ("olx",),
-    },
-    "run_enjoei_searches_daily": {
-        "task": "product_scrapers.tasks.run_scraper_searches",
-        "schedule": crontab(hour="01", minute="00"),
-        "args": ("enjoei",),
-    },
-    "run_olx_scraper_update_daily": {
-        "task": "product_scrapers.tasks.run_scraper_update",
-        "schedule": crontab(hour="02", minute="00"),
-        "args": ("olx",),
-    },
-    "run_enjoei_scraper_update_daily": {
-        "task": "product_scrapers.tasks.run_scraper_update",
-        "schedule": crontab(hour="03", minute="00"),
-        "args": ("enjoei",),
-    },
-}
-
-app.conf.timezone = "America/Sao_Paulo"

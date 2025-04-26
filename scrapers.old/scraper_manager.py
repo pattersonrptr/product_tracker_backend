@@ -1,10 +1,10 @@
 from itertools import islice
 
-from scrapers.base.scraper import Scraper
-from scrapers.enjoei.scraper import EnjoeiScraper
-from scrapers.estante_virtual.scraper import EstanteVirtualScraper
-from scrapers.mercado_livre.scraper import MercadoLivreScraper
-from scrapers.olx.scraper import OLXScraper
+from product_scrapers.interfaces.scraper_interface import Scraper
+from product_scrapers.enjoei.scraper import EnjoeiScraper
+from product_scrapers.estante_virtual.scraper import EstanteVirtualScraper
+from product_scrapers.mercado_livre.scraper import MercadoLivreScraper
+from product_scrapers.olx.scraper import OLXScraper
 
 
 class ScraperManager:

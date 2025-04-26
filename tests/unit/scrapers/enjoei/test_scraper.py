@@ -2,7 +2,7 @@ import unittest
 import requests
 
 from unittest.mock import MagicMock, patch
-from scrapers.enjoei.scraper import Scraper
+from product_scrapers.enjoei.scraper import Scraper
 
 
 class TestScraper(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestScraper(unittest.TestCase):
         self.mock_response.status_code = 200
         self.mock_response.json.return_value = {"data": "mock_data"}
 
-    @patch("scrapers.enjoei.scraper.cloudscraper.create_scraper")
+    @patch("product_scrapers.enjoei.scraper.cloudscraper.create_scraper")
     def test_init(self, mock_scraper):
         scraper = Scraper()
         self.assertEqual(scraper.BASE_URL, "https://enjusearch.enjoei.com.br")
@@ -32,7 +32,7 @@ class TestScraper(unittest.TestCase):
             scraper = Scraper()
             self.assertEqual(scraper.api_url, "http://env-api:5000")
 
-    @patch("scrapers.enjoei.scraper.cloudscraper.create_scraper")
+    @patch("product_scrapers.enjoei.scraper.cloudscraper.create_scraper")
     def test_init_headers_and_timeouts(self, mock_create_scraper):
         mock_session = MagicMock()
         mock_create_scraper.return_value = mock_session
@@ -47,7 +47,7 @@ class TestScraper(unittest.TestCase):
 
         mock_session.headers.update.assert_called_once_with(scraper.headers)
 
-    @patch("scrapers.enjoei.scraper.cloudscraper.create_scraper")
+    @patch("product_scrapers.enjoei.scraper.cloudscraper.create_scraper")
     def test_search_basic(self, mock_create_scraper):
         mock_session = MagicMock()
         mock_create_scraper.return_value = mock_session
@@ -78,7 +78,7 @@ class TestScraper(unittest.TestCase):
 
         self.assertEqual(response, self.mock_response)
 
-    @patch("scrapers.enjoei.scraper.cloudscraper.create_scraper")
+    @patch("product_scrapers.enjoei.scraper.cloudscraper.create_scraper")
     def test_search_with_after_param(self, mock_create_scraper):
         mock_session = MagicMock()
         mock_create_scraper.return_value = mock_session
@@ -109,7 +109,7 @@ class TestScraper(unittest.TestCase):
             },
         )
 
-    @patch("scrapers.enjoei.scraper.cloudscraper.create_scraper")
+    @patch("product_scrapers.enjoei.scraper.cloudscraper.create_scraper")
     def test_search_connection_error(self, mock_create_scraper):
         mock_session = MagicMock()
         mock_create_scraper.return_value = mock_session
@@ -170,7 +170,7 @@ class TestScraper(unittest.TestCase):
         self.assertEqual(urls, [])
         self.assertIsNone(cursor)
 
-    @patch("scrapers.enjoei.scraper.cloudscraper.create_scraper")
+    @patch("product_scrapers.enjoei.scraper.cloudscraper.create_scraper")
     def test_get_product_data(self, mock_create_scraper):
         mock_session = MagicMock()
         mock_create_scraper.return_value = mock_session
