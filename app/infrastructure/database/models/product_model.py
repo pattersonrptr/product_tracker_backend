@@ -43,7 +43,9 @@ class Product(Base):
     state = Column(String)
 
     # Ad metadata
-    condition = Column(SQLAlchemyEnum(ProductCondition), default=ProductCondition.USED)
+    condition = Column(
+        SQLAlchemyEnum(ProductCondition), default=ProductCondition.USED
+    )  # TODO: maybe it's better to be nullable
     seller_name = Column(String(20))
     is_available = Column(Boolean, default=True)
 

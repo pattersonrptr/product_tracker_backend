@@ -3,11 +3,13 @@ import json
 
 from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
-from product_scrapers.interfaces.scraper_interface import ScraperInterface
-from typing import Optional, Dict, List, Any
+from typing import Dict, List, Any
 
-from product_scrapers.base.requests_scraper import RequestScraper
-from product_scrapers.mixins.rotating_user_agent_mixin import RotatingUserAgentMixin
+from product_scrapers.scrapers.base.requests_scraper import RequestScraper
+from product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
+from product_scrapers.scrapers.mixins.rotating_user_agent_mixin import (
+    RotatingUserAgentMixin,
+)
 
 
 class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
@@ -68,29 +70,32 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
         city = json_data.get("location", {}).get("municipality")
         state = json_data.get("location", {}).get("uf")
 
-        condition: Optional[str] = next(
-            (
-                prop["value"]
-                for prop in json_data.get("properties", [])
-                if prop["name"] == "hobbies_condition"
-            ),
-            None,
-        )
+        # TODO: find cleaner way to extract this data
+        # condition: Optional[str] = next(
+        #     (
+        #         prop["value"]
+        #         for prop in json_data.get("properties", [])
+        #         if prop["name"] == "hobbies_condition"
+        #     ),
+        #     None,
+        # )
 
         return {
             "url": url,
             "title": title,
             "description": description,
-            "price": price,
-            "image_urls": image_url,
             "source_product_code": source_product_code,
-            "seller_name": seller_name,
             "city": city,
             "state": state,
-            "condition": condition,
-            # TODO: the scraper do not need to know its id in the database. But scrapers_manager.py needs to know it!
-            # "source_website_id": 1,
-            "source_metadata": json_data.get("properties"),
+            # "condition": condition,
+            "seller_name": seller_name,
+            "is_available": True,  # TODO: check if the product is available.
+            "image_urls": image_url,
+            # "last_notified_at": None, # TODO: remove this field from here, Model and Schema.
+            # TODO: the scraper do not need to know its id in the database. Remove this field.
+            "source_website_id": 1,
+            "source_metadata": {},
+            "price": price.replace("R$", "").replace(".", "").replace(",", ".").strip(),
         }
 
     def update_data(self, product: Dict[str, Any]) -> Dict[str, Any]:
@@ -100,7 +105,7 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
         return data
 
     def _build_search_url(self, search_term: str, page_number: int = 1) -> str:
-        encoded_search = quote_plus(search_term)
+        encoded_search = quote_plus(search_term.encode("utf-8"))
         return f"{self.BASE_URL}?q={encoded_search}&o={page_number}"
 
     def _extract_links(self, html_content: str) -> List[str]:

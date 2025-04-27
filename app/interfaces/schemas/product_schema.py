@@ -20,8 +20,9 @@ class ProductBase(BaseModel):
     )
     city: str = Field(..., description="Cidade do produto")
     state: str = Field(..., description="Estado do produto")
-    condition: ProductCondition = Field(
-        ProductCondition.USED, description="Condição do produto"
+    condition: Optional[ProductCondition] = Field(
+        ProductCondition.USED,
+        description="Condição do produto",  # TODO: maybe it's better to be nullable
     )
     seller_name: Optional[str] = Field(None, description="Nome do vendedor")
     is_available: bool = Field(True, description="Disponibilidade do produto")

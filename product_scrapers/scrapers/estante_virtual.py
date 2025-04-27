@@ -3,10 +3,10 @@ import cloudscraper
 
 from bs4 import BeautifulSoup
 
-from product_scrapers.interfaces.scraper_interface import Scraper
+from product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
 
 
-class EstanteVirtualScraper(Scraper):
+class EstanteVirtualScraper(ScraperInterface):
     def __init__(self):
         self.BASE_URL = "https://www.estantevirtual.com.br"
 

@@ -3,7 +3,7 @@ import cloudscraper
 
 from bs4 import BeautifulSoup
 
-from product_scrapers.interfaces.scraper_interface import Scraper
+from product_scrapers.scrapers.interfaces import Scraper
 
 
 class EstanteVirtualScraper(Scraper):

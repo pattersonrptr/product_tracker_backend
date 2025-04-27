@@ -93,9 +93,29 @@ def get_fixtures():
                 "created_at": datetime(2023, 10, 16, 11, 30, 0, tzinfo=timezone.utc),
             },
         ],
+        "users": [
+            {
+                "id": 1,
+                "username": "admin",
+                "email": "admin@example.com",
+                "hashed_password": "$2b$12$...",
+                "is_active": True,
+                "created_at": datetime(2023, 10, 10, 9, 0, 0, tzinfo=timezone.utc),
+                "updated_at": datetime(2023, 10, 10, 9, 0, 0, tzinfo=timezone.utc),
+            },
+            {
+                "id": 2,
+                "username": "user1",
+                "email": "user1@example.com",
+                "hashed_password": "$2b$12$...",
+                "is_active": True,
+                "created_at": datetime(2023, 10, 11, 10, 30, 0, tzinfo=timezone.utc),
+                "updated_at": datetime(2023, 10, 11, 10, 30, 0, tzinfo=timezone.utc),
+            },
+        ],
         "search_configs": [
             {
-                "id": 1,  # Adicionado o ID
+                "id": 1,
                 "search_term": "iphone 13",
                 "is_active": True,
                 "frequency_days": 1,
@@ -106,15 +126,17 @@ def get_fixtures():
                     "condition": "used",
                 },
                 "source_website_ids": [1, 2],
+                "user_id": 1,
             },
             {
-                "id": 2,  # Adicionado o ID
+                "id": 2,
                 "search_term": "câmera sony",
                 "is_active": True,
                 "frequency_days": 3,
                 "preferred_time": time(14, 30),
                 "search_metadata": {"category": "eletrônicos", "warranty": True},
                 "source_website_ids": [2],
+                "user_id": 2,
             },
         ],
     }

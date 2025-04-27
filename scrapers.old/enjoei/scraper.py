@@ -3,7 +3,7 @@ import cloudscraper
 from requests import Response
 from cloudscraper import requests
 
-from product_scrapers.interfaces.scraper_interface import Scraper
+from product_scrapers.scrapers.interfaces import Scraper
 
 
 class EnjoeiScraper(Scraper):

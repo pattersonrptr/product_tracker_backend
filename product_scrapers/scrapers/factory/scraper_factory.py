@@ -1,19 +1,8 @@
-from product_scrapers.interfaces.scraper_interface import ScraperInterface
+from product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
 from product_scrapers.scrapers.enjoei import EnjoeiScraper
 from product_scrapers.scrapers.estante_virtual import EstanteVirtualScraper
 from product_scrapers.scrapers.mercado_livre import MercadoLivreScraper
 from product_scrapers.scrapers.olx import OLXScraper
-
-
-_registry = {}
-
-
-def register_scraper(name):
-    def decorator(cls):
-        _registry[name] = cls
-        return cls
-
-    return decorator
 
 
 class ScraperFactory:

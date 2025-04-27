@@ -1,8 +1,10 @@
-docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_searches --args '["olx"]'
-docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_searches --args '["enjoei"]'
+# docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_searches --args '["olx"]'
+# docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_searches --args '["enjoei"]'
 
-docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_update --args '["olx"]'
-docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_update --args '["enjoei"]'
+# docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_update --args '["olx"]'
+# docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_update --args '["enjoei"]'
+
+docker exec -it web celery -A product_scrapers.celery.tasks call run_scraper_searches --args '["olx"]'
 
 alembic revision --autogenerate -m "First Migration" && alembic upgrade head
 

@@ -3,10 +3,10 @@ import cloudscraper
 from requests import Response
 from cloudscraper import requests
 
-from product_scrapers.interfaces.scraper_interface import Scraper
+from product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
 
 
-class EnjoeiScraper(Scraper):
+class EnjoeiScraper(ScraperInterface):
     def __init__(self):
         self.BASE_URL = "https://enjusearch.enjoei.com.br"
         self.session = cloudscraper.create_scraper()

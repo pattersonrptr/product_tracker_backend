@@ -3,10 +3,10 @@ import cloudscraper
 from bs4 import BeautifulSoup
 from cloudscraper import requests
 
-from product_scrapers.interfaces.scraper_interface import Scraper
+from product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
 
 
-class MercadoLivreScraper(Scraper):
+class MercadoLivreScraper(ScraperInterface):
     def __init__(self):
         self.BASE_URL = "https://lista.mercadolivre.com.br"
 

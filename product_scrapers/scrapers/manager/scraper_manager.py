@@ -1,27 +1,14 @@
+# TODO: Use logging instead of simple prints.
+# TODO: Better decouple the logging logic, maybe having a logger class.
+
 from itertools import islice
 
-from product_scrapers.scrapers.interfaces import Scraper
-from product_scrapers.enjoei.scraper import EnjoeiScraper
-from product_scrapers.estante_virtual.scraper import EstanteVirtualScraper
-from product_scrapers.mercado_livre.scraper import MercadoLivreScraper
-from product_scrapers.olx.scraper import OLXScraper
+from product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
 
 
 class ScraperManager:
-    def __init__(self, scraper_name: str):
-        self.valid_scrapers = {
-            "olx": OLXScraper,
-            "enjoei": EnjoeiScraper,
-            "mercado_livre": MercadoLivreScraper,
-            "estante_virtual": EstanteVirtualScraper,
-        }
-        self.scraper = self.get_scraper(scraper_name)
-
-    def get_scraper(self, scraper_name: str) -> Scraper:
-        if scraper_name not in self.valid_scrapers:
-            raise ValueError(f"Unknown scraper: {scraper_name}")
-
-        return self.valid_scrapers[scraper_name]()
+    def __init__(self, scraper: ScraperInterface):
+        self.scraper = scraper
 
     def get_products_urls(self, search):
         print(f"🔎 Searching term: {search} with {self.scraper}")
@@ -29,22 +16,20 @@ class ScraperManager:
 
     def scrape_product(self, url):
         print(f"🛒 Get products data for {url} with {self.scraper}")
-
         return self.scraper.scrape_data(url)
 
     def update_product(self, product: dict):
         print(f"🔄 Updating product for URL: {product['url']}")
-
         product_data = self.scraper.update_data(product)
         return product_data
 
     @staticmethod
     def get_urls_to_update(existing_urls, urls):
-        new_urls = list(set(urls) - existing_urls)
+        new_urls = list(set(urls) - set(existing_urls))
 
         print(f"➡ New: {len(new_urls)}")
         print(f"➡ Existing: {len(existing_urls)}")
-        print(f"➡ Found {len(list(urls))} URLs, {len(new_urls)} are new")
+        print(f"➡ Found {len(urls)} URLs, {len(new_urls)} are new")
 
         return new_urls
 
