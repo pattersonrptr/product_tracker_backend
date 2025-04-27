@@ -1,3 +1,4 @@
+from datetime import datetime, UTC
 from typing import Optional, List
 
 from sqlalchemy import func
@@ -94,6 +95,9 @@ class ProductRepository(ProductRepositoryInterface):
                 for key, value in product.__dict__.items():
                     if hasattr(db_product, key) and key != "current_price":
                         setattr(db_product, key, value)
+                db_product.updated_at = datetime.now(UTC)
+                print("PRODUCT ID", product.id)
+                print("PRODUCT ID", db_product.updated_at)
                 self.db.commit()
                 self.db.refresh(db_product)
 

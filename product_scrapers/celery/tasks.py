@@ -27,7 +27,7 @@ def run_search(search: str, scraper_name: str):
     scraper = ScraperManager(ScraperFactory().create_scraper(scraper_name))
     existing_urls = ApiClient().get_existing_product_urls(scraper_name)
     # TODO: By using list here it makes useless the generator in get_products_urls. Maybe it's better to make the
-    #  scraper.search() method return also the leght of the urls list.
+    #  scraper.search() method return also the length of the urls list.
     urls = list(scraper.get_products_urls(search))
     new_urls = scraper.get_urls_to_update(existing_urls, urls)
 
