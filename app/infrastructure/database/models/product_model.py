@@ -20,6 +20,7 @@ class ProductCondition(str, Enum):
     NEW = "new"
     USED = "used"
     REFURBISHED = "refurbished"
+    UNDETERMINED = "undetermined"
 
 
 class Product(Base):
@@ -44,8 +45,8 @@ class Product(Base):
 
     # Ad metadata
     condition = Column(
-        SQLAlchemyEnum(ProductCondition), default=ProductCondition.USED
-    )  # TODO: maybe it's better to be nullable
+        SQLAlchemyEnum(ProductCondition), default=ProductCondition.UNDETERMINED
+    )
     seller_name = Column(String(20))
     is_available = Column(Boolean, default=True)
 
@@ -57,7 +58,6 @@ class Product(Base):
     updated_at = Column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
-    last_notified_at = Column(DateTime)  # For price alerts
 
     # Improved source tracking (replaces previous 'source' field)
     source_website_id = Column(

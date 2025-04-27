@@ -60,7 +60,6 @@ class Product(Base):
     updated_at = Column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
-    last_notified_at = Column(DateTime)  # For price alerts
 
     # Improved source tracking (replaces previous 'source' field)
     source_website_id = Column(

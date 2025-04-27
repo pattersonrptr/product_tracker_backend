@@ -70,6 +70,7 @@ def read_product(
 ):
     use_case = GetProductByIdUseCase(product_repo)
     product = use_case.execute(product_id)
+    # print(f">>>>> {product.__dict__}")
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
@@ -100,9 +101,7 @@ def update_product(
     price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
 ):
     use_case = UpdateProductUseCase(product_repo, price_history_repo)
-    updated_product = use_case.execute(
-        product_id, product_in, product_in.price
-    )  # Passando product_in
+    updated_product = use_case.execute(product_id, product_in, product_in.price)
     if not updated_product:
         raise HTTPException(status_code=404, detail="Product not found")
     return updated_product

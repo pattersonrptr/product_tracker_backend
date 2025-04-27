@@ -16,8 +16,8 @@ class Product(BaseModel):
     seller_name: Optional[str] = None
     is_available: bool = True
     image_urls: Optional[str] = None
-    last_notified_at: Optional[datetime] = None
     source_metadata: Optional[dict] = None
     created_at: datetime = datetime.now(UTC)
     updated_at: datetime = datetime.now(UTC)
+    current_price: Optional[float] = None
     id: Optional[int] = None

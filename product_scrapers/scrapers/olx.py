@@ -91,9 +91,9 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
             "seller_name": seller_name,
             "is_available": True,  # TODO: check if the product is available.
             "image_urls": image_url,
-            # "last_notified_at": None, # TODO: remove this field from here, Model and Schema.
             # TODO: the scraper do not need to know its id in the database. Remove this field.
-            "source_website_id": 1,
+            # "source_website_id": 1,
+            # "source_website_name": "OLX",
             "source_metadata": {},
             "price": price.replace("R$", "").replace(".", "").replace(",", ".").strip(),
         }

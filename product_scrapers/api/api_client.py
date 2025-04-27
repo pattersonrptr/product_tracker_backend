@@ -22,6 +22,15 @@ class ApiClient:
 
         return [item for item in response.json() if item.get("is_active")]
 
+    def get_source_website_by_name(self, website_name: str) -> Dict[str, Any]:
+        print(f"🔎 Checking if source website {website_name} exists")
+        api_url = f"{self.base_url}/source_websites/name/{website_name}"
+        response = requests.get(api_url)
+
+        if response.status_code == 200 and response.json():
+            return response.json()
+        return {}
+
     def get_existing_product_urls(self, scraper_name):
         print("🔎 Checking existing products")
         api_url = f"{self.base_url}/products/"
@@ -37,9 +46,7 @@ class ApiClient:
         print(f"💾 Creating product: {product['url']}")
 
         print(">>>>>>>>>> DEBUG api.client.create_product >>>>>>>>>>")
-        from pprint import pp
-
-        pp(product)
+        print(product)
         print(">>>>>>>>>> DEBUG api.client.create_product >>>>>>>>>>")
 
         api_url = f"{self.base_url}/products/"
@@ -52,13 +59,13 @@ class ApiClient:
     def product_exists(self, product) -> bool:
         print("🔎 Checking if product exists")
 
-        api_url = f"{self.base_url}/products/"
-        resp = requests.get(api_url, params={"url": product["url"]})
+        api_url = f"{self.base_url}/products/url/{product["url"]}"
+        resp = requests.get(api_url)
 
-        # TODO: Need to check if the product exists in the response.
         if resp.status_code == 200 and resp.json():
+            print(resp.status_code)
             print(resp.json())
-        #     return True
+            return True
         return False
 
     def create_new_products(self, products: list[dict]) -> int:
@@ -80,7 +87,7 @@ class ApiClient:
     def get_products(self, params=None):
         print("🔄 Updating products by URLs")
 
-        api_url = f"{self.base_url}/products/"
+        api_url = f"{self.base_url}/products/filter/"
         resp = requests.get(api_url, params=params)
 
         if resp.status_code == 200 and resp.json():
@@ -91,7 +98,12 @@ class ApiClient:
     def update_product_list(self, products):
         print(f"💾 Updating {len(products)} products")
         updated = 0
+
         for product in products:
+            print(80 * "-")
+            print(product)
+            print(80 * "-")
+
             api_url = f"{self.base_url}/products/{product['id']}"
             response = requests.put(api_url, json=product, timeout=10)
 

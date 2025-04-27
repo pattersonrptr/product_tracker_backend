@@ -49,7 +49,7 @@ def process_urls_list(search_results: dict, scraper_name: str):
     task_group = group(
         chord(
             scrape_product_page.s(url, scraper_name).set(countdown=5) for url in chunk
-        )(save_products.s())
+        )(save_products.s(scraper_name))
         for chunk in chunks
     )
 
@@ -68,13 +68,23 @@ def scrape_product_page(url: str, scraper_name: str):
 
 
 @app.task(name="product_scrapers.celery.tasks.save_products")
-def save_products(results):
+def save_products(results, scraper_name: str):
     # TODO: Next improvement cold be to save the products in batches
 
-    successful = [r["data"] for r in results if r["status"] == "success"]
-    created = ApiClient().create_new_products(successful)
+    if results:
+        source_website = ApiClient().get_source_website_by_name(scraper_name.upper())
+        website_id = source_website.get("id")
+        successful = [
+            {**r["data"], **{"source_website_id": website_id}}
+            for r in results
+            if r["status"] == "success"
+        ]
 
-    return {"status": "success", "created": created}
+        if successful:
+            created = ApiClient().create_new_products(successful)
+            return {"status": "success", "created": created}
+
+    return {"status": "error", "message": "No products to save"}
 
 
 @app.task(name="product_scrapers.celery.tasks.run_scraper_update")
@@ -82,10 +92,12 @@ def run_scraper_update(scraper_name: str):
     cutoff_date = (datetime.today() - timedelta(days=30)).date()
     products = ApiClient().get_products({"updated_before": cutoff_date})
 
+    # TODO: Todos os produtos estão sendo atualizados... revise essa lógica
+
     return chord(
         update_product.s(product, scraper_name).set(countdown=10)
         for product in products
-    )(update_products.s())
+    )(update_products.s(scraper_name))
 
 
 @app.task(name="product_scrapers.celery.tasks.update_product")
@@ -100,8 +112,18 @@ def update_product(product: dict, scraper_name: str):
 
 
 @app.task(name="product_scrapers.celery.tasks.update_products")
-def update_products(results):
-    successful = [r["data"] for r in results if r["status"] == "success"]
-    updated = ApiClient().update_product_list(successful)
+def update_products(results, scraper_name: str):
+    if results:
+        source_website = ApiClient().get_source_website_by_name(scraper_name.upper())
+        website_id = source_website.get("id")
+        successful = [
+            {**r["data"], **{"source_website_id": website_id}}
+            for r in results
+            if r["status"] == "success"
+        ]
 
-    return {"status": "success", "updated_count": updated}
+        if successful:
+            updated = ApiClient().update_product_list(successful)
+            return {"status": "success", "updated": updated}
+
+        return {"status": "error", "message": "No products to update"}

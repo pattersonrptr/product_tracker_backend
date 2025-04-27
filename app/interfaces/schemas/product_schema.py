@@ -1,14 +1,9 @@
 from datetime import datetime
-from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
-
-class ProductCondition(str, Enum):
-    NEW = "new"
-    USED = "used"
-    REFURBISHED = "refurbished"
+from app.infrastructure.database.models.product_model import ProductCondition
 
 
 class ProductBase(BaseModel):
@@ -22,15 +17,12 @@ class ProductBase(BaseModel):
     state: str = Field(..., description="Estado do produto")
     condition: Optional[ProductCondition] = Field(
         ProductCondition.USED,
-        description="Condição do produto",  # TODO: maybe it's better to be nullable
+        description="Condição do produto",
     )
     seller_name: Optional[str] = Field(None, description="Nome do vendedor")
     is_available: bool = Field(True, description="Disponibilidade do produto")
     image_urls: Optional[str] = Field(
         None, description="URLs das imagens (separadas por vírgulas)"
-    )
-    last_notified_at: Optional[datetime] = Field(
-        None, description="Última vez que o preço foi notificado"
     )
     source_website_id: int = Field(..., description="ID do site de origem")
     source_metadata: Optional[dict] = Field(

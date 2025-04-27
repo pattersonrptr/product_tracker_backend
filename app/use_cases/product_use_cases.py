@@ -42,7 +42,9 @@ class GetProductByIdUseCase:
         self.product_repository = product_repository
 
     def execute(self, product_id: int) -> Optional[Product]:
-        return self.product_repository.get_by_id(product_id)
+        product = self.product_repository.get_by_id(product_id)
+
+        return product
 
 
 class GetProductByUrlUseCase:
@@ -77,11 +79,11 @@ class UpdateProductUseCase:
         new_price: Optional[float] = None,
     ) -> Optional[Product]:
         existing_product = self.product_repository.get_by_id(product_id)
+
         if not existing_product:
             return None
 
-        # Atualiza os atributos da entidade existente com os dados do schema
-        for key, value in product_update.dict(
+        for key, value in product_update.model_dump(
             exclude={"price"}, exclude_unset=True
         ).items():
             setattr(existing_product, key, value)

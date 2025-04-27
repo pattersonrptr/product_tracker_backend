@@ -25,50 +25,61 @@ class ProductRepository(ProductRepositoryInterface):
         logging.info(f"Tipo da variável 'product' no repository: {type(product)}")
         logging.info(f"Conteúdo da variável 'product' no repository: {product}")
         try:
-            db_product = ProductModel(
-                **product.__dict__
-            )  # Crie um model SQLAlchemy a partir da entidade
+            db_product = ProductModel(**product.__dict__)
             self.db.add(db_product)
             self.db.commit()
             self.db.refresh(db_product)
-            return ProductEntity.Product(
-                **db_product.__dict__
-            )  # Retorne uma entidade pura
+            return ProductEntity.Product(**db_product.__dict__)
         except Exception as e:
             self.db.rollback()
             raise e
 
     def get_all(self) -> List[ProductEntity.Product]:
         db_products = (
-            self.db.query(ProductModel)  # Use o model SQLAlchemy
+            self.db.query(ProductModel)
             .options(joinedload(ProductModel.price_history))
             .all()
         )
+
+        # TODO: Find a cleaner way to do this.
+        # TODO: Maybe this is not the right place to add this logic. Maybe it is better in the use case.
         return [
-            ProductEntity.Product(**db_product.__dict__) for db_product in db_products
-        ]  # Converta para entidades
+            ProductEntity.Product(
+                **db_product.__dict__,
+                **{"current_price": db_product.price_history[-1].price},
+            )
+            for db_product in db_products
+        ]
 
     def get_by_id(self, product_id: int) -> Optional[ProductEntity.Product]:
         db_product = (
-            self.db.query(ProductModel)  # Use o model SQLAlchemy
+            self.db.query(ProductModel)
             .options(joinedload(ProductModel.price_history))
             .filter(ProductModel.id == product_id)
             .first()
         )
-        return (
-            ProductEntity.Product(**db_product.__dict__) if db_product else None
-        )  # Converta para entidade
+
+        # TODO: Find a cleaner way to do this.
+        # TODO: Maybe this is not the right place to add this logic. Maybe it is better in the use case.
+        entity = ProductEntity.Product(**db_product.__dict__) if db_product else None
+        entity.current_price = db_product.price_history[-1].price
+
+        return entity
 
     def get_by_url(self, url: str) -> Optional[ProductEntity.Product]:
         db_product = (
-            self.db.query(ProductModel)  # Use o model SQLAlchemy
+            self.db.query(ProductModel)
             .options(joinedload(ProductModel.price_history))
             .filter(ProductModel.url == url)
             .first()
         )
-        return (
-            ProductEntity.Product(**db_product.__dict__) if db_product else None
-        )  # Converta para entidade
+
+        # TODO: Find a cleaner way to do this.
+        # TODO: Maybe this is not the right place to add this logic. Maybe it is better in the use case.
+        entity = ProductEntity.Product(**db_product.__dict__) if db_product else None
+        entity.current_price = db_product.price_history[-1].price
+
+        return ProductEntity.Product(**db_product.__dict__) if db_product else None
 
     def update(
         self, product_id: int, product: ProductEntity.Product
@@ -80,25 +91,12 @@ class ProductRepository(ProductRepositoryInterface):
                 .first()
             )
             if db_product:
-                logging.info(
-                    f"Tipo de db_product ANTES da atualização: {type(db_product)}"
-                )
-                logging.info(
-                    f"Conteúdo de db_product ANTES da atualização: {db_product.__dict__}"
-                )
                 for key, value in product.__dict__.items():
-                    if hasattr(db_product, key):
+                    if hasattr(db_product, key) and key != "current_price":
                         setattr(db_product, key, value)
                 self.db.commit()
-                logging.info(f"Tipo de db_product ANTES do refresh: {type(db_product)}")
-                logging.info(
-                    f"Conteúdo de db_product ANTES do refresh: {db_product.__dict__}"
-                )
                 self.db.refresh(db_product)
-                logging.info(f"Tipo de db_product APÓS o refresh: {type(db_product)}")
-                logging.info(
-                    f"Conteúdo de db_product APÓS o refresh: {db_product.__dict__}"
-                )
+
                 return ProductEntity.Product(**db_product.__dict__)
             return None
         except Exception as e:
@@ -108,7 +106,7 @@ class ProductRepository(ProductRepositoryInterface):
     def delete(self, product_id: int) -> bool:
         db_product = (
             self.db.query(ProductModel).filter(ProductModel.id == product_id).first()
-        )  # Use o model SQLAlchemy
+        )
         if not db_product:
             return False
         try:
@@ -121,19 +119,19 @@ class ProductRepository(ProductRepositoryInterface):
 
     def search_products(self, query: str) -> List[ProductEntity.Product]:
         db_products = (
-            self.db.query(ProductModel)  # Use o model SQLAlchemy
+            self.db.query(ProductModel)
             .options(joinedload(ProductModel.price_history))
             .filter(ProductModel.title.ilike(f"%{query}%"))
             .all()
         )
         return [
             ProductEntity.Product(**db_product.__dict__) for db_product in db_products
-        ]  # Converta para entidades
+        ]
 
     def filter_products(self, filter_data: dict) -> List[ProductEntity.Product]:
         query = self.db.query(ProductModel).options(
             joinedload(ProductModel.price_history)
-        )  # Use o model SQLAlchemy
+        )
 
         if "url" in filter_data and filter_data["url"]:
             query = query.filter(ProductModel.url.ilike(f"%{filter_data['url']}%"))
@@ -141,22 +139,16 @@ class ProductRepository(ProductRepositoryInterface):
         if "title" in filter_data and filter_data["title"]:
             query = query.filter(ProductModel.title.ilike(f"%{filter_data['title']}%"))
 
-        # Adapte os filtros de preço para não usar mais Product.price diretamente
-        # Agora o preço "atual" está em product.price_history[-1].price
-        # Isso exigiria joins com PriceHistoryModel e subqueries para filtrar pelo preço atual
-
         if (
             "min_current_price" in filter_data
             and filter_data["min_current_price"] is not None
         ):
-            # Implemente a lógica de filtragem pelo preço atual usando joins/subqueries
             pass
 
         if (
             "max_current_price" in filter_data
             and filter_data["max_current_price"] is not None
         ):
-            # Implemente a lógica de filtragem pelo preço atual usando joins/subqueries
             pass
 
         if "created_after" in filter_data and filter_data["created_after"] is not None:
@@ -188,7 +180,7 @@ class ProductRepository(ProductRepositoryInterface):
         db_products = query.all()
         return [
             ProductEntity.Product(**db_product.__dict__) for db_product in db_products
-        ]  # Converta para entidades
+        ]
 
     def get_product_stats(self) -> dict:
         subquery = (
@@ -237,7 +229,7 @@ class ProductRepository(ProductRepositoryInterface):
 
     def get_minimal_products(self) -> List[dict]:
         db_products = (
-            self.db.query(ProductModel)  # Use o model SQLAlchemy
+            self.db.query(ProductModel)
             .options(joinedload(ProductModel.price_history))
             .all()
         )

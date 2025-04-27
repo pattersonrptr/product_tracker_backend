@@ -23,7 +23,7 @@ Base = declarative_base()
 
 
 def get_db():
-    db: Session = SessionLocal()  # Cria uma instância da sessão
+    db: Session = SessionLocal()
     try:
         yield db
     finally:
