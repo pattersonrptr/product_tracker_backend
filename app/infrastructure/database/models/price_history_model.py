@@ -10,7 +10,7 @@ class PriceHistory(Base):
     __tablename__ = "price_history"
 
     id = Column(Integer, primary_key=True)
-    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=True)
     price = Column(Numeric(10, 2), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
 

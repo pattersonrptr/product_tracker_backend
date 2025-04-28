@@ -70,7 +70,7 @@ def read_product(
 ):
     use_case = GetProductByIdUseCase(product_repo)
     product = use_case.execute(product_id)
-    # print(f">>>>> {product.__dict__}")
+
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
@@ -112,6 +112,7 @@ def delete_product(
     product_id: int, product_repo: ProductRepository = Depends(get_product_repository)
 ):
     use_case = DeleteProductUseCase(product_repo)
+
     if not use_case.execute(product_id):
         raise HTTPException(status_code=404, detail="Product not found")
     return {"detail": "Product deleted successfully"}

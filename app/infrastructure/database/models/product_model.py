@@ -71,12 +71,14 @@ class Product(Base):
     )
 
     # Relationships
-    price_history = relationship("PriceHistory", back_populates="product")
+    price_history = relationship(
+        "PriceHistory", back_populates="product", cascade="all, delete-orphan"
+    )
     source_website = relationship("SourceWebsite", back_populates="products")
 
-    # Property to get the current price from the last price history entry
-    @property
-    def current_price(self):
-        if self.price_history:
-            return self.price_history[-1].price
-        return None
+    # # Property to get the current price from the last price history entry
+    # @property
+    # def current_price(self):
+    #     if self.price_history:
+    #         return self.price_history[-1].price
+    #     return None

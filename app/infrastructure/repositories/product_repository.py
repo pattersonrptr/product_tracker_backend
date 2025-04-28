@@ -10,7 +10,7 @@ from app.infrastructure.database.models.product_model import (
 from app.infrastructure.database.models.price_history_model import (
     PriceHistory as PriceHistoryModel,
 )
-from app.entities.product import product as ProductEntity
+from app.entities.product.product import Product as ProductEntity
 from app.interfaces.repositories.product_repository import ProductRepositoryInterface
 
 import logging
@@ -22,69 +22,70 @@ class ProductRepository(ProductRepositoryInterface):
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, product: ProductEntity.Product) -> ProductEntity.Product:
+    def create(self, product: ProductEntity) -> ProductEntity:
         logging.info(f"Tipo da variável 'product' no repository: {type(product)}")
         logging.info(f"Conteúdo da variável 'product' no repository: {product}")
         try:
-            db_product = ProductModel(**product.__dict__)
+            # Crie o db_product apenas com os atributos que existem no ProductModel
+            db_product_data = {
+                key: value
+                for key, value in product.__dict__.items()
+                if key != "current_price"
+            }
+            db_product = ProductModel(**db_product_data)
             self.db.add(db_product)
             self.db.commit()
             self.db.refresh(db_product)
-            return ProductEntity.Product(**db_product.__dict__)
+            return ProductEntity(**db_product.__dict__)
         except Exception as e:
             self.db.rollback()
             raise e
 
-    def get_all(self) -> List[ProductEntity.Product]:
+    def get_all(self) -> List[ProductEntity]:
         db_products = (
             self.db.query(ProductModel)
             .options(joinedload(ProductModel.price_history))
             .all()
         )
+        products = []
+        for db_product in db_products:
+            product_entity = ProductEntity(**db_product.__dict__)
+            if db_product.price_history:
+                product_entity.current_price = db_product.price_history[-1].price
+            products.append(product_entity)
+        return products
 
-        # TODO: Find a cleaner way to do this.
-        # TODO: Maybe this is not the right place to add this logic. Maybe it is better in the use case.
-        return [
-            ProductEntity.Product(
-                **db_product.__dict__,
-                **{"current_price": db_product.price_history[-1].price},
-            )
-            for db_product in db_products
-        ]
-
-    def get_by_id(self, product_id: int) -> Optional[ProductEntity.Product]:
+    def get_by_id(self, product_id: int) -> Optional[ProductEntity]:
         db_product = (
             self.db.query(ProductModel)
             .options(joinedload(ProductModel.price_history))
             .filter(ProductModel.id == product_id)
             .first()
         )
+        if db_product:
+            product_entity = ProductEntity(**db_product.__dict__)
+            if db_product.price_history:
+                product_entity.current_price = db_product.price_history[-1].price
+            return product_entity
+        return None
 
-        # TODO: Find a cleaner way to do this.
-        # TODO: Maybe this is not the right place to add this logic. Maybe it is better in the use case.
-        entity = ProductEntity.Product(**db_product.__dict__) if db_product else None
-        entity.current_price = db_product.price_history[-1].price
-
-        return entity
-
-    def get_by_url(self, url: str) -> Optional[ProductEntity.Product]:
+    def get_by_url(self, url: str) -> Optional[ProductEntity]:
         db_product = (
             self.db.query(ProductModel)
             .options(joinedload(ProductModel.price_history))
             .filter(ProductModel.url == url)
             .first()
         )
-
-        # TODO: Find a cleaner way to do this.
-        # TODO: Maybe this is not the right place to add this logic. Maybe it is better in the use case.
-        entity = ProductEntity.Product(**db_product.__dict__) if db_product else None
-        entity.current_price = db_product.price_history[-1].price
-
-        return ProductEntity.Product(**db_product.__dict__) if db_product else None
+        if db_product:
+            product_entity = ProductEntity(**db_product.__dict__)
+            if db_product.price_history:
+                product_entity.current_price = db_product.price_history[-1].price
+            return product_entity
+        return None
 
     def update(
-        self, product_id: int, product: ProductEntity.Product
-    ) -> Optional[ProductEntity.Product]:
+        self, product_id: int, product: ProductEntity
+    ) -> Optional[ProductEntity]:
         try:
             db_product = (
                 self.db.query(ProductModel)
@@ -101,7 +102,7 @@ class ProductRepository(ProductRepositoryInterface):
                 self.db.commit()
                 self.db.refresh(db_product)
 
-                return ProductEntity.Product(**db_product.__dict__)
+                return ProductEntity(**db_product.__dict__)
             return None
         except Exception as e:
             self.db.rollback()
@@ -121,18 +122,22 @@ class ProductRepository(ProductRepositoryInterface):
             self.db.rollback()
             raise e
 
-    def search_products(self, query: str) -> List[ProductEntity.Product]:
+    def search_products(self, query: str) -> List[ProductEntity]:
         db_products = (
             self.db.query(ProductModel)
             .options(joinedload(ProductModel.price_history))
             .filter(ProductModel.title.ilike(f"%{query}%"))
             .all()
         )
-        return [
-            ProductEntity.Product(**db_product.__dict__) for db_product in db_products
-        ]
+        products = []
+        for db_product in db_products:
+            product_entity = ProductEntity(**db_product.__dict__)
+            if db_product.price_history:
+                product_entity.current_price = db_product.price_history[-1].price
+            products.append(product_entity)
+        return products
 
-    def filter_products(self, filter_data: dict) -> List[ProductEntity.Product]:
+    def filter_products(self, filter_data: dict) -> List[ProductEntity]:
         query = self.db.query(ProductModel).options(
             joinedload(ProductModel.price_history)
         )
@@ -182,9 +187,13 @@ class ProductRepository(ProductRepositoryInterface):
             )
 
         db_products = query.all()
-        return [
-            ProductEntity.Product(**db_product.__dict__) for db_product in db_products
-        ]
+        products = []
+        for db_product in db_products:
+            product_entity = ProductEntity(**db_product.__dict__)
+            if db_product.price_history:
+                product_entity.current_price = db_product.price_history[-1].price
+            products.append(product_entity)
+        return products
 
     def get_product_stats(self) -> dict:
         subquery = (

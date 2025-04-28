@@ -1,13 +1,13 @@
 from typing import Optional, List
 
-from app.entities.product import Product
+# from app.entities.product import Product
 from app.entities.product.price_history import PriceHistory as PriceHistoryEntity
 from app.interfaces.repositories.product_repository import ProductRepositoryInterface
 from app.interfaces.repositories.price_history_repository import (
     PriceHistoryRepositoryInterface,
 )
 from app.interfaces.schemas.product_schema import ProductUpdate
-from app.entities.product import product as ProductEntity
+from app.entities.product.product import Product as ProductEntity
 
 import logging
 
@@ -23,17 +23,21 @@ class CreateProductUseCase:
         self.product_repository = product_repository
         self.price_history_repository = price_history_repository
 
-    def execute(self, product: ProductEntity.Product, initial_price: float):
+    def execute(self, product: ProductEntity, initial_price: float):
         logging.info(f"Tipo da variável 'product' no use case: {type(product)}")
         logging.info(
             f"Conteúdo da variável 'product' no use case: {product.__dict__ if hasattr(product, '__dict__') else product}"
         )
         created_product = self.product_repository.create(product)
+
         if created_product is not None and initial_price is not None:
             price_history_entry = PriceHistoryEntity(
                 product_id=created_product.id, price=initial_price
             )
             self.price_history_repository.create(price_history_entry)
+
+            retrieved_product = self.product_repository.get_by_id(created_product.id)
+            return retrieved_product
         return created_product
 
 
@@ -41,17 +45,15 @@ class GetProductByIdUseCase:
     def __init__(self, product_repository: ProductRepositoryInterface):
         self.product_repository = product_repository
 
-    def execute(self, product_id: int) -> Optional[Product]:
-        product = self.product_repository.get_by_id(product_id)
-
-        return product
+    def execute(self, product_id: int) -> Optional[ProductEntity]:
+        return self.product_repository.get_by_id(product_id)
 
 
 class GetProductByUrlUseCase:
     def __init__(self, product_repository: ProductRepositoryInterface):
         self.product_repository = product_repository
 
-    def execute(self, url: str) -> Optional[Product]:
+    def execute(self, url: str) -> Optional[ProductEntity]:
         return self.product_repository.get_by_url(url)
 
 
@@ -59,7 +61,7 @@ class ListProductsUseCase:
     def __init__(self, product_repository: ProductRepositoryInterface):
         self.product_repository = product_repository
 
-    def execute(self) -> List[Product]:
+    def execute(self) -> List[ProductEntity]:
         return self.product_repository.get_all()
 
 
@@ -77,7 +79,7 @@ class UpdateProductUseCase:
         product_id: int,
         product_update: ProductUpdate,
         new_price: Optional[float] = None,
-    ) -> Optional[Product]:
+    ) -> Optional[ProductEntity]:
         existing_product = self.product_repository.get_by_id(product_id)
 
         if not existing_product:
@@ -104,7 +106,6 @@ class DeleteProductUseCase:
         self.product_repository = product_repository
 
     def execute(self, product_id: int) -> bool:
-        # Aqui poderíamos adicionar lógica de negócios antes de deletar o produto.
         return self.product_repository.delete(product_id)
 
 
@@ -112,7 +113,7 @@ class SearchProductsUseCase:
     def __init__(self, product_repository: ProductRepositoryInterface):
         self.product_repository = product_repository
 
-    def execute(self, query: str) -> List[Product]:
+    def execute(self, query: str) -> List[ProductEntity]:
         return self.product_repository.search_products(query)
 
 
@@ -120,7 +121,7 @@ class FilterProductsUseCase:
     def __init__(self, product_repository: ProductRepositoryInterface):
         self.product_repository = product_repository
 
-    def execute(self, filter_data: dict) -> List[Product]:
+    def execute(self, filter_data: dict) -> List[ProductEntity]:
         return self.product_repository.filter_products(filter_data)
 
 
