@@ -10,10 +10,6 @@ from app.interfaces.repositories.source_website_repository import (
     SourceWebsiteRepositoryInterface,
 )
 
-import logging
-
-logging.basicConfig(level=logging.INFO)
-
 
 class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
     def __init__(self, db: Session):
@@ -22,12 +18,6 @@ class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
     def create(
         self, source_website: SourceWebsiteEntity.SourceWebsite
     ) -> SourceWebsiteEntity.SourceWebsite:
-        logging.info(
-            f"Tipo da variável 'source_website' no repository: {type(source_website)}"
-        )
-        logging.info(
-            f"Conteúdo da variável 'source_website' no repository: {source_website}"
-        )
         db_source_website = SourceWebsiteModel(**source_website.model_dump())
         self.db.add(db_source_website)
         self.db.commit()

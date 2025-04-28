@@ -7,18 +7,12 @@ from app.interfaces.repositories.user_repository import UserRepositoryInterface
 from app.entities import user as UserEntity
 from app.infrastructure.database.models.user_model import User as UserModel
 
-import logging
-
-logging.basicConfig(level=logging.INFO)
-
 
 class UserRepository(UserRepositoryInterface):
     def __init__(self, db: Session):
         self.db = db
 
     def create(self, user: UserEntity.User) -> UserEntity.User:
-        logging.info(f"Tipo da variável 'user' no repository: {type(user)}")
-        logging.info(f"Conteúdo da variável 'user' no repository: {user}")
         db_user = UserModel(**user.model_dump())
         self.db.add(db_user)
         self.db.commit()

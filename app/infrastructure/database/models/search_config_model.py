@@ -38,7 +38,7 @@ class SearchConfig(Base):
     source_websites = relationship(
         "SourceWebsite",
         secondary=search_config_source_website,
-        back_populates="search_configs",  # <--- CORREÇÃO: Deve ser "search_configs" no SourceWebsite
+        back_populates="search_configs",
     )
 
     __table_args__ = (

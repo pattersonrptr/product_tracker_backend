@@ -13,18 +13,12 @@ from app.infrastructure.database.models.price_history_model import (
 from app.entities.product.product import Product as ProductEntity
 from app.interfaces.repositories.product_repository import ProductRepositoryInterface
 
-import logging
-
-logging.basicConfig(level=logging.INFO)
-
 
 class ProductRepository(ProductRepositoryInterface):
     def __init__(self, db: Session):
         self.db = db
 
     def create(self, product: ProductEntity) -> ProductEntity:
-        logging.info(f"Tipo da variável 'product' no repository: {type(product)}")
-        logging.info(f"Conteúdo da variável 'product' no repository: {product}")
         try:
             db_product_data = {
                 key: value
@@ -96,8 +90,6 @@ class ProductRepository(ProductRepositoryInterface):
                     if hasattr(db_product, key) and key != "current_price":
                         setattr(db_product, key, value)
                 db_product.updated_at = datetime.now(UTC)
-                print("PRODUCT ID", product.id)
-                print("PRODUCT ID", db_product.updated_at)
                 self.db.commit()
                 self.db.refresh(db_product)
 
