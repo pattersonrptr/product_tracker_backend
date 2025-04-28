@@ -18,12 +18,6 @@ class PriceHistoryRepositoryInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_bulk(
-        self, price_histories: List[PriceHistoryEntity.PriceHistory]
-    ) -> List[PriceHistoryEntity.PriceHistory]:
-        raise NotImplementedError
-
-    @abstractmethod
     def get_latest_price(
         self, product_id: int
     ) -> Optional[PriceHistoryEntity.PriceHistory]:

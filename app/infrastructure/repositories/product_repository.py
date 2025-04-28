@@ -26,7 +26,6 @@ class ProductRepository(ProductRepositoryInterface):
         logging.info(f"Tipo da variável 'product' no repository: {type(product)}")
         logging.info(f"Conteúdo da variável 'product' no repository: {product}")
         try:
-            # Crie o db_product apenas com os atributos que existem no ProductModel
             db_product_data = {
                 key: value
                 for key, value in product.__dict__.items()

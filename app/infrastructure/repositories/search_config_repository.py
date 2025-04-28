@@ -23,7 +23,6 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
         self, search_config: SearchConfigEntity.SearchConfig
     ) -> SearchConfigEntity.SearchConfig:
         try:
-            # Crie o db_search_config sem os source_websites inicialmente
             search_config_data = {
                 k: v
                 for k, v in search_config.model_dump().items()
@@ -31,7 +30,6 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
             }
             db_search_config = SearchConfigModel(**search_config_data)
 
-            # Adicionar os SourceWebsites relacionados
             if search_config.source_websites:
                 db_source_websites = []
                 for sw_entity in search_config.source_websites:

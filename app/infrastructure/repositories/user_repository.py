@@ -1,3 +1,4 @@
+from datetime import datetime, UTC
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -43,7 +44,6 @@ class UserRepository(UserRepositoryInterface):
         return None
 
     def get_all(self) -> list[UserEntity.User]:
-        # print(f"Mapper attributes for UserModel in get_all: {UserModel.__mapper__.attrs}")
         users = self.db.query(UserModel).all()
         return [UserEntity.User(**user.__dict__) for user in users]
 
@@ -52,10 +52,9 @@ class UserRepository(UserRepositoryInterface):
         if not db_user:
             return None
         try:
-            for key, value in user.model_dump(
-                exclude_unset=True
-            ).items():  # Use model_dump aqui
+            for key, value in user.model_dump(exclude_unset=True).items():
                 setattr(db_user, key, value)
+            db_user.updated_at = datetime.now(UTC)
             self.db.commit()
             self.db.refresh(db_user)
             return UserEntity.User(**db_user.__dict__)

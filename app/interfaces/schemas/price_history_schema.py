@@ -6,8 +6,8 @@ from pydantic import BaseModel, Field
 
 
 class PriceHistoryBase(BaseModel):
-    product_id: int = Field(..., description="ID do produto associado")
-    price: Decimal = Field(..., description="Preço registrado")
+    product_id: int = Field(..., description="Related product ID")
+    price: Decimal = Field(..., description="Price Registered")
 
 
 class PriceHistoryCreate(PriceHistoryBase):

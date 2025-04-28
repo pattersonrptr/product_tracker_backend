@@ -1,12 +1,11 @@
-from typing import Optional
 from pydantic import BaseModel, Field
 
 
 class SourceWebsiteBase(BaseModel):
-    name: str = Field(..., description="Nome do website (e.g., 'OLX', 'Enjoei')")
-    base_url: str = Field(..., description="URL base do website")
+    name: str = Field(..., description="Website name (e.g., 'OLX', 'Enjoei')")
+    base_url: str = Field(..., description="Base URL of the website")
     is_active: bool = Field(
-        True, description="Indica se estamos atualmente coletando dados deste site"
+        True, description="Indicates if we are currently collecting data from this site"
     )
 
 
@@ -19,4 +18,4 @@ class SourceWebsiteRead(SourceWebsiteBase):
 
 
 class SourceWebsiteUpdate(SourceWebsiteBase):
-    id: Optional[int] = None
+    pass

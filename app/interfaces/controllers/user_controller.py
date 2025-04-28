@@ -12,7 +12,7 @@ from app.interfaces.schemas.user_schema import (
 )
 from app.infrastructure.database_config import get_db
 from app.infrastructure.repositories.user_repository import UserRepository
-from app.entities.user import User as UserEntity  # Importe a CLASSE User
+from app.entities.user import User as UserEntity
 
 import logging
 

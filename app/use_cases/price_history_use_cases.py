@@ -22,14 +22,6 @@ class GetPriceHistoryByProductIdUseCase:
         return self.price_history_repository.get_by_product_id(product_id)
 
 
-class CreateBulkPriceHistoryUseCase:
-    def __init__(self, price_history_repository: PriceHistoryRepositoryInterface):
-        self.price_history_repository = price_history_repository
-
-    def execute(self, price_histories: List[PriceHistory]) -> List[PriceHistory]:
-        return self.price_history_repository.create_bulk(price_histories)
-
-
 class GetLatestPriceUseCase:
     def __init__(self, price_history_repository: PriceHistoryRepositoryInterface):
         self.price_history_repository = price_history_repository

@@ -1,6 +1,5 @@
 from typing import Optional, List
 
-# from app.entities.product import Product
 from app.entities.product.price_history import PriceHistory as PriceHistoryEntity
 from app.interfaces.repositories.product_repository import ProductRepositoryInterface
 from app.interfaces.repositories.price_history_repository import (
@@ -8,10 +7,6 @@ from app.interfaces.repositories.price_history_repository import (
 )
 from app.interfaces.schemas.product_schema import ProductUpdate
 from app.entities.product.product import Product as ProductEntity
-
-import logging
-
-logging.basicConfig(level=logging.INFO)
 
 
 class CreateProductUseCase:
@@ -24,10 +19,6 @@ class CreateProductUseCase:
         self.price_history_repository = price_history_repository
 
     def execute(self, product: ProductEntity, initial_price: float):
-        logging.info(f"Tipo da variável 'product' no use case: {type(product)}")
-        logging.info(
-            f"Conteúdo da variável 'product' no use case: {product.__dict__ if hasattr(product, '__dict__') else product}"
-        )
         created_product = self.product_repository.create(product)
 
         if created_product is not None and initial_price is not None:
@@ -98,6 +89,8 @@ class UpdateProductUseCase:
             )
             self.price_history_repository.create(price_history_entry)
 
+            retrieved_product = self.product_repository.get_by_id(updated_product.id)
+            return retrieved_product
         return updated_product
 
 

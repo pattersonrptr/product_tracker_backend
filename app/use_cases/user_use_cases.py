@@ -11,7 +11,6 @@ class UserUseCases:
         self.user_repo = user_repo
 
     def create_user(self, user: UserEntity.User) -> UserEntity.User:
-        # Add any business logic before creation (e.g., password hashing)
         return self.user_repo.create(user)
 
     def get_user(self, user_id: int) -> Optional[UserEntity.User]:
@@ -32,8 +31,7 @@ class UserUseCases:
         existing_user = self.user_repo.get_by_id(user_id)
         if not existing_user:
             return None
-        user.id = user_id  # Ensure ID is set for update
-        # Add any business logic before update (e.g., password hashing if changed)
+        user.id = user_id
         return self.user_repo.update(user_id, user)
 
     def delete_user(self, user_id: int) -> bool:

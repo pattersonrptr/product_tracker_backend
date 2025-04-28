@@ -21,5 +21,5 @@ class SourceWebsite(Base):
     search_configs = relationship(
         "SearchConfig",
         secondary=search_config_source_website,
-        back_populates="source_websites",  # <--- CORREÇÃO: Deve ser "source_websites" aqui
+        back_populates="source_websites",
     )

@@ -78,9 +78,7 @@ class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
         if not db_source_website_model:
             return None
         try:
-            for key, value in source_website.model_dump(
-                exclude_unset=True
-            ).items():  # Use model_dump aqui
+            for key, value in source_website.model_dump(exclude_unset=True).items():
                 setattr(db_source_website_model, key, value)
             self.db.commit()
             self.db.refresh(db_source_website_model)

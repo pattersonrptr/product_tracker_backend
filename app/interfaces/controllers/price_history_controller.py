@@ -10,10 +10,8 @@ from app.infrastructure.repositories.price_history_repository import (
 from app.use_cases.price_history_use_cases import (
     CreatePriceHistoryUseCase,
     GetPriceHistoryByProductIdUseCase,
-    CreateBulkPriceHistoryUseCase,
     GetLatestPriceUseCase,
 )
-from app.infrastructure.database.models.price_history_model import PriceHistory
 from app.interfaces.schemas.price_history_schema import (
     PriceHistoryCreate,
     PriceHistoryRead,
@@ -45,16 +43,6 @@ def get_price_history_by_product(
     use_case = GetPriceHistoryByProductIdUseCase(price_history_repo)
     history = use_case.execute(product_id)
     return history
-
-
-@router.post("/bulk/", response_model=List[PriceHistoryRead], status_code=201)
-def create_bulk_price_history(
-    price_histories: List[PriceHistoryCreate],
-    price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
-):
-    price_history_entities = [PriceHistory(**ph.model_dump()) for ph in price_histories]
-    use_case = CreateBulkPriceHistoryUseCase(price_history_repo)
-    return use_case.execute(price_history_entities)
 
 
 @router.get("/product/{product_id}/latest", response_model=Optional[PriceHistoryRead])

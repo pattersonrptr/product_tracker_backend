@@ -22,7 +22,6 @@ class SearchConfigUseCases:
     def create_search_config(
         self, search_config: SearchConfigEntity.SearchConfig
     ) -> SearchConfigEntity.SearchConfig:
-        # Verificar se o usuário existe
         if search_config.user_id and not self.user_repo.get_by_id(
             search_config.user_id
         ):
@@ -43,12 +42,11 @@ class SearchConfigUseCases:
         existing_config = self.search_config_repo.get_by_id(search_config_id)
         if not existing_config:
             return None
-        # Verificar se o usuário existe
         if search_config.user_id and not self.user_repo.get_by_id(
             search_config.user_id
         ):
             raise ValueError(f"User with id {search_config.user_id} not found")
-        search_config.id = search_config_id  # Ensure ID is set for update
+        search_config.id = search_config_id
         return self.search_config_repo.update(search_config_id, search_config)
 
     def delete_search_config(self, search_config_id: int) -> bool:
@@ -64,8 +62,6 @@ class SearchConfigUseCases:
     def get_search_configs_by_source_website(
         self, source_website: SourceWebsiteEntity.SourceWebsite
     ) -> List[SearchConfigEntity.SearchConfig]:
-        # Assuming SourceWebsite entity has an id attribute
         if not source_website.id:
             raise ValueError("SourceWebsite must have an ID to search by.")
-        # We don't need to check if the website exists here, the repository handles the join.
         return self.search_config_repo.get_by_source_website(source_website)

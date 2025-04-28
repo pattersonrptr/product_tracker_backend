@@ -48,9 +48,7 @@ def create_search_config(
                 )
 
     search_config = SearchConfigEntity.SearchConfig(
-        **search_config_in.model_dump(
-            exclude={"source_websites"}
-        ),  # Excluímos para evitar passar duas vezes
+        **search_config_in.model_dump(exclude={"source_websites"}),
         source_websites=source_websites,
     )
     return use_cases.create_search_config(search_config)

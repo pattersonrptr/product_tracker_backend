@@ -41,23 +41,6 @@ class PriceHistoryRepository(PriceHistoryRepositoryInterface):
             for db_price_history in db_price_histories
         ]
 
-    def create_bulk(
-        self, price_histories: List[PriceHistoryEntity.PriceHistory]
-    ) -> List[PriceHistoryEntity.PriceHistory]:
-        db_price_histories = [
-            PriceHistoryModel(**ph.__dict__) for ph in price_histories
-        ]
-        try:
-            self.db.bulk_save_objects(db_price_histories)
-            self.db.commit()
-            return [
-                PriceHistoryEntity.PriceHistory(**db_ph.__dict__)
-                for db_ph in db_price_histories
-            ]
-        except Exception as e:
-            self.db.rollback()
-            raise e
-
     def get_latest_price(
         self, product_id: int
     ) -> Optional[PriceHistoryEntity.PriceHistory]:
