@@ -1,5 +1,4 @@
-# TODO: Use logging instead of simple prints.
-# TODO: Better decouple the logging logic, maybe having a logger class.
+# TODO: Use logging instead of simple prints. It's better to decouple the logging logic, maybe having a logger class.
 
 import os
 from typing import List, Dict, Any
