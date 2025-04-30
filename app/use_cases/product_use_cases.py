@@ -106,8 +106,10 @@ class SearchProductsUseCase:
     def __init__(self, product_repository: ProductRepositoryInterface):
         self.product_repository = product_repository
 
-    def execute(self, query: str) -> List[ProductEntity]:
-        return self.product_repository.search_products(query)
+    def execute(self, query: str, limit: int, offset: int) -> List[ProductEntity]:
+        return self.product_repository.search_products(
+            query=query, limit=limit, offset=offset
+        )
 
 
 class FilterProductsUseCase:

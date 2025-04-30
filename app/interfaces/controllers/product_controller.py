@@ -125,10 +125,14 @@ def delete_product(
 
 @router.get("/search/{query}", response_model=List[ProductRead])
 def search_products(
-    query: str, product_repo: ProductRepository = Depends(get_product_repository)
+    query: str,
+    product_repo: ProductRepository = Depends(get_product_repository),
+    limit: int = Query(default=10, ge=1, description="Number of items per page"),
+    offset: int = Query(default=0, ge=0, description="Offset to start fetching items"),
 ):
     use_case = SearchProductsUseCase(product_repo)
-    return use_case.execute(query)
+    results = use_case.execute(query=query, limit=limit, offset=offset)
+    return results
 
 
 @router.get("/filter/", response_model=List[ProductRead])

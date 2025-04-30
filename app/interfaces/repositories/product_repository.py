@@ -30,7 +30,7 @@ class ProductRepositoryInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def search_products(self, query: str) -> List[Product]:
+    def search_products(self, query: str, limit: int, offset: int) -> List[Product]:
         raise NotImplementedError
 
     @abstractmethod

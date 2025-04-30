@@ -115,20 +115,18 @@ class ProductRepository(ProductRepositoryInterface):
             self.db.rollback()
             raise e
 
-    def search_products(self, query: str) -> List[ProductEntity]:
+    def search_products(
+        self, query: str, limit: int, offset: int
+    ) -> List[ProductEntity]:
         db_products = (
             self.db.query(ProductModel)
             .options(joinedload(ProductModel.price_history))
             .filter(ProductModel.title.ilike(f"%{query}%"))
+            .limit(limit)
+            .offset(offset)
             .all()
         )
-        products = []
-        for db_product in db_products:
-            product_entity = ProductEntity(**db_product.__dict__)
-            if db_product.price_history:
-                product_entity.current_price = db_product.price_history[-1].price
-            products.append(product_entity)
-        return products
+        return [ProductEntity(**db_product.__dict__) for db_product in db_products]
 
     def filter_products(self, filter_data: dict) -> List[ProductEntity]:
         query = self.db.query(ProductModel).options(
