@@ -52,8 +52,8 @@ class ListProductsUseCase:
     def __init__(self, product_repository: ProductRepositoryInterface):
         self.product_repository = product_repository
 
-    def execute(self) -> List[ProductEntity]:
-        return self.product_repository.get_all()
+    def execute(self, limit: int, offset: int) -> List[ProductEntity]:
+        return self.product_repository.get_all(limit=limit, offset=offset)
 
 
 class UpdateProductUseCase:

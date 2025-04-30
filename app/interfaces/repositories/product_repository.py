@@ -18,7 +18,7 @@ class ProductRepositoryInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_all(self) -> List[Product]:
+    def get_all(self, limit: int, offset: int) -> List[Product]:
         raise NotImplementedError
 
     @abstractmethod

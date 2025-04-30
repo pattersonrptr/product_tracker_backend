@@ -34,10 +34,12 @@ class ProductRepository(ProductRepositoryInterface):
             self.db.rollback()
             raise e
 
-    def get_all(self) -> List[ProductEntity]:
+    def get_all(self, limit: int, offset: int) -> List[ProductEntity]:
         db_products = (
             self.db.query(ProductModel)
             .options(joinedload(ProductModel.price_history))
+            .limit(limit)
+            .offset(offset)
             .all()
         )
         products = []
