@@ -136,5 +136,5 @@ class GetMinimalProductsUseCase:
     def __init__(self, product_repository: ProductRepositoryInterface):
         self.product_repository = product_repository
 
-    def execute(self) -> List[dict]:
-        return self.product_repository.get_minimal_products()
+    def execute(self, limit: int, offset: int) -> List[dict]:
+        return self.product_repository.get_minimal_products(limit=limit, offset=offset)

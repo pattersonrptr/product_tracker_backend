@@ -221,10 +221,12 @@ class ProductRepository(ProductRepositoryInterface):
             "max_price": float(max_price) if max_price is not None else 0.0,
         }
 
-    def get_minimal_products(self) -> List[dict]:
+    def get_minimal_products(self, limit: int, offset: int) -> List[dict]:
         db_products = (
             self.db.query(ProductModel)
             .options(joinedload(ProductModel.price_history))
+            .limit(limit)
+            .offset(offset)
             .all()
         )
         minimal_products_list = []

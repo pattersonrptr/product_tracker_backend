@@ -175,6 +175,8 @@ def get_product_stats(
 @router.get("/minimal/", response_model=List[ProductMinimal])
 def get_minimal_products(
     product_repo: ProductRepository = Depends(get_product_repository),
+    limit: int = Query(default=10, ge=1, description="Number of items per page"),
+    offset: int = Query(default=0, ge=0, description="Offset to start fetching items"),
 ):
     use_case = GetMinimalProductsUseCase(product_repo)
-    return use_case.execute()
+    return use_case.execute(limit=limit, offset=offset)

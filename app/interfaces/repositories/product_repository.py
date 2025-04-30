@@ -44,5 +44,5 @@ class ProductRepositoryInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_minimal_products(self) -> List[dict]:
+    def get_minimal_products(self, limit: int, offset: int) -> List[dict]:
         raise NotImplementedError
