@@ -1,5 +1,5 @@
 from datetime import datetime, UTC
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
@@ -128,7 +128,9 @@ class ProductRepository(ProductRepositoryInterface):
         )
         return [ProductEntity(**db_product.__dict__) for db_product in db_products]
 
-    def filter_products(self, filter_data: dict) -> List[ProductEntity]:
+    def filter_products(
+        self, filter_data: Dict, limit: int, offset: int
+    ) -> List[ProductEntity]:
         query = self.db.query(ProductModel).options(
             joinedload(ProductModel.price_history)
         )
@@ -139,52 +141,40 @@ class ProductRepository(ProductRepositoryInterface):
         if "title" in filter_data and filter_data["title"]:
             query = query.filter(ProductModel.title.ilike(f"%{filter_data['title']}%"))
 
-        if (
-            "min_current_price" in filter_data
-            and filter_data["min_current_price"] is not None
-        ):
-            pass
+            if (
+                "min_current_price" in filter_data
+                and filter_data["min_current_price"] is not None
+            ):
+                pass
 
-        if (
-            "max_current_price" in filter_data
-            and filter_data["max_current_price"] is not None
-        ):
-            pass
+            if (
+                "max_current_price" in filter_data
+                and filter_data["max_current_price"] is not None
+            ):
+                pass
 
-        if "created_after" in filter_data and filter_data["created_after"] is not None:
+        if "created_after" in filter_data and filter_data["created_after"]:
             query = query.filter(
                 ProductModel.created_at >= filter_data["created_after"]
             )
 
-        if (
-            "created_before" in filter_data
-            and filter_data["created_before"] is not None
-        ):
+        if "created_before" in filter_data and filter_data["created_before"]:
             query = query.filter(
                 ProductModel.created_at <= filter_data["created_before"]
             )
 
-        if "updated_after" in filter_data and filter_data["updated_after"] is not None:
+        if "updated_after" in filter_data and filter_data["updated_after"]:
             query = query.filter(
                 ProductModel.updated_at >= filter_data["updated_after"]
             )
 
-        if (
-            "updated_before" in filter_data
-            and filter_data["updated_before"] is not None
-        ):
+        if "updated_before" in filter_data and filter_data["updated_before"]:
             query = query.filter(
                 ProductModel.updated_at <= filter_data["updated_before"]
             )
 
-        db_products = query.all()
-        products = []
-        for db_product in db_products:
-            product_entity = ProductEntity(**db_product.__dict__)
-            if db_product.price_history:
-                product_entity.current_price = db_product.price_history[-1].price
-            products.append(product_entity)
-        return products
+        db_products = query.limit(limit).offset(offset).all()
+        return [ProductEntity(**db_product.__dict__) for db_product in db_products]
 
     def get_product_stats(self) -> dict:
         subquery = (

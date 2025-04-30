@@ -139,13 +139,15 @@ def search_products(
 def filter_products(
     url: Optional[str] = Query(None),
     title: Optional[str] = Query(None),
-    min_price: Optional[float] = Query(None),
-    max_price: Optional[float] = Query(None),
+    min_price: Optional[float] = Query(None, ge=0),
+    max_price: Optional[float] = Query(None, ge=0),
     created_after: Optional[datetime] = Query(None),
     created_before: Optional[datetime] = Query(None),
     updated_after: Optional[datetime] = Query(None),
     updated_before: Optional[datetime] = Query(None),
     product_repo: ProductRepository = Depends(get_product_repository),
+    limit: int = Query(default=10, ge=1, description="Number of items per page"),
+    offset: int = Query(default=0, ge=0, description="Offset to start fetching items"),
 ):
     filter_params = {
         "url": url,
@@ -158,7 +160,8 @@ def filter_products(
         "updated_before": updated_before,
     }
     use_case = FilterProductsUseCase(product_repo)
-    return use_case.execute(filter_params)
+    results = use_case.execute(filter_data=filter_params, limit=limit, offset=offset)
+    return results
 
 
 @router.get("/stats/", response_model=dict)

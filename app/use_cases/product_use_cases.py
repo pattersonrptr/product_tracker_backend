@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from app.entities.product.price_history import PriceHistory as PriceHistoryEntity
 from app.interfaces.repositories.product_repository import ProductRepositoryInterface
@@ -116,8 +116,12 @@ class FilterProductsUseCase:
     def __init__(self, product_repository: ProductRepositoryInterface):
         self.product_repository = product_repository
 
-    def execute(self, filter_data: dict) -> List[ProductEntity]:
-        return self.product_repository.filter_products(filter_data)
+    def execute(
+        self, filter_data: Dict, limit: int, offset: int
+    ) -> List[ProductEntity]:
+        return self.product_repository.filter_products(
+            filter_data=filter_data, limit=limit, offset=offset
+        )
 
 
 class GetProductStatsUseCase:

@@ -34,7 +34,9 @@ class ProductRepositoryInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def filter_products(self, filter_data: dict) -> List[Product]:
+    def filter_products(
+        self, filter_data: dict, limit: int, offset: int
+    ) -> List[Product]:
         raise NotImplementedError
 
     @abstractmethod
