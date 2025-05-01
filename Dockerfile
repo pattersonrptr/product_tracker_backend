@@ -1,6 +1,6 @@
 FROM ubuntu:latest
 
-WORKDIR /app
+WORKDIR /src
 
 COPY install_system_requirements.sh .
 RUN bash ./install_system_requirements.sh

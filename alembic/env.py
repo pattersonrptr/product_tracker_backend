@@ -6,20 +6,13 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 
-from app.infrastructure.database_config import Base
+from src.app.infrastructure.database_config import Base
 
-from app.infrastructure.database.models.user_model import User  # noqa: F401
-from app.infrastructure.database.models.search_config_model import SearchConfig  # noqa: F401
-from app.infrastructure.database.models.product_model import Product  # noqa: F401
-from app.infrastructure.database.models.source_website_model import SourceWebsite  # noqa: F401
-from app.infrastructure.database.models.price_history_model import PriceHistory  # noqa: F401
-from app.infrastructure.database.models.search_execution_log_model import (
-    SearchExecutionLog,  # noqa: F401
-)
-from app.infrastructure.database.models.search_config_source_website_model import (
-    search_config_source_website,  # noqa: F401
-)
-
+from src.app import User  # noqa: F401
+from src.app.infrastructure.database.models.search_config_model import SearchConfig  # noqa: F401
+from src.app.infrastructure.database.models.product_model import Product  # noqa: F401
+from src.app.infrastructure.database.models.source_website_model import SourceWebsite  # noqa: F401
+from src.app.infrastructure.database.models.price_history_model import PriceHistory  # noqa: F401
 
 # Add projects's root directory
 # sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

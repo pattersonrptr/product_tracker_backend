@@ -9,10 +9,10 @@ services:
       - redis
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
-      - PYTHONPATH=/app
+      - PYTHONPATH=/src
     volumes:
-      - ./alembic:/app/alembic
-      - .:/app
+      - ./alembic:/src/alembic
+      - .:/src
     command: ./start.sh
 
   scraper:
@@ -25,12 +25,12 @@ services:
       - API_URL=http://web:8000
       - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
       - CELERY_BROKER_URL=redis://redis:6379/0
-      - PYTHONPATH=/app
+      - PYTHONPATH=/src
     volumes:
-      - ./alembic:/app/alembic
-      - .:/app
-      - .:/product_scrapers
-    command: celery -A product_scrapers.celery.tasks worker --loglevel=info --concurrency=16
+      - ./alembic:/src/alembic
+      - .:/src
+    #    command: celery -A product_scrapers.celery.tasks worker --loglevel=info --concurrency=16
+    command: celery -A src.product_scrapers.celery.tasks worker --loglevel=info --concurrency=16
     # command: ["/bin/sh", "-c", "celery multi start 8 -A product_scrapers.celery.tasks --loglevel=info --concurrency=2 --detach && tail -f /dev/null"]
 
   flower:
@@ -42,7 +42,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
     ports:
       - "5555:5555"
-    command: celery -A product_scrapers.celery.tasks flower --port=5555
+    command: celery -A src.product_scrapers.celery.tasks flower --port=5555
 
   #  celery-beat:
   #    build: .
@@ -54,7 +54,7 @@ services:
   #      - API_URL=http://web:8000
   #      - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
   #      - CELERY_BROKER_URL=redis://redis:6379/0
-  #    command: celery -A product_scrapers.celery.tasks beat --loglevel=info
+  #    command: celery -A src.product_scrapers.celery.tasks beat --loglevel=info
 
   db:
     image: postgres:13

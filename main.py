@@ -1,15 +1,17 @@
 from fastapi import FastAPI
 
-from app.interfaces.controllers import (
+from src.app.interfaces.controllers import (
     product_controller,
-    price_history_controller,
-    source_website_controller,
-    search_config_controller,
+)
+from src.app.interfaces.controllers import (
     user_controller,
+    source_website_controller,
+    price_history_controller,
+    search_config_controller,
 )
 
 # TODO: verify if this import is necessary
-from app.infrastructure.database import models  # noqa: F401
+from src.app.infrastructure.database import models  # noqa: F401
 
 app = FastAPI()
 
