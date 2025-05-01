@@ -3,7 +3,9 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from src.app.entities.user import User as UserEntity
 from src.app.entities import search_config as SearchConfigEntity
+from src.app.security.auth import get_current_active_user
 from src.app.use_cases.search_config_use_cases import SearchConfigUseCases
 from src.app.interfaces.schemas.search_config_schema import (
     SearchConfig,
@@ -33,6 +35,7 @@ def get_search_config_use_cases(db: Session = Depends(get_db)):
 def create_search_config(
     search_config_in: SearchConfigCreate,
     use_cases: SearchConfigUseCases = Depends(get_search_config_use_cases),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     source_websites = []
     if search_config_in.source_websites:
@@ -57,6 +60,7 @@ def create_search_config(
 @router.get("/", response_model=List[SearchConfig])
 def read_search_configs(
     use_cases: SearchConfigUseCases = Depends(get_search_config_use_cases),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     return use_cases.get_all_search_configs()
 
@@ -65,6 +69,7 @@ def read_search_configs(
 def read_search_config(
     search_config_id: int,
     use_cases: SearchConfigUseCases = Depends(get_search_config_use_cases),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     search_config = use_cases.get_search_config(search_config_id)
     if not search_config:
@@ -77,6 +82,7 @@ def update_search_config(
     search_config_id: int,
     search_config_in: SearchConfigUpdate,
     use_cases: SearchConfigUseCases = Depends(get_search_config_use_cases),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     source_websites_models = []
     if search_config_in.source_websites:
@@ -105,6 +111,7 @@ def update_search_config(
 def delete_search_config(
     search_config_id: int,
     use_cases: SearchConfigUseCases = Depends(get_search_config_use_cases),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     if not use_cases.get_search_config(search_config_id):
         raise HTTPException(status_code=404, detail="Search config not found")
@@ -113,7 +120,9 @@ def delete_search_config(
 
 @router.get("/users/{user_id}/", response_model=List[SearchConfig])
 def read_user_search_configs(
-    user_id: int, use_cases: SearchConfigUseCases = Depends(get_search_config_use_cases)
+    user_id: int,
+    use_cases: SearchConfigUseCases = Depends(get_search_config_use_cases),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     try:
         return use_cases.get_search_configs_by_user(user_id)
@@ -125,6 +134,7 @@ def read_user_search_configs(
 def read_website_search_configs(
     source_website_id: int,
     use_cases: SearchConfigUseCases = Depends(get_search_config_use_cases),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     source_website_repo = SourceWebsiteRepository(use_cases.search_config_repo.db)
     db_source_website = source_website_repo.get_by_id(source_website_id)
