@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.infrastructure.database.models.price_history_model import (
     PriceHistory as PriceHistoryModel,
 )
-from app.entities.product import price_history as PriceHistoryEntity
+from app.entities import price_history as PriceHistoryEntity
 from app.interfaces.repositories.price_history_repository import (
     PriceHistoryRepositoryInterface,
 )

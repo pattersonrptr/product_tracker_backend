@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.entities.search import search_config as SearchConfigEntity
+from app.entities import search_config as SearchConfigEntity
 from app.use_cases.search_config_use_cases import SearchConfigUseCases
 from app.interfaces.schemas.search_config_schema import (
     SearchConfig,

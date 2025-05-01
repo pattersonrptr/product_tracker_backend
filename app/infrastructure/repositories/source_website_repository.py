@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.infrastructure.database.models.source_website_model import (
     SourceWebsite as SourceWebsiteModel,
 )
-from app.entities.product import source_website as SourceWebsiteEntity
+from app.entities import source_website as SourceWebsiteEntity
 from app.interfaces.repositories.source_website_repository import (
     SourceWebsiteRepositoryInterface,
 )

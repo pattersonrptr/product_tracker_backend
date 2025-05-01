@@ -10,7 +10,7 @@ from app.infrastructure.database.models.product_model import (
 from app.infrastructure.database.models.price_history_model import (
     PriceHistory as PriceHistoryModel,
 )
-from app.entities.product.product import Product as ProductEntity
+from app.entities.product import Product as ProductEntity
 from app.interfaces.repositories.product_repository import ProductRepositoryInterface
 
 

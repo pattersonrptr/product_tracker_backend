@@ -16,7 +16,7 @@ from app.interfaces.schemas.price_history_schema import (
     PriceHistoryCreate,
     PriceHistoryRead,
 )
-from app.entities.product.price_history import PriceHistory as PriceHistoryEntity
+from app.entities.price_history import PriceHistory as PriceHistoryEntity
 
 router = APIRouter(prefix="/price_history", tags=["price_history"])
 

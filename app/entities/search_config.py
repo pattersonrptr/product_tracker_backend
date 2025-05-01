@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from app.entities.product.source_website import SourceWebsite as SourceWebsiteEntity
+from app.entities.source_website import SourceWebsite as SourceWebsiteEntity
 
 
 class SearchConfig(BaseModel):

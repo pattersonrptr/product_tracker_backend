@@ -3,7 +3,7 @@ from typing import List, Optional
 from app.interfaces.repositories.price_history_repository import (
     PriceHistoryRepositoryInterface,
 )
-from app.entities.product.price_history import PriceHistory
+from app.entities.price_history import PriceHistory
 
 
 class CreatePriceHistoryUseCase:

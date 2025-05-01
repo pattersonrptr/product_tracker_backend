@@ -2,8 +2,10 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session  # noqa: F401
 
-from app.entities.search import search_config as SearchConfigEntity
-from app.entities.product import source_website as SourceWebsiteEntity
+from app.entities import (
+    source_website as SourceWebsiteEntity,
+    search_config as SearchConfigEntity,
+)
 from app.interfaces.repositories.search_config_repository import (
     SearchConfigRepositoryInterface,
 )

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from app.entities.product.product import Product
+from app.entities.product import Product
 
 
 class ProductRepositoryInterface(ABC):

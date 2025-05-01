@@ -1,7 +1,7 @@
 from typing import List, Optional
 from abc import ABC, abstractmethod
 
-from app.entities.product import price_history as PriceHistoryEntity
+from app.entities import price_history as PriceHistoryEntity
 
 
 class PriceHistoryRepositoryInterface(ABC):

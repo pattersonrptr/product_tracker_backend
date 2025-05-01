@@ -1,8 +1,10 @@
 from typing import Optional, List
 from abc import ABC, abstractmethod
 
-from app.entities.search import search_config as SearchConfigEntity
-from app.entities.product import source_website as SourceWebsiteEntity
+from app.entities import (
+    source_website as SourceWebsiteEntity,
+    search_config as SearchConfigEntity,
+)
 
 
 class SearchConfigRepositoryInterface(ABC):

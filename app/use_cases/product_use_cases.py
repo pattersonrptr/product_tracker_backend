@@ -1,12 +1,12 @@
 from typing import Optional, List, Dict
 
-from app.entities.product.price_history import PriceHistory as PriceHistoryEntity
+from app.entities.price_history import PriceHistory as PriceHistoryEntity
 from app.interfaces.repositories.product_repository import ProductRepositoryInterface
 from app.interfaces.repositories.price_history_repository import (
     PriceHistoryRepositoryInterface,
 )
 from app.interfaces.schemas.product_schema import ProductUpdate
-from app.entities.product.product import Product as ProductEntity
+from app.entities.product import Product as ProductEntity
 
 
 class CreateProductUseCase:

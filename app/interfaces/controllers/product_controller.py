@@ -28,7 +28,7 @@ from app.interfaces.schemas.product_schema import (
     ProductUpdate,
     ProductMinimal,
 )
-from app.entities.product.product import Product as ProductEntity
+from app.entities.product import Product as ProductEntity
 
 import logging
 

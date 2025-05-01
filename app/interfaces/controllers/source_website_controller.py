@@ -20,7 +20,7 @@ from app.interfaces.schemas.source_website_schema import (
     SourceWebsiteRead,
     SourceWebsiteUpdate,
 )
-from app.entities.product.source_website import SourceWebsite as SourceWebsiteEntity
+from app.entities.source_website import SourceWebsite as SourceWebsiteEntity
 
 router = APIRouter(prefix="/source_websites", tags=["source_websites"])
 

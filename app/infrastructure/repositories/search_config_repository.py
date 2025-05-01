@@ -5,8 +5,10 @@ from sqlalchemy.orm import Session, joinedload
 from app.infrastructure.database.models.search_config_model import (
     SearchConfig as SearchConfigModel,
 )
-from app.entities.search import search_config as SearchConfigEntity
-from app.entities.product import source_website as SourceWebsiteEntity
+from app.entities import (
+    source_website as SourceWebsiteEntity,
+    search_config as SearchConfigEntity,
+)
 from app.infrastructure.database.models.source_website_model import (
     SourceWebsite as SourceWebsiteModel,
 )
