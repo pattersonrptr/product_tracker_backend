@@ -7,6 +7,7 @@ from src.app.infrastructure.database_config import get_db
 from src.app.infrastructure.repositories.source_website_repository import (
     SourceWebsiteRepository,
 )
+from src.app.security.auth import get_current_active_user
 from src.app.use_cases.source_website_use_cases import (
     CreateSourceWebsiteUseCase,
     GetSourceWebsiteByIdUseCase,
@@ -21,6 +22,7 @@ from src.app.interfaces.schemas.source_website_schema import (
     SourceWebsiteUpdate,
 )
 from src.app.entities.source_website import SourceWebsite as SourceWebsiteEntity
+from src.app.entities.user import User as UserEntity
 
 router = APIRouter(prefix="/source_websites", tags=["source_websites"])
 
@@ -35,6 +37,7 @@ def create_source_website(
     source_website_repo: SourceWebsiteRepository = Depends(
         get_source_website_repository
     ),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     source_website_entity = SourceWebsiteEntity(**source_website.model_dump())
     use_case = CreateSourceWebsiteUseCase(source_website_repo)
@@ -47,6 +50,7 @@ def read_source_website(
     source_website_repo: SourceWebsiteRepository = Depends(
         get_source_website_repository
     ),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = GetSourceWebsiteByIdUseCase(source_website_repo)
     source_website = use_case.execute(source_website_id)
@@ -61,6 +65,7 @@ def read_source_website_by_name(
     source_website_repo: SourceWebsiteRepository = Depends(
         get_source_website_repository
     ),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = GetSourceWebsiteByNameUseCase(source_website_repo)
     source_website = use_case.execute(name)
@@ -74,6 +79,7 @@ def list_source_websites(
     source_website_repo: SourceWebsiteRepository = Depends(
         get_source_website_repository
     ),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = ListSourceWebsitesUseCase(source_website_repo)
     return use_case.execute()
@@ -86,6 +92,7 @@ def update_source_website(
     source_website_repo: SourceWebsiteRepository = Depends(
         get_source_website_repository
     ),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = UpdateSourceWebsiteUseCase(source_website_repo)
     updated_source_website = use_case.execute(source_website_id, source_website)
@@ -100,6 +107,7 @@ def delete_source_website(
     source_website_repo: SourceWebsiteRepository = Depends(
         get_source_website_repository
     ),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = DeleteSourceWebsiteUseCase(source_website_repo)
     if not use_case.execute(source_website_id):

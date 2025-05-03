@@ -29,8 +29,8 @@ from src.app.interfaces.schemas.product_schema import (
     ProductMinimal,
 )
 from src.app.entities.product import Product as ProductEntity
-from src.app.security.auth import get_current_active_user
 from src.app.entities.user import User as UserEntity
+from src.app.security.auth import get_current_active_user
 
 
 import logging
