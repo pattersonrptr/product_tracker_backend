@@ -51,6 +51,9 @@ class ApiClient:
         api_url = f"{self.base_url}/products/"
         resp = requests.post(api_url, json=product, timeout=10)
 
+        print(f"RESP: {resp.json()}")
+        print(f"RESP: {resp.status_code}")
+
         if resp.status_code == 201:
             return True
         return False

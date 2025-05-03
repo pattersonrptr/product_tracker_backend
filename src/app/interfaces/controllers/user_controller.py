@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm
-from datetime import timedelta, datetime
-from jose import jwt
+from datetime import timedelta, datetime, UTC
+from jose import jwt, JWTError
 
+from src.app.interfaces.schemas.auth_schema import TokenPayload
 from src.app.use_cases.user_use_cases import UserUseCases
 from src.app.interfaces.schemas.user_schema import (
     User,
@@ -41,15 +42,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        expire = datetime.now(UTC)  + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(
-        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
-    )
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
 
@@ -57,10 +54,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 def create_user(
     user_in: UserCreate,
     use_cases: UserUseCases = Depends(get_user_use_cases),
-    current_user: UserEntity = Depends(get_current_active_user),
+    # current_user: UserEntity = Depends(get_current_active_user),
 ):
-    # TODO: I can check if the current_user has permission to create other users, maybe they need to be Admin.
-
     hashed_password = hash_password(user_in.password)
     user_data = user_in.model_dump(exclude={"password"})
     user = UserEntity(**user_data, hashed_password=hashed_password)
@@ -74,6 +69,7 @@ async def login(
     db: Session = Depends(get_db),
 ):
     user = use_cases.get_user_by_username(form_data.username)
+
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     if not verify_password(form_data.password, user.hashed_password):
@@ -84,6 +80,17 @@ async def login(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@auth_router.post("/verify-token")
+async def verify_token(payload: TokenPayload):
+    try:
+        jwt.decode(payload.token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        print("Token is valid")
+        return {"is_valid": True}
+    except JWTError:
+        print("Token is NOT invalid")
+        return {"is_valid": False}
 
 
 @router.get("/", response_model=List[User])
@@ -111,7 +118,7 @@ def update_user(
     user_id: int,
     user_in: UserUpdate,
     use_cases: UserUseCases = Depends(get_user_use_cases),
-    current_user: UserEntity = Depends(get_current_active_user),
+    # current_user: UserEntity = Depends(get_current_active_user),
 ):
     user_data = user_in.model_dump(exclude_unset=True)
     existing_user = use_cases.get_user(user_id)
