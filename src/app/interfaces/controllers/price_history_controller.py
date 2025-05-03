@@ -7,7 +7,7 @@ from src.app.infrastructure.database_config import get_db
 from src.app.infrastructure.repositories.price_history_repository import (
     PriceHistoryRepository,
 )
-# from src.app.security.auth import get_current_active_user
+from src.app.security.auth import get_current_active_user
 from src.app.use_cases.price_history_use_cases import (
     CreatePriceHistoryUseCase,
     GetPriceHistoryByProductIdUseCase,
@@ -31,7 +31,7 @@ def get_price_history_repository(db: Session = Depends(get_db)):
 def create_price_history(
     price_history: PriceHistoryCreate,
     price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     price_history_entity = PriceHistoryEntity(**price_history.model_dump())
     use_case = CreatePriceHistoryUseCase(price_history_repo)
@@ -42,7 +42,7 @@ def create_price_history(
 def get_price_history_by_product(
     product_id: int,
     price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = GetPriceHistoryByProductIdUseCase(price_history_repo)
     history = use_case.execute(product_id)

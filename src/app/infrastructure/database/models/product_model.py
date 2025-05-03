@@ -47,7 +47,7 @@ class Product(Base):
     condition = Column(
         SQLAlchemyEnum(ProductCondition), default=ProductCondition.UNDETERMINED
     )
-    seller_name = Column(String(20))
+    seller_name = Column(String(255))
     is_available = Column(Boolean, default=True)
 
     # Images (URLs separated by commas)

@@ -1,8 +1,9 @@
 # TODO: Implement retry logic for when some task fails.
 
 import os
-from datetime import datetime, timedelta
+import requests
 
+from datetime import datetime, timedelta
 from celery import Celery, group, chord
 
 from src.product_scrapers.api.api_client import ApiClient
@@ -13,9 +14,30 @@ broker_url = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
 app = Celery(main="product_scrapers", broker=broker_url, backend="redis://redis:6379/0")
 
 
+def get_celery_worker_token():
+    api_base_url = os.getenv("API_URL", "web:8000")
+    auth_url = f"{api_base_url}/auth/login"
+    payload = {
+        "username": os.getenv("CELERY_WORKER_USERNAME"),
+        "password": os.getenv("CELERY_WORKER_PASSWORD"),
+        "grant_type": "password",
+        "scope": "",
+        "client_id": "",
+        "client_secret": "",
+    }
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    try:
+        response = requests.post(auth_url, data=payload, headers=headers)
+        response.raise_for_status()
+        return response.json().get("access_token")
+    except requests.exceptions.RequestException as e:
+        print(f"🔴 Error when trying to retrieve Celery worker token: {e}")
+        return None
+
+
 @app.task(name="src.product_scrapers.celery.tasks.run_scraper_searches")
 def run_scraper_searches(scraper_name: str = "olx"):
-    active_searches = ApiClient().get_active_searches()
+    active_searches = ApiClient(get_celery_worker_token()).get_active_searches()
 
     return group(
         run_search.s(search["search_term"], scraper_name) for search in active_searches
@@ -25,7 +47,9 @@ def run_scraper_searches(scraper_name: str = "olx"):
 @app.task(name="src.product_scrapers.celery.tasks.run_search")
 def run_search(search: str, scraper_name: str):
     scraper = ScraperManager(ScraperFactory().create_scraper(scraper_name))
-    existing_urls = ApiClient().get_existing_product_urls(scraper_name)
+    existing_urls = ApiClient(get_celery_worker_token()).get_existing_product_urls(
+        scraper_name
+    )
     # TODO: By using list here it makes useless the generator in get_products_urls. Maybe it's better to make the
     #  scraper.search() method return also the length of the urls list.
     urls = list(scraper.get_products_urls(search))
@@ -72,7 +96,9 @@ def save_products(results, scraper_name: str):
     # TODO: Next improvement cold be to save the products in batches
 
     if results:
-        source_website = ApiClient().get_source_website_by_name(scraper_name.upper())
+        source_website = ApiClient(
+            get_celery_worker_token()
+        ).get_source_website_by_name(scraper_name.upper())
         website_id = source_website.get("id")
         successful = [
             {**r["data"], **{"source_website_id": website_id}}
@@ -81,7 +107,9 @@ def save_products(results, scraper_name: str):
         ]
 
         if successful:
-            created = ApiClient().create_new_products(successful)
+            created = ApiClient(get_celery_worker_token()).create_new_products(
+                successful
+            )
             return {"status": "success", "created": created}
 
     return {"status": "error", "message": "No products to save"}
@@ -90,7 +118,9 @@ def save_products(results, scraper_name: str):
 @app.task(name="src.product_scrapers.celery.tasks.run_scraper_update")
 def run_scraper_update(scraper_name: str):
     cutoff_date = (datetime.today() - timedelta(days=30)).date()
-    products = ApiClient().get_products({"updated_before": cutoff_date})
+    products = ApiClient(get_celery_worker_token()).get_products(
+        {"updated_before": cutoff_date}
+    )
 
     # TODO: Todos os produtos estão sendo atualizados... revise essa lógica
 
@@ -114,7 +144,9 @@ def update_product(product: dict, scraper_name: str):
 @app.task(name="src.product_scrapers.celery.tasks.update_products")
 def update_products(results, scraper_name: str):
     if results:
-        source_website = ApiClient().get_source_website_by_name(scraper_name.upper())
+        source_website = ApiClient(
+            get_celery_worker_token()
+        ).get_source_website_by_name(scraper_name.upper())
         website_id = source_website.get("id")
         successful = [
             {**r["data"], **{"source_website_id": website_id}}
@@ -123,7 +155,9 @@ def update_products(results, scraper_name: str):
         ]
 
         if successful:
-            updated = ApiClient().update_product_list(successful)
+            updated = ApiClient(get_celery_worker_token()).update_product_list(
+                successful
+            )
             return {"status": "success", "updated": updated}
 
         return {"status": "error", "message": "No products to update"}

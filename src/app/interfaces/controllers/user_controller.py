@@ -44,9 +44,13 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(UTC)  + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(UTC) + timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
     return encoded_jwt
 
 
@@ -54,7 +58,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 def create_user(
     user_in: UserCreate,
     use_cases: UserUseCases = Depends(get_user_use_cases),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     hashed_password = hash_password(user_in.password)
     user_data = user_in.model_dump(exclude={"password"})
@@ -118,7 +122,7 @@ def update_user(
     user_id: int,
     user_in: UserUpdate,
     use_cases: UserUseCases = Depends(get_user_use_cases),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     user_data = user_in.model_dump(exclude_unset=True)
     existing_user = use_cases.get_user(user_id)

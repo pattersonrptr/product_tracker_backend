@@ -54,9 +54,9 @@ def create_product(
     product_in: ProductCreate,
     product_repo: ProductRepository = Depends(get_product_repository),
     price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
-    # logging.info(f"Authenticated user creating product: {current_user.username}")
+    logging.info(f"Authenticated user creating product: {current_user.username}")
     product_entity = ProductEntity(**product_in.model_dump(exclude={"price"}))
     use_case = CreateProductUseCase(product_repo, price_history_repo)
     created_product = use_case.execute(product_entity, product_in.price)
@@ -67,7 +67,7 @@ def create_product(
 def read_product(
     product_id: int,
     product_repo: ProductRepository = Depends(get_product_repository),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = GetProductByIdUseCase(product_repo)
     product = use_case.execute(product_id)
@@ -81,7 +81,7 @@ def read_product(
 def read_product_by_url(
     url: str,
     product_repo: ProductRepository = Depends(get_product_repository),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = GetProductByUrlUseCase(product_repo)
     product = use_case.execute(url)
@@ -95,7 +95,7 @@ def read_products(
     product_repo: ProductRepository = Depends(get_product_repository),
     limit: int = Query(default=10, ge=1, description="Number of items per page"),
     offset: int = Query(default=0, ge=0, description="Offset to start fetching items"),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = ListProductsUseCase(product_repo)
     products = use_case.execute(limit=limit, offset=offset)
@@ -108,7 +108,7 @@ def update_product(
     product_in: ProductUpdate,
     product_repo: ProductRepository = Depends(get_product_repository),
     price_history_repo: PriceHistoryRepository = Depends(get_price_history_repository),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = UpdateProductUseCase(product_repo, price_history_repo)
     updated_product = use_case.execute(product_id, product_in, product_in.price)
@@ -121,7 +121,7 @@ def update_product(
 def delete_product(
     product_id: int,
     product_repo: ProductRepository = Depends(get_product_repository),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = DeleteProductUseCase(product_repo)
 
@@ -136,7 +136,7 @@ def search_products(
     product_repo: ProductRepository = Depends(get_product_repository),
     limit: int = Query(default=10, ge=1, description="Number of items per page"),
     offset: int = Query(default=0, ge=0, description="Offset to start fetching items"),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = SearchProductsUseCase(product_repo)
     results = use_case.execute(query=query, limit=limit, offset=offset)
@@ -156,9 +156,9 @@ def filter_products(
     product_repo: ProductRepository = Depends(get_product_repository),
     limit: int = Query(default=10, ge=1, description="Number of items per page"),
     offset: int = Query(default=0, ge=0, description="Offset to start fetching items"),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
-    # logging.info(f"Authenticated user accessing /filter/: {current_user.username}")
+    logging.info(f"Authenticated user accessing /filter/: {current_user.username}")
     filter_params = {
         "url": url,
         "title": title,
@@ -177,7 +177,7 @@ def filter_products(
 @router.get("/stats/", response_model=dict)
 def get_product_stats(
     product_repo: ProductRepository = Depends(get_product_repository),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = GetProductStatsUseCase(product_repo)
     return use_case.execute()
@@ -188,7 +188,7 @@ def get_minimal_products(
     product_repo: ProductRepository = Depends(get_product_repository),
     limit: int = Query(default=10, ge=1, description="Number of items per page"),
     offset: int = Query(default=0, ge=0, description="Offset to start fetching items"),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = GetMinimalProductsUseCase(product_repo)
     return use_case.execute(limit=limit, offset=offset)

@@ -60,7 +60,7 @@ def create_search_config(
 @router.get("/", response_model=List[SearchConfig])
 def read_search_configs(
     use_cases: SearchConfigUseCases = Depends(get_search_config_use_cases),
-    # current_user: UserEntity = Depends(get_current_active_user),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     return use_cases.get_all_search_configs()
 
