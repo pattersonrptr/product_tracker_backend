@@ -176,7 +176,15 @@ class ProductRepository(ProductRepositoryInterface):
             )
 
         db_products = query.limit(limit).offset(offset).all()
-        return [ProductEntity(**db_product.__dict__) for db_product in db_products]
+        products = []
+
+        for db_product in db_products:
+            product_entity = ProductEntity(**db_product.__dict__)
+            if db_product.price_history:
+                product_entity.current_price = db_product.price_history[-1].price
+            products.append(product_entity)
+        return products
+        # return [ProductEntity(**db_product.__dict__) for db_product in db_products]
 
     def get_product_stats(self) -> dict:
         subquery = (
