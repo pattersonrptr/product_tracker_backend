@@ -146,7 +146,9 @@ def delete_user(
 
 @router.get("/username/{username}", response_model=User)
 def read_user_by_username(
-    username: str, use_cases: UserUseCases = Depends(get_user_use_cases)
+    username: str,
+    use_cases: UserUseCases = Depends(get_user_use_cases),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     user = use_cases.get_user_by_username(username)
     if not user:
@@ -156,7 +158,9 @@ def read_user_by_username(
 
 @router.get("/email/{email}", response_model=User)
 def read_user_by_email(
-    email: str, use_cases: UserUseCases = Depends(get_user_use_cases)
+    email: str,
+    use_cases: UserUseCases = Depends(get_user_use_cases),
+    current_user: UserEntity = Depends(get_current_active_user),
 ):
     user = use_cases.get_user_by_email(email)
     if not user:
