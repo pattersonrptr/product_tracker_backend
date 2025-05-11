@@ -7,7 +7,8 @@ done
 
 sleep 5
 
-rm -rf alembic/versions/*
+rm -rf alembic/versions
+mkdir -p alembic/versions
 alembic revision --autogenerate -m "First Migration"
 alembic upgrade head
 
