@@ -46,21 +46,17 @@ class MercadoLivreScraper(ScraperInterface):
 
         return ""
 
-    def _get_next_url(self, html: str) -> str:
-        soup = BeautifulSoup(html, "html.parser")
+    def _get_next_url(self, total_links: int, search_term: str) -> str:
+        if not total_links:
+            return ""
+        start_from = total_links + 1
 
-        next_button = soup.select_one(
-            "li.andes-pagination__button--next a.andes-pagination__link"
-        )
+        return f"{self.BASE_URL}/{search_term}_Desde_{start_from}_NoIndex_True"
 
-        if next_button and next_button.has_attr("href"):
-            next_url = next_button["href"]
-            return next_url
-
-        return ""
 
     def search(self, search_term: str) -> list:
         page_number = 1
+        total_links = 0
         has_next = True
         all_links = []
         search_url = f"{self.BASE_URL}/{search_term}"
@@ -78,9 +74,11 @@ class MercadoLivreScraper(ScraperInterface):
                     break
 
                 all_links.extend(links)
-                page_number += 1
                 print(f"Page Number {page_number}")
-                search_url = self._get_next_url(html)
+                page_number += 1
+                total_links = total_links + len(links)
+                search_url = self._get_next_url(total_links, search_term)
+                has_next = search_term !=  ""
 
             except Exception as e:
                 print(f"Error on page {page_number}: {str(e)}")
@@ -94,11 +92,13 @@ class MercadoLivreScraper(ScraperInterface):
         soup = BeautifulSoup(html, "html.parser")
         title = self._extract_title(soup)
         price = self._extract_price(soup)
+        description = self._extract_description(soup)
 
         return {
             "title": title,
             "url": url,
             "price": price,
+            "description": description,
         }
 
     def _extract_price(self, soup):
@@ -114,6 +114,11 @@ class MercadoLivreScraper(ScraperInterface):
         title_element = soup.find("h1", class_="ui-pdp-title")
         title = title_element.get_text(strip=True) if title_element else ""
         return title
+
+    def _extract_description(self, soup):
+        description_element = soup.find("p", {"class": "ui-pdp-description__content"})
+        description = description_element.get_text(strip=True) if description_element else ""
+        return description
 
     def update_data(self, product: dict) -> dict:
         data = self.scrape_data(product["url"])

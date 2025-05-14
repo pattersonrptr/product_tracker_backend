@@ -70,7 +70,6 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
         city = json_data.get("location", {}).get("municipality")
         state = json_data.get("location", {}).get("uf")
 
-        # TODO: find cleaner way to extract this data
         # condition: Optional[str] = next(
         #     (
         #         prop["value"]
