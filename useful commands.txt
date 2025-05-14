@@ -1,11 +1,12 @@
-docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_searches --args '["olx"]'
-docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_searches --args '["enjoei"]'
 
-docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_update --args '["olx"]'
-docker exec -it web celery -A scrapers.tasks call scrapers.tasks.run_scraper_update --args '["enjoei"]'
 
-alembic revision --autogenerate -m "First Migrations" && alembic upgrade head
+docker exec -it web celery -A product_scrapers.celery.tasks call product_scrapers.celery.tasks.run_scraper_searches --args '["olx"]'
+docker exec -it web celery -A product_scrapers.celery.tasks call product_scrapers.celery.tasks.run_scraper_update --args '["olx"]'
+
+
+alembic revision --autogenerate -m "First Migration" && alembic upgrade head
 
 psql -U user -d price_monitor
 
 docker exec -it web python3 scripts/load_fixtures.py
+docker exec -it web celery -A src.product_scrapers.celery.tasks call src.product_scrapers.celery.tasks.run_scraper_searches --args '["olx"]'

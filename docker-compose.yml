@@ -9,7 +9,10 @@ services:
       - redis
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
-      - PYTHONPATH=/app
+      - PYTHONPATH=/src
+    volumes:
+      - ./alembic:/src/alembic
+      - .:/src
     command: ./start.sh
 
   scraper:
@@ -22,8 +25,15 @@ services:
       - API_URL=http://web:8000
       - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
       - CELERY_BROKER_URL=redis://redis:6379/0
-    command: celery -A scrapers.tasks worker --loglevel=info --concurrency=16
-    # command: ["/bin/sh", "-c", "celery multi start 8 -A scrapers.tasks --loglevel=info --concurrency=2 --detach && tail -f /dev/null"]
+      - PYTHONPATH=/src
+      - CELERY_WORKER_USERNAME=celery_user
+      - CELERY_WORKER_PASSWORD=celery_user_password
+    volumes:
+      - ./alembic:/src/alembic
+      - .:/src
+    #    command: celery -A product_scrapers.celery.tasks worker --loglevel=info --concurrency=16
+    command: celery -A src.product_scrapers.celery.tasks worker --loglevel=info --concurrency=16
+    # command: ["/bin/sh", "-c", "celery multi start 8 -A product_scrapers.celery.tasks --loglevel=info --concurrency=2 --detach && tail -f /dev/null"]
 
   flower:
     build: .
@@ -34,19 +44,19 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
     ports:
       - "5555:5555"
-    command: celery -A scrapers.tasks flower --port=5555
+    command: celery -A src.product_scrapers.celery.tasks flower --port=5555
 
-  celery-beat:
-    build: .
-    container_name: celery-beat
-    depends_on:
-      - scraper
-      - redis
-    environment:
-      - API_URL=http://web:8000
-      - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
-      - CELERY_BROKER_URL=redis://redis:6379/0
-    command: celery -A scrapers.tasks beat --loglevel=info
+  #  celery-beat:
+  #    build: .
+  #    container_name: celery-beat
+  #    depends_on:
+  #      - scraper
+  #      - redis
+  #    environment:
+  #      - API_URL=http://web:8000
+  #      - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
+  #      - CELERY_BROKER_URL=redis://redis:6379/0
+  #    command: celery -A src.product_scrapers.celery.tasks beat --loglevel=info
 
   db:
     image: postgres:13
