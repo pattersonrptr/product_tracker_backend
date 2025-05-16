@@ -38,7 +38,6 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
             search_url = self._build_search_url(search_term, page_number)
             resp = self.retry_request(search_url, self.headers())
 
-            # if hasattr(resp, 'json'):
             html_content = resp.text
 
             if not html_content:
@@ -63,21 +62,12 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
         title = json_data.get("subject")
         description = json_data.get("body")
         source_product_code = f"OLX - {json_data.get('listId')}"
-        price = json_data.get("priceValue")
+        price = json_data.get("priceValue", '').replace("R$", "").replace(".", "").replace(",", ".").strip()
         images = json_data.get("images", [])
         image_url = images[0].get("original", "") if images else ""
         seller_name = json_data.get("user", {}).get("name")
         city = json_data.get("location", {}).get("municipality")
         state = json_data.get("location", {}).get("uf")
-
-        # condition: Optional[str] = next(
-        #     (
-        #         prop["value"]
-        #         for prop in json_data.get("properties", [])
-        #         if prop["name"] == "hobbies_condition"
-        #     ),
-        #     None,
-        # )
 
         return {
             "url": url,
@@ -86,12 +76,11 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
             "source_product_code": source_product_code,
             "city": city,
             "state": state,
-            # "condition": condition,
             "seller_name": seller_name,
-            "is_available": True,  # TODO: check if the product is available.
+            "is_available": True if price else False,
             "image_urls": image_url,
             "source_metadata": {},
-            "price": price.replace("R$", "").replace(".", "").replace(",", ".").strip(),
+            "price": price,
         }
 
     def update_data(self, product: Dict[str, Any]) -> Dict[str, Any]:

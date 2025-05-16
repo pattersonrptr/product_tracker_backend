@@ -7,7 +7,7 @@ def get_fixtures():
         "source_websites": [
             {
                 "id": 1,
-                "name": "OLX",
+                "name": "olx",
                 "base_url": "https://www.olx.com.br",
                 "is_active": True,
             },
@@ -21,7 +21,7 @@ def get_fixtures():
                 "id": 3,
                 "name": "mercado_livre",
                 "base_url": "https://www.mercadolivre.com.br",
-                "is_active": False,
+                "is_active": True,
             },
             {
                 "id": 4,
@@ -135,7 +135,7 @@ def get_fixtures():
                 "frequency_days": 3,
                 "preferred_time": time(14, 30),
                 "search_metadata": {"category": "eletrônicos", "warranty": True},
-                "source_website_ids": [2],
+                "source_website_ids": [3],
                 "user_id": 2,
             },
         ],

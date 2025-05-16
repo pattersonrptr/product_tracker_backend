@@ -1,5 +1,3 @@
-# TODO: Implement retry logic for when some task fails.
-
 import os
 import requests
 
@@ -98,7 +96,7 @@ def save_products(results, scraper_name: str):
     if results:
         source_website = ApiClient(
             get_celery_worker_token()
-        ).get_source_website_by_name(scraper_name.upper())
+        ).get_source_website_by_name(scraper_name.lower())
         website_id = source_website.get("id")
         successful = [
             {**r["data"], **{"source_website_id": website_id}}
@@ -146,7 +144,7 @@ def update_products(results, scraper_name: str):
     if results:
         source_website = ApiClient(
             get_celery_worker_token()
-        ).get_source_website_by_name(scraper_name.upper())
+        ).get_source_website_by_name(scraper_name.lower())
         website_id = source_website.get("id")
         successful = [
             {**r["data"], **{"source_website_id": website_id}}
@@ -160,4 +158,4 @@ def update_products(results, scraper_name: str):
             )
             return {"status": "success", "updated": updated}
 
-        return {"status": "error", "message": "No products to update"}
+    return {"status": "error", "message": "No products to update"}

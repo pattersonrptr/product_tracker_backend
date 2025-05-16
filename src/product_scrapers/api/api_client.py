@@ -19,6 +19,7 @@ class ApiClient:
         self, method: str, endpoint: str, data: dict = None, params: dict = None
     ) -> requests.Response:
         url = f"{self.base_url}{endpoint}"
+        print("data: ", data)
         try:
             response = requests.request(
                 method, url, headers=self.headers, json=data, params=params, timeout=10
@@ -59,7 +60,7 @@ class ApiClient:
 
     def product_exists(self, product) -> bool:
         print("🔎 Checking if product exists")
-        response = self._make_request("GET", f"/products/url/{product["url"]}")
+        response = self._make_request("GET", f"/products/url/{product['url']}")
         if response.status_code == 200 and response.json():
             print(response.status_code)
             print(response.json())
