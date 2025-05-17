@@ -1,7 +1,4 @@
-import cloudscraper
-
 from bs4 import BeautifulSoup
-from cloudscraper import requests
 from urllib.parse import urlparse, parse_qs
 
 from src.product_scrapers.scrapers.base.requests_scraper import RequestScraper
@@ -20,7 +17,6 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
             "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
             "DNT": "1",
             "Sec-GPC": "1",
-            # ...
         }
         random_user_agent = self.get_random_user_agent()
 
@@ -90,23 +86,24 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
         title = self._extract_title(soup)
         price = self._extract_price(soup)
         description = self._extract_description(soup)
+        source_product_code = f"ML - {self._extract_product_code(url)}"
         is_available = self._extract_availability(soup)
-        image_urls = self._extract_image_src(soup)
+        image_url = self._extract_image_src(soup)
 
         self._extract_product_code(url)
 
         return {
             "url": url,
             "title": title,
+            "price": price,
             "description": description,
-            "source_product_code": f"ML - {self._extract_product_code(url)}",
+            "source_product_code": source_product_code,
             "city": "not found",
             "state": "not found",
             "seller_name": "not found",
             "is_available": is_available,
-            "image_urls": image_urls,
+            "image_urls": image_url,
             "source_metadata": {},
-            "price": price,
         }
 
     def _extract_price(self, soup):
