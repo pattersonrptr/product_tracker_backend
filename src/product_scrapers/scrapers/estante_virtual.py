@@ -66,8 +66,7 @@ class EstanteVirtualScraper(ScraperInterface, RequestScraper, RotatingUserAgentM
             return {}
 
         product_info = self._extract_product_info(data)
-        prices = self._extract_prices(product_info)
-        price = self._get_lowest_price(prices)
+        price = self._extract_price(product_info)
         description = self._extract_description(product_info)
         seller = self._extract_seller(product_info)
         location = self._extract_location(product_info)
@@ -120,21 +119,18 @@ class EstanteVirtualScraper(ScraperInterface, RequestScraper, RotatingUserAgentM
                 prices.append(price)
         return prices
 
-    def _get_lowest_price(self, prices: list) -> float:
-        return min(prices) if prices else 0
+    def __extract_price(self, product_info: dict) -> float:
+        sale_in_cents = product_info.get("currentProduct", {}).get("price", {}).get("saleInCents")
+
+        if sale_in_cents is None:
+            raise ValueError("Price not found in product info")
+        return sale_in_cents / 100
 
     def _extract_description(self, product_info: dict) -> str:
         return product_info.get("currentProduct", {}).get("description", "")
 
     def _extract_seller(self, product_info: dict) -> str:
-        grouper = product_info.get("grouper", {})
-        group_products = grouper.get("groupProducts", {})
-        for condition in ["novo", "usado"]:
-            if condition in group_products:
-                prices_list = group_products[condition].get("prices", [])
-                if prices_list:
-                    return prices_list[0].get("sellerName", "")
-        return ""
+        return product_info.get("currentProduct", {}).get("price", {}).get("seller", "Seller not found")
 
     def _extract_location(self, product_info: dict) -> str:
         grouper = product_info.get("grouper", {})

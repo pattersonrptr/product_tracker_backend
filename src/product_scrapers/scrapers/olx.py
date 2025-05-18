@@ -31,26 +31,34 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
             custom_headers["User-Agent"] = random_user_agent
         return custom_headers
 
-    def search(self, search_term: str):
+    def search(self, search_term: str) -> List[str]:
         page_number = 1
+        results = []
 
         while True:
             search_url = self._build_search_url(search_term, page_number)
             resp = self.retry_request(search_url, self.headers())
-
             html_content = resp.text
 
             if not html_content:
                 break
 
-            links = self._extract_links(html_content)
+            try:
+                links = self._extract_links(html_content)
 
-            if not links:
+                if not links:
+                    break
+            except Exception as e:
+                print(f"Error extracting links: {e}")
                 break
 
-            yield from links
-
+            results.extend(links)
             page_number += 1
+
+        if not results:
+            raise Exception("No results found")
+
+        return results
 
     def scrape_data(self, url: str) -> Dict[str, Any]:
         resp = self.retry_request(url, self.headers())
@@ -58,7 +66,6 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
         soup = BeautifulSoup(html_content, "html.parser")
         json_data = self._extract_json_data(soup)
 
-        # TODO: find cleaner way to extract this data
         title = json_data.get("subject")
         description = json_data.get("body")
         source_product_code = f"OLX - {json_data.get('listId')}"
@@ -72,6 +79,7 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
         return {
             "url": url,
             "title": title,
+            "price": price,
             "description": description,
             "source_product_code": source_product_code,
             "city": city,
@@ -80,7 +88,6 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
             "is_available": True if price else False,
             "image_urls": image_url,
             "source_metadata": {},
-            "price": price,
         }
 
     def update_data(self, product: Dict[str, Any]) -> Dict[str, Any]:
@@ -95,12 +102,27 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
 
     def _extract_links(self, html_content: str) -> List[str]:
         soup = BeautifulSoup(html_content, "html.parser")
-        links = []
-        for a in soup.select(".AdListing_adListContainer__ALQla .olx-adcard a"):
-            href = a.get("href", "").split("#")[0]
-            if href and href not in links:
-                links.append(href)
-        return links
+        urls = []
+
+        # json_str = document.getElementById("__NEXT_DATA__").innerHTML
+        data_element = soup.find("script", {"id": "__NEXT_DATA__"})
+
+        if not data_element:
+            raise Exception("No data found")
+
+        data = json.loads(data_element.string)
+        ads_data = data.get('props', {}).get('pageProps', {}).get('ads')
+
+        if not ads_data:
+            raise Exception("No ads data found")
+
+        for ad in ads_data:
+            url = ad.get("url")
+
+            if url and url not in urls:
+                urls.append(url)
+
+        return urls
 
     def _extract_json_data(self, soup: BeautifulSoup) -> Dict[str, Any]:
         script = soup.find("script", {"id": "initial-data"})
