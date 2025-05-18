@@ -30,15 +30,19 @@ class ApiClient:
             print(f"🔴 Request error at {url}: {e}")
             return requests.Response()
 
+    def get_search_configs_by_source_website(self, source_website_name: str):
+        source_website = self.get_source_website_by_name(source_website_name)
+        source_website_id = source_website.get("id")
+        if not source_website_id:
+            print(f"🔴 Source website '{source_website_name}' not found.")
+            return []
+        response = self._make_request("GET", f"/search_configs/source_websites/{source_website_id}/")
+        return response.json() if response.status_code == 200 and response.json() else []
+
     def get_active_searches(self) -> List[Dict[str, Any]]:
-        # TODO: This is temporarily, it is better to have get_active_searches endpoint in the API.
         print("🔎 Getting search configs")
         response = self._make_request("GET", "/search_configs/")
-        return (
-            [item for item in response.json() if item.get("is_active")]
-            if response.status_code == 200
-            else []
-        )
+        return [item for item in response.json() if item.get("is_active")]
 
     def get_source_website_by_name(self, website_name: str) -> Dict[str, Any]:
         print(f"🔎 Checking if source website {website_name} exists")
