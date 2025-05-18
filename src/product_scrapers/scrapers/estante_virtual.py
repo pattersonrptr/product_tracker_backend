@@ -76,7 +76,7 @@ class EstanteVirtualScraper(ScraperInterface, RequestScraper, RotatingUserAgentM
         return {
             "url": url,
             "title": f"{product_info.get('name', '')} | {product_info.get('author', '')}",
-            "price": f"R$ {price:.2f}" if price else "",
+            "price": f"{price:.2f}" if price else "",
             "description": description,
             "source_product_code": f"EV - {product_info.get('id', '')}",
             "city": location,
@@ -119,7 +119,7 @@ class EstanteVirtualScraper(ScraperInterface, RequestScraper, RotatingUserAgentM
                 prices.append(price)
         return prices
 
-    def __extract_price(self, product_info: dict) -> float:
+    def _extract_price(self, product_info: dict) -> float:
         sale_in_cents = product_info.get("currentProduct", {}).get("price", {}).get("saleInCents")
 
         if sale_in_cents is None:
@@ -130,7 +130,7 @@ class EstanteVirtualScraper(ScraperInterface, RequestScraper, RotatingUserAgentM
         return product_info.get("currentProduct", {}).get("description", "")
 
     def _extract_seller(self, product_info: dict) -> str:
-        return product_info.get("currentProduct", {}).get("price", {}).get("seller", "Seller not found")
+        return product_info.get("currentProduct", {}).get("price", {}).get("seller").get("name", "Seller not found")
 
     def _extract_location(self, product_info: dict) -> str:
         grouper = product_info.get("grouper", {})
