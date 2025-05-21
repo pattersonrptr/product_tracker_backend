@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict, Any
 
 from src.app.infrastructure.database.models.source_website_model import SourceWebsite
 from src.app.interfaces.repositories.source_website_repository import (
@@ -39,8 +39,21 @@ class ListSourceWebsitesUseCase:
     def __init__(self, source_website_repository: SourceWebsiteRepositoryInterface):
         self.source_website_repository = source_website_repository
 
-    def execute(self, limit: int, offset: int) -> Tuple[List[SourceWebsite], int]: #
-        return self.source_website_repository.get_all(limit, offset)
+    def execute(
+            self,
+            limit: int,
+            offset: int,
+            filter_data: Optional[Dict[str, Any]] = None,
+            sort_by: Optional[str] = None,
+            sort_order: Optional[str] = None
+    ) -> Tuple[List[SourceWebsite], int]:
+        return self.source_website_repository.get_all(
+            limit=limit,
+            offset=offset,
+            filter_params=filter_data,
+            sort_by=sort_by,
+            sort_order=sort_order
+        )
 
 
 class UpdateSourceWebsiteUseCase:

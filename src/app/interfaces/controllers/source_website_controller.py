@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from sqlalchemy.orm import Session
 
@@ -60,16 +62,33 @@ def get_source_website_by_id(
 
 @router.get("/", response_model=PaginatedSourceWebsiteResponse)
 def list_source_websites(
+    name: Optional[str] = Query(None, min_length=1),
+    is_active: Optional[bool] = Query(None),
+    base_url: Optional[str] = Query(None),
     limit: int = Query(10, ge=1, description="Number of items per page"),
     offset: int = Query(0, ge=0, description="Offset to start fetching items"),
+    sort_by: Optional[str] = Query(None, description="Field to sort by"),
+    sort_order: Optional[str] = Query(None, description="Sort order (asc or desc)"),
     source_website_repo: SourceWebsiteRepository = Depends(
         get_source_website_repository
     ),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
+    filter_params = {
+        "name": name,
+        "is_active": is_active,
+        "base_url": base_url,
+    }
     use_case = ListSourceWebsitesUseCase(source_website_repo)
-    items, total_count = use_case.execute(limit=limit, offset=offset)
+    items, total_count = use_case.execute(
+        filter_data=filter_params,
+        limit=limit,
+        offset=offset,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
     return {"items": items, "total_count": total_count, "limit": limit, "offset": offset}
+
 
 
 @router.put("/{source_website_id}", response_model=SourceWebsiteRead)

@@ -1,5 +1,6 @@
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict, Any
 
+from sqlalchemy import func, desc, asc
 from sqlalchemy.orm import Session
 
 from src.app.infrastructure.database.models.source_website_model import (
@@ -50,11 +51,35 @@ class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
             else None
         )
 
-    def get_all(self, limit: int, offset: int) -> Tuple[List[SourceWebsiteEntity.SourceWebsite], int]: #
+    def get_all(
+            self,
+            limit: int,
+            offset: int,
+            filter_params: Optional[Dict[str, Any]] = None,
+            sort_by: Optional[str] = None,
+            sort_order: Optional[str] = None
+    ) -> Tuple[List[SourceWebsiteEntity.SourceWebsite], int]:
         query = self.db.query(SourceWebsiteModel)
+
+        if filter_params:
+            if filter_params.get("name"):
+                query = query.filter(SourceWebsiteModel.name.ilike(f"%{filter_params['name']}%"))
+            if filter_params.get("is_active") is not None:
+                query = query.filter(SourceWebsiteModel.is_active == filter_params['is_active'])
+            if filter_params.get("base_url"):
+                query = query.filter(SourceWebsiteModel.base_url.ilike(f"%{filter_params['base_url']}%"))
+
         total_count = query.count()
 
-        db_source_websites = query.offset(offset).limit(limit).all() #
+        if sort_by:
+            sort_column = getattr(SourceWebsiteModel, sort_by, None)
+            if sort_column:
+                if sort_order == 'desc':
+                    query = query.order_by(desc(sort_column))
+                else:
+                    query = query.order_by(asc(sort_column))
+
+        db_source_websites = query.offset(offset).limit(limit).all()
 
         items = [
             SourceWebsiteEntity.SourceWebsite(**db_sw.__dict__)

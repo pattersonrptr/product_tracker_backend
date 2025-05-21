@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict
 
 from src.app.infrastructure.database.models.source_website_model import SourceWebsite
 from src.app.entities import source_website as SourceWebsiteEntity
@@ -19,8 +19,15 @@ class SourceWebsiteRepositoryInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_all(self, limit: int, offset: int) -> Tuple[List[SourceWebsiteEntity.SourceWebsite], int]:
-        pass
+    def get_all(
+            self,
+            limit: int,
+            offset: int,
+            filter_params: Dict,
+            sort_by: str,
+            sort_order: str,
+    ) -> Tuple[List[SourceWebsiteEntity.SourceWebsite], int]:
+        raise NotImplementedError
 
     @abstractmethod
     def update(

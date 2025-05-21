@@ -158,7 +158,6 @@ def filter_products(
     offset: int = Query(default=0, ge=0, description="Offset to start fetching items"),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
-    logging.info(f"Authenticated user accessing /filter/: {current_user.username}")
     filter_params = {
         "url": url,
         "title": title,
