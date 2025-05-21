@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from src.app.infrastructure.database.models.source_website_model import SourceWebsite
+from src.app.entities import source_website as SourceWebsiteEntity
 
 
 class SourceWebsiteRepositoryInterface(ABC):
@@ -18,8 +19,8 @@ class SourceWebsiteRepositoryInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_all(self) -> List[SourceWebsite]:
-        raise NotImplementedError
+    def get_all(self, limit: int, offset: int) -> Tuple[List[SourceWebsiteEntity.SourceWebsite], int]:
+        pass
 
     @abstractmethod
     def update(

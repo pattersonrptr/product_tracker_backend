@@ -44,12 +44,16 @@ def load_fixtures(selected_fixtures):
     try:
         if "source_websites" in selected_fixtures:
             db.bulk_insert_mappings(SourceWebsite, data["source_websites"])
+
         if "users" in selected_fixtures:
             db.bulk_insert_mappings(User, data.get("users", []))
+
         if "products" in selected_fixtures:
             db.bulk_insert_mappings(Product, data["products"])
+
         if "price_history" in selected_fixtures:
             db.bulk_insert_mappings(PriceHistory, data["price_history"])
+
         if "search_configs" in selected_fixtures:
             search_configs_data = []
             for sc in data["search_configs"]:

@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 
 from src.app.entities.user import User as UserEntity
@@ -20,7 +20,6 @@ from src.app.infrastructure.repositories.user_repository import UserRepository
 from src.app.infrastructure.repositories.source_website_repository import (
     SourceWebsiteRepository,
 )
-
 
 router = APIRouter(prefix="/search_configs", tags=["search_config"])
 
@@ -116,6 +115,27 @@ def delete_search_config(
     if not use_cases.get_search_config(search_config_id):
         raise HTTPException(status_code=404, detail="Search config not found")
     return use_cases.delete_search_config(search_config_id)
+
+
+@router.delete("/bulk/", response_model=dict)
+def bulk_delete_search_configs(
+    ids: list[int] = Body(..., embed=True, description="Lista de IDs para deletar"),
+    use_cases: SearchConfigUseCases = Depends(get_search_config_use_cases),
+    current_user: UserEntity = Depends(get_current_active_user),
+):
+    not_found = []
+    deleted = []
+    for sc_id in ids:
+        if use_cases.get_search_config(sc_id):
+            use_cases.delete_search_config(sc_id)
+            deleted.append(sc_id)
+        else:
+            not_found.append(sc_id)
+    return {
+        "deleted": deleted,
+        "not_found": not_found,
+        "message": f"{len(deleted)} configs deletados, {len(not_found)} não encontrados."
+    }
 
 
 @router.get("/users/{user_id}/", response_model=List[SearchConfig])

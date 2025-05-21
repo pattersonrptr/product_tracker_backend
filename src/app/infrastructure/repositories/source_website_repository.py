@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from sqlalchemy.orm import Session
 
@@ -50,12 +50,17 @@ class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
             else None
         )
 
-    def get_all(self) -> List[SourceWebsiteEntity.SourceWebsite]:
-        db_source_websites = self.db.query(SourceWebsiteModel).all()
-        return [
+    def get_all(self, limit: int, offset: int) -> Tuple[List[SourceWebsiteEntity.SourceWebsite], int]: #
+        query = self.db.query(SourceWebsiteModel)
+        total_count = query.count()
+
+        db_source_websites = query.offset(offset).limit(limit).all() #
+
+        items = [
             SourceWebsiteEntity.SourceWebsite(**db_sw.__dict__)
             for db_sw in db_source_websites
         ]
+        return items, total_count
 
     def update(
         self, source_website_id: int, source_website: SourceWebsiteEntity.SourceWebsite

@@ -1,11 +1,12 @@
 from pydantic import BaseModel, Field
+from typing import List
 
 
 class SourceWebsiteBase(BaseModel):
     name: str = Field(..., description="Website name (e.g., 'OLX', 'Enjoei')")
     base_url: str = Field(..., description="Base URL of the website")
     is_active: bool = Field(
-        True, description="Indicates if we are currently collecting data from this site"
+        True, description="Indicates if we are currently collecting data from this site."
     )
 
 
@@ -19,3 +20,10 @@ class SourceWebsiteRead(SourceWebsiteBase):
 
 class SourceWebsiteUpdate(SourceWebsiteBase):
     pass
+
+
+class PaginatedSourceWebsiteResponse(BaseModel):
+    items: List[SourceWebsiteRead]
+    total_count: int
+    limit: int
+    offset: int
