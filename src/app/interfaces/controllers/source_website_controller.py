@@ -1,6 +1,5 @@
-from typing import Optional
-
-from fastapi import APIRouter, Depends, HTTPException, Body, Query
+from typing import List, Optional, Dict, Any # Added Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, Body, Request, Query
 from sqlalchemy.orm import Session
 
 from src.app.infrastructure.database_config import get_db
@@ -11,6 +10,7 @@ from src.app.security.auth import get_current_active_user
 from src.app.use_cases.source_website_use_cases import (
     CreateSourceWebsiteUseCase,
     GetSourceWebsiteByIdUseCase,
+    GetSourceWebsiteByNameUseCase,
     ListSourceWebsitesUseCase,
     UpdateSourceWebsiteUseCase,
     DeleteSourceWebsiteUseCase,
@@ -46,7 +46,7 @@ def create_source_website(
 
 
 @router.get("/{source_website_id}", response_model=SourceWebsiteRead)
-def get_source_website_by_id(
+def get_source_website(
     source_website_id: int,
     source_website_repo: SourceWebsiteRepository = Depends(
         get_source_website_repository
@@ -62,9 +62,7 @@ def get_source_website_by_id(
 
 @router.get("/", response_model=PaginatedSourceWebsiteResponse)
 def list_source_websites(
-    name: Optional[str] = Query(None, min_length=1),
-    is_active: Optional[bool] = Query(None),
-    base_url: Optional[str] = Query(None),
+    request: Request,
     limit: int = Query(10, ge=1, description="Number of items per page"),
     offset: int = Query(0, ge=0, description="Offset to start fetching items"),
     sort_by: Optional[str] = Query(None, description="Field to sort by"),
@@ -74,21 +72,33 @@ def list_source_websites(
     ),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
-    filter_params = {
-        "name": name,
-        "is_active": is_active,
-        "base_url": base_url,
-    }
+    column_filters = {}
+    for param_name, param_value in request.query_params.items():
+        if param_name.startswith("filter_") and param_name.endswith("_value"):
+            field = param_name.replace("filter_", "").replace("_value", "")
+            operator_param_name = f"filter_{field}_operator"
+            operator = request.query_params.get(operator_param_name, "equals")
+
+            if field == 'is_active':
+                if isinstance(param_value, str):
+                    param_value = param_value.lower() == 'true'
+
+            column_filters[field] = {
+                "value": param_value,
+                "operator": operator
+            }
+
+    filter_data = { "column_filters": column_filters }
+
     use_case = ListSourceWebsitesUseCase(source_website_repo)
     items, total_count = use_case.execute(
-        filter_data=filter_params,
+        filter_data=filter_data,
         limit=limit,
         offset=offset,
         sort_by=sort_by,
         sort_order=sort_order
     )
     return {"items": items, "total_count": total_count, "limit": limit, "offset": offset}
-
 
 
 @router.put("/{source_website_id}", response_model=SourceWebsiteRead)
@@ -100,7 +110,7 @@ def update_source_website(
     ),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
-    source_website_entity = SourceWebsiteEntity(**source_website.model_dump())
+    source_website_entity = SourceWebsiteEntity(id=source_website_id, **source_website.model_dump())
     use_case = UpdateSourceWebsiteUseCase(source_website_repo)
     updated_source_website = use_case.execute(source_website_id, source_website_entity)
     if not updated_source_website:
@@ -119,12 +129,12 @@ def delete_source_website(
     use_case = DeleteSourceWebsiteUseCase(source_website_repo)
     if not use_case.execute(source_website_id):
         raise HTTPException(status_code=404, detail="Source website not found")
-    return
+    return {"detail": "Source website deleted successfully"}
 
 
 @router.delete("/bulk/", response_model=dict)
 def bulk_delete_source_websites(
-    ids: list[int] = Body(..., embed=True, description="IDs list to delete"),
+    ids: list[int] = Body(..., embed=True, description="Lista de IDs para deletar"),
     source_website_repo: SourceWebsiteRepository = Depends(get_source_website_repository),
     current_user: UserEntity = Depends(get_current_active_user),
 ):

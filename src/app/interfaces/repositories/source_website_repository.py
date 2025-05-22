@@ -1,40 +1,39 @@
 from abc import ABC, abstractmethod
-from typing import Optional, List, Tuple, Dict
+from typing import Optional, List, Tuple, Dict, Any
 
-from src.app.infrastructure.database.models.source_website_model import SourceWebsite
-from src.app.entities import source_website as SourceWebsiteEntity
+from src.app.entities.source_website import SourceWebsite
 
 
 class SourceWebsiteRepositoryInterface(ABC):
     @abstractmethod
     def create(self, source_website: SourceWebsite) -> SourceWebsite:
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def get_by_id(self, source_website_id: int) -> Optional[SourceWebsite]:
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def get_by_name(self, name: str) -> Optional[SourceWebsite]:
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def get_all(
-            self,
-            limit: int,
-            offset: int,
-            filter_params: Dict,
-            sort_by: str,
-            sort_order: str,
-    ) -> Tuple[List[SourceWebsiteEntity.SourceWebsite], int]:
-        raise NotImplementedError
+        self,
+        column_filters: Optional[Dict[str, Any]] = None,
+        limit: int = 10,
+        offset: int = 0,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
+    ) -> Tuple[List[SourceWebsite], int]:
+        pass
 
     @abstractmethod
     def update(
         self, source_website_id: int, source_website: SourceWebsite
     ) -> Optional[SourceWebsite]:
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def delete(self, source_website_id: int) -> bool:
-        raise NotImplementedError
+        pass
