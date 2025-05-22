@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -78,14 +78,51 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
             )
         return None
 
-    def get_all(self) -> List[SearchConfigEntity.SearchConfig]:
-        db_search_configs = (
+    def get_all(
+        self,
+        column_filters: Optional[Dict[str, Any]] = None,
+        limit: int = 10,
+        offset: int = 0,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
+    ):
+        query = (
             self.db.query(SearchConfigModel)
             .options(joinedload(SearchConfigModel.source_websites))
             .options(joinedload(SearchConfigModel.user))
             .options(joinedload(SearchConfigModel.search_execution_logs))
-            .all()
         )
+
+        # Filtros dinâmicos
+        if column_filters and "column_filters" in column_filters:
+            for field, filter_info in column_filters["column_filters"].items():
+                value = filter_info.get("value")
+                operator = filter_info.get("operator", "equals")
+                column = getattr(SearchConfigModel, field, None)
+                if column is not None:
+                    if operator == "equals":
+                        query = query.filter(column == value)
+                    elif operator == "contains":
+                        query = query.filter(column.ilike(f"%{value}%"))
+                    elif operator == "in" and isinstance(value, list):
+                        query = query.filter(column.in_(value))
+                    # Adicione outros operadores conforme necessário
+
+        total_count = query.count()
+
+        # Ordenação
+        if sort_by:
+            column = getattr(SearchConfigModel, sort_by, None)
+            if column is not None:
+                if sort_order == "desc":
+                    query = query.order_by(column.desc())
+                else:
+                    query = query.order_by(column.asc())
+
+        # Paginação
+        query = query.offset(offset).limit(limit)
+
+        db_search_configs = query.all()
         search_configs = []
         for db_sc in db_search_configs:
             source_websites_entities = [
@@ -101,7 +138,7 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
                 source_websites=source_websites_entities,
             )
             search_configs.append(search_config_entity)
-        return search_configs
+        return search_configs, total_count
 
     def update(
         self, search_config_id: int, search_config: SearchConfigEntity.SearchConfig

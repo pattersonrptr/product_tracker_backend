@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any # Added Dict, Any
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Body, Request, Query
 from sqlalchemy.orm import Session
 
@@ -10,7 +10,6 @@ from src.app.security.auth import get_current_active_user
 from src.app.use_cases.source_website_use_cases import (
     CreateSourceWebsiteUseCase,
     GetSourceWebsiteByIdUseCase,
-    GetSourceWebsiteByNameUseCase,
     ListSourceWebsitesUseCase,
     UpdateSourceWebsiteUseCase,
     DeleteSourceWebsiteUseCase,
@@ -73,6 +72,7 @@ def list_source_websites(
     current_user: UserEntity = Depends(get_current_active_user),
 ):
     column_filters = {}
+
     for param_name, param_value in request.query_params.items():
         if param_name.startswith("filter_") and param_name.endswith("_value"):
             field = param_name.replace("filter_", "").replace("_value", "")
@@ -89,8 +89,8 @@ def list_source_websites(
             }
 
     filter_data = { "column_filters": column_filters }
-
     use_case = ListSourceWebsitesUseCase(source_website_repo)
+
     items, total_count = use_case.execute(
         filter_data=filter_data,
         limit=limit,
@@ -98,6 +98,7 @@ def list_source_websites(
         sort_by=sort_by,
         sort_order=sort_order
     )
+
     return {"items": items, "total_count": total_count, "limit": limit, "offset": offset}
 
 

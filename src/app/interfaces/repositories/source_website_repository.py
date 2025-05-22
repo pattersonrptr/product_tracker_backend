@@ -7,15 +7,15 @@ from src.app.entities.source_website import SourceWebsite
 class SourceWebsiteRepositoryInterface(ABC):
     @abstractmethod
     def create(self, source_website: SourceWebsite) -> SourceWebsite:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def get_by_id(self, source_website_id: int) -> Optional[SourceWebsite]:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def get_by_name(self, name: str) -> Optional[SourceWebsite]:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def get_all(
@@ -26,14 +26,14 @@ class SourceWebsiteRepositoryInterface(ABC):
         sort_by: Optional[str] = None,
         sort_order: Optional[str] = None,
     ) -> Tuple[List[SourceWebsite], int]:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def update(
         self, source_website_id: int, source_website: SourceWebsite
     ) -> Optional[SourceWebsite]:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def delete(self, source_website_id: int) -> bool:
-        pass
+        raise NotImplementedError

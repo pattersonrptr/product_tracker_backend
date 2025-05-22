@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Dict, Any, Tuple
 from abc import ABC, abstractmethod
 
 from src.app.entities import (
@@ -21,7 +21,14 @@ class SearchConfigRepositoryInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_all(self) -> List[SearchConfigEntity.SearchConfig]:
+    def get_all(
+        self,
+        column_filters: Optional[Dict[str, Any]] = None,
+        limit: int = 10,
+        offset: int = 0,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
+    ) -> Tuple[List[SearchConfigEntity.SearchConfig], int]:
         raise NotImplementedError
 
     @abstractmethod

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 from typing import List
 
@@ -16,7 +18,6 @@ class SourceWebsiteCreate(SourceWebsiteBase):
 
 class SourceWebsiteRead(SourceWebsiteBase):
     id: int
-
 
 class SourceWebsiteUpdate(SourceWebsiteBase):
     pass

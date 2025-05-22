@@ -1,4 +1,4 @@
-from datetime import time
+from datetime import time, datetime
 from typing import Optional, List
 
 from pydantic import BaseModel
@@ -39,3 +39,14 @@ class SearchConfig(SearchConfigInDBBase):
 
 class SearchConfigSearchResults(BaseModel):
     results: List[SearchConfig]
+
+
+class SearchConfigRead(SearchConfigBase):
+    id: int
+
+
+class PaginatedSearchConfigResponse(BaseModel):
+    items: List[SearchConfigRead]
+    total_count: int
+    limit: int
+    offset: int
