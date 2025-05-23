@@ -55,7 +55,7 @@ class ApiClient:
         print("🔎 Checking existing products")
         response = self._make_request("GET", "/products/")
         existing_products = response.json() if response.status_code == 200 else []
-        return {p["url"] for p in existing_products if scraper_name in p["url"]}
+        return {p["url"] for p in existing_products if scraper_name in ["url"]}
 
     def create_product(self, product):
         print(f"💾 Creating product: {product['url']}")

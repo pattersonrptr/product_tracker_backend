@@ -10,6 +10,7 @@ from src.app.security.auth import get_current_active_user
 from src.app.use_cases.source_website_use_cases import (
     CreateSourceWebsiteUseCase,
     GetSourceWebsiteByIdUseCase,
+    GetSourceWebsiteByNameUseCase,
     ListSourceWebsitesUseCase,
     UpdateSourceWebsiteUseCase,
     DeleteSourceWebsiteUseCase,
@@ -59,6 +60,22 @@ def get_source_website(
     return source_website
 
 
+@router.get("/name/{name}", response_model=SourceWebsiteRead)
+def read_source_website_by_name(
+    name: str,
+    source_website_repo: SourceWebsiteRepository = Depends(
+        get_source_website_repository
+    ),
+    current_user: UserEntity = Depends(get_current_active_user),
+):
+    use_case = GetSourceWebsiteByNameUseCase(source_website_repo)
+    source_website = use_case.execute(name)
+    if not source_website:
+        raise HTTPException(status_code=404, detail="Source website not found")
+    return source_website
+
+
+
 @router.get("/", response_model=PaginatedSourceWebsiteResponse)
 def list_source_websites(
     request: Request,
@@ -98,7 +115,6 @@ def list_source_websites(
         sort_by=sort_by,
         sort_order=sort_order
     )
-
     return {"items": items, "total_count": total_count, "limit": limit, "offset": offset}
 
 

@@ -123,7 +123,6 @@ class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
                     query = query.order_by(sort_column.asc())
 
         total_count = query.count()
-
         db_source_websites = query.offset(offset).limit(limit).all()
 
         return (
