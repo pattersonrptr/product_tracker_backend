@@ -23,6 +23,10 @@ class SourceWebsiteUpdate(SourceWebsiteBase):
     pass
 
 
+class SourceWebsiteBulkDeleteRequest(BaseModel):
+    ids: List[int] = Field(..., description="List of IDs to delete")
+
+
 class PaginatedSourceWebsiteResponse(BaseModel):
     items: List[SourceWebsiteRead]
     total_count: int

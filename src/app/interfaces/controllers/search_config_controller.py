@@ -168,9 +168,9 @@ def delete_search_config(
     return use_case.execute(search_config_id)
 
 
-@router.delete("/bulk/", response_model=dict)
+@router.delete("/bulk", response_model=dict)
 def bulk_delete_search_configs(
-    ids: list[int] = Body(..., embed=True, description="Lista de IDs para deletar"),
+    ids: list[int] = Body(..., embed=True, description="List of IDs to delete"),
     repos=Depends(get_repos),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
@@ -187,7 +187,7 @@ def bulk_delete_search_configs(
     return {
         "deleted": deleted,
         "not_found": not_found,
-        "message": f"{len(deleted)} configs deletados, {len(not_found)} não encontrados."
+        "message": f"{len(deleted)} configs deleted, {len(not_found)} not found."
     }
 
 

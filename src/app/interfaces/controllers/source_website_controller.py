@@ -19,7 +19,7 @@ from src.app.interfaces.schemas.source_website_schema import (
     SourceWebsiteCreate,
     SourceWebsiteRead,
     SourceWebsiteUpdate,
-    PaginatedSourceWebsiteResponse,
+    PaginatedSourceWebsiteResponse, SourceWebsiteBulkDeleteRequest,
 )
 from src.app.entities.source_website import SourceWebsite as SourceWebsiteEntity
 from src.app.entities.user import User as UserEntity
@@ -135,7 +135,7 @@ def update_source_website(
     return updated_source_website
 
 
-@router.delete("/{source_website_id}", status_code=204)
+@router.delete("/delete/{source_website_id}", status_code=204)
 def delete_source_website(
     source_website_id: int,
     source_website_repo: SourceWebsiteRepository = Depends(
@@ -149,15 +149,15 @@ def delete_source_website(
     return {"detail": "Source website deleted successfully"}
 
 
-@router.delete("/bulk/", response_model=dict)
+@router.delete("/bulk/delete", response_model=dict)
 def bulk_delete_source_websites(
-    ids: list[int] = Body(..., embed=True, description="Lista de IDs para deletar"),
+    data: SourceWebsiteBulkDeleteRequest,
     source_website_repo: SourceWebsiteRepository = Depends(get_source_website_repository),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
     deleted = []
     not_found = []
-    for sw_id in ids:
+    for sw_id in data.ids:
         use_case = DeleteSourceWebsiteUseCase(source_website_repo)
         if use_case.execute(sw_id):
             deleted.append(sw_id)
