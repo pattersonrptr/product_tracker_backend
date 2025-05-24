@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import timezone, datetime
 
 from sqlalchemy import Column, Integer, Numeric, DateTime, ForeignKey, Index
 from sqlalchemy.orm import relationship
@@ -12,7 +12,7 @@ class PriceHistory(Base):
     id = Column(Integer, primary_key=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=True)
     price = Column(Numeric(10, 2), nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     product = relationship("Product", back_populates="price_history")
 

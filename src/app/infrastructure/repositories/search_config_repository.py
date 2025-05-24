@@ -1,6 +1,8 @@
 from typing import Optional, List, Dict, Any
 
+from sqlalchemy import inspect
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.sql.sqltypes import Boolean
 
 from src.app.infrastructure.database.models.search_config_model import (
     SearchConfig as SearchConfigModel,
@@ -93,24 +95,65 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
             .options(joinedload(SearchConfigModel.search_execution_logs))
         )
 
-        # Filtros dinâmicos
-        if column_filters and "column_filters" in column_filters:
-            for field, filter_info in column_filters["column_filters"].items():
+        print("DEBUG: ", column_filters)
+
+        if column_filters:
+            for field, filter_info in column_filters.items():
                 value = filter_info.get("value")
                 operator = filter_info.get("operator", "equals")
                 column = getattr(SearchConfigModel, field, None)
-                if column is not None:
+
+                if column is None:
+                    print(
+                        f"Warning: Filter field '{field}' not found on SearchConfigModel."
+                    )
+                    continue
+
+                column_type = (
+                    inspect(column).type if hasattr(inspect(column), "type") else None
+                )
+
+                if value is None:
+                    if operator == "isEmpty":
+                        query = query.filter(column.is_(None) | (column == ""))
+                    elif operator == "isNotEmpty":
+                        query = query.filter(column.isnot(None) & (column != ""))
+                    continue
+
+                if isinstance(column_type, Boolean):
+                    if operator == "equals" or operator == "is":
+                        query = query.filter(column == value)
+                    elif operator == "notEquals":
+                        query = query.filter(column != value)
+                else:
                     if operator == "equals":
                         query = query.filter(column == value)
+                    elif operator == "notEquals":
+                        query = query.filter(column != value)
                     elif operator == "contains":
-                        query = query.filter(column.ilike(f"%{value}%"))
-                    elif operator == "in" and isinstance(value, list):
-                        query = query.filter(column.in_(value))
-                    # Adicione outros operadores conforme necessário
+                        if hasattr(column, "ilike"):
+                            print(column, operator)
+                            query = query.filter(column.ilike(f"%{value}%"))
+                        else:
+                            query = query.filter(column.contains(value))
+                    elif operator == "notContains":
+                        if hasattr(column, "ilike"):
+                            query = query.filter(~column.ilike(f"%{value}%"))
+                        else:
+                            query = query.filter(~column.contains(value))
+                    elif operator == "startsWith":
+                        if hasattr(column, "ilike"):
+                            query = query.filter(column.ilike(f"{value}%"))
+                        else:
+                            query = query.filter(column.startswith(value))
+                    elif operator == "endsWith":
+                        if hasattr(column, "ilike"):
+                            query = query.filter(column.ilike(f"%{value}"))
+                        else:
+                            query = query.filter(column.endswith(value))
 
         total_count = query.count()
 
-        # Ordenação
         if sort_by:
             column = getattr(SearchConfigModel, sort_by, None)
             if column is not None:
@@ -119,11 +162,11 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
                 else:
                     query = query.order_by(column.asc())
 
-        # Paginação
         query = query.offset(offset).limit(limit)
 
         db_search_configs = query.all()
         search_configs = []
+
         for db_sc in db_search_configs:
             source_websites_entities = [
                 SourceWebsiteEntity.SourceWebsite(**sw.__dict__)

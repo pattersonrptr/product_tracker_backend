@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from src.app.infrastructure.repositories.price_history_repository import (
     PriceHistoryRepository,
@@ -29,10 +29,10 @@ def test_get_by_product_id(mocker):
     repo = PriceHistoryRepository(mock_db)
     mock_db.query.return_value.filter.return_value.all.return_value = [
         PriceHistoryModel.PriceHistory(
-            id=1, product_id=1, price=10.50, created_at=datetime.now(UTC)
+            id=1, product_id=1, price=10.50, created_at=datetime.now(timezone.utc)
         ),
         PriceHistoryModel.PriceHistory(
-            id=2, product_id=1, price=12.00, created_at=datetime.now(UTC)
+            id=2, product_id=1, price=12.00, created_at=datetime.now(timezone.utc)
         ),
     ]
 
@@ -53,7 +53,7 @@ def test_get_by_product_id(mocker):
 def test_get_latest_price(mocker):
     mock_db = mocker.MagicMock()
     repo = PriceHistoryRepository(mock_db)
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     mock_price_history_model = PriceHistoryModel.PriceHistory(
         id=3, product_id=1, price=15.00, created_at=now
     )

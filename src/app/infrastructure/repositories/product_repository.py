@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any, Tuple
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_, inspect
+from sqlalchemy import inspect
 from sqlalchemy.types import Boolean
 
 from src.app.infrastructure.database.models.product_model import (
@@ -39,13 +39,13 @@ class ProductRepository(ProductRepositoryInterface):
             raise e
 
     def get_all(
-            self,
-            column_filters: Optional[Dict[str, Any]] = None,
-            limit: int = 10,
-            offset: int = 0,
-            sort_by: Optional[str] = None,
-            sort_order: Optional[str] = None,
-        ) -> Tuple[List[ProductEntity], int]:
+        self,
+        column_filters: Optional[Dict[str, Any]] = None,
+        limit: int = 10,
+        offset: int = 0,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
+    ) -> Tuple[List[ProductEntity], int]:
         query = self.db.query(ProductModel)
 
         if column_filters:
@@ -58,14 +58,15 @@ class ProductRepository(ProductRepositoryInterface):
                     print(f"Warning: Filter field '{field}' not found on ProductModel.")
                     continue
 
-                column_type = inspect(column).type if hasattr(inspect(column), 'type') else None
-
+                column_type = (
+                    inspect(column).type if hasattr(inspect(column), "type") else None
+                )
 
                 if value is None:
-                    if operator == 'isEmpty':
-                        query = query.filter(column.is_(None) | (column == ''))
-                    elif operator == 'isNotEmpty':
-                        query = query.filter(column.isnot(None) & (column != ''))
+                    if operator == "isEmpty":
+                        query = query.filter(column.is_(None) | (column == ""))
+                    elif operator == "isNotEmpty":
+                        query = query.filter(column.isnot(None) & (column != ""))
                     continue
 
                 if isinstance(column_type, Boolean):
@@ -79,22 +80,22 @@ class ProductRepository(ProductRepositoryInterface):
                     elif operator == "notEquals":
                         query = query.filter(column != value)
                     elif operator == "contains":
-                        if hasattr(column, 'ilike'):
+                        if hasattr(column, "ilike"):
                             query = query.filter(column.ilike(f"%{value}%"))
                         else:
                             query = query.filter(column.contains(value))
                     elif operator == "notContains":
-                        if hasattr(column, 'ilike'):
+                        if hasattr(column, "ilike"):
                             query = query.filter(~column.ilike(f"%{value}%"))
                         else:
                             query = query.filter(~column.contains(value))
                     elif operator == "startsWith":
-                        if hasattr(column, 'ilike'):
+                        if hasattr(column, "ilike"):
                             query = query.filter(column.ilike(f"{value}%"))
                         else:
                             query = query.filter(column.startswith(value))
                     elif operator == "endsWith":
-                        if hasattr(column, 'ilike'):
+                        if hasattr(column, "ilike"):
                             query = query.filter(column.ilike(f"%{value}"))
                         else:
                             query = query.filter(column.endswith(value))
@@ -108,15 +109,12 @@ class ProductRepository(ProductRepositoryInterface):
                     query = query.order_by(sort_column.asc())
 
         total_count = query.count()
-        # db_source_websites = query.offset(offset).limit(limit).all()
         db_products = (
-            query
-            .options(joinedload(ProductModel.price_history))
+            query.options(joinedload(ProductModel.price_history))
             .limit(limit)
             .offset(offset)
             .all()
         )
-
         products = []
 
         for db_product in db_products:
@@ -126,7 +124,6 @@ class ProductRepository(ProductRepositoryInterface):
             products.append(product_entity)
 
         return products, total_count
-
 
     def get_by_id(self, product_id: int) -> Optional[ProductEntity]:
         db_product = (
