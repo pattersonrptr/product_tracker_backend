@@ -18,7 +18,7 @@ from src.app.use_cases.search_config_use_cases import (
 from src.app.interfaces.schemas.search_config_schema import (
     SearchConfig,
     SearchConfigCreate,
-    SearchConfigUpdate, PaginatedSearchConfigResponse,
+    SearchConfigUpdate, PaginatedSearchConfigResponse, SearchConfigsBulkDeleteRequest,
 )
 from src.app.infrastructure.database_config import get_db
 from src.app.infrastructure.repositories.search_config_repository import (
@@ -156,7 +156,7 @@ def update_search_config(
     return updated_config
 
 
-@router.delete("/{search_config_id}", response_model=bool)
+@router.delete("/delete/{search_config_id}", response_model=bool)
 def delete_search_config(
     search_config_id: int,
     repos=Depends(get_repos),
@@ -168,9 +168,9 @@ def delete_search_config(
     return use_case.execute(search_config_id)
 
 
-@router.delete("/bulk", response_model=dict)
+@router.delete("/bulk/delete", response_model=dict)
 def bulk_delete_search_configs(
-    ids: list[int] = Body(..., embed=True, description="List of IDs to delete"),
+    data: SearchConfigsBulkDeleteRequest,
     repos=Depends(get_repos),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
@@ -178,7 +178,7 @@ def bulk_delete_search_configs(
     get_use_case = GetSearchConfigUseCase(repos["search_config_repo"])
     not_found = []
     deleted = []
-    for sc_id in ids:
+    for sc_id in data.ids:
         if get_use_case.execute(sc_id):
             use_case.execute(sc_id)
             deleted.append(sc_id)

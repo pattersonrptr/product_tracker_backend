@@ -27,7 +27,7 @@ from src.app.interfaces.schemas.product_schema import (
     ProductCreate,
     ProductRead,
     ProductUpdate,
-    ProductMinimal, PaginatedProductResponse,
+    ProductMinimal, PaginatedProductResponse, ProductsBulkDeleteRequest,
 )
 from src.app.entities.product import Product as ProductEntity
 from src.app.entities.user import User as UserEntity
@@ -146,7 +146,7 @@ def update_product(
     return updated_product
 
 
-@router.delete("/{product_id}", status_code=204)
+@router.delete("/delete/{product_id}", status_code=204)
 def delete_product(
     product_id: int,
     product_repo: ProductRepository = Depends(get_product_repository),
@@ -158,6 +158,26 @@ def delete_product(
         raise HTTPException(status_code=404, detail="Product not found")
     return {"detail": "Product deleted successfully"}
 
+
+@router.delete("/bulk/delete", response_model=dict)
+def bulk_delete_products(
+    data: ProductsBulkDeleteRequest,
+    product_repo: ProductRepository = Depends(get_product_repository),
+    current_user: UserEntity = Depends(get_current_active_user),
+):
+    not_found = []
+    deleted = []
+    for pid in data.ids:
+        use_case = DeleteProductUseCase(product_repo)
+        if use_case.execute(pid):
+            deleted.append(pid)
+        else:
+            not_found.append(pid)
+    return {
+        "deleted": deleted,
+        "not_found": not_found,
+        "message": f"{len(deleted)} products deleted, {len(not_found)} not found."
+    }
 
 @router.get("/search/{query}", response_model=List[ProductRead])
 def search_products(

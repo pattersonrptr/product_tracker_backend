@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, Field
 
@@ -48,6 +48,10 @@ class ProductMinimal(BaseModel):
     title: str
     url: str
     current_price: Optional[float] = Field(None, description="Current product price")
+
+
+class ProductsBulkDeleteRequest(BaseModel):
+    ids: List[int] = Field(..., description="List of IDs to delete")
 
 
 class PaginatedProductResponse(BaseModel):

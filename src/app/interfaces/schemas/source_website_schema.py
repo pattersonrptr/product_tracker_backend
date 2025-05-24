@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from pydantic import BaseModel, Field
 from typing import List
 
@@ -23,7 +21,7 @@ class SourceWebsiteUpdate(SourceWebsiteBase):
     pass
 
 
-class SourceWebsiteBulkDeleteRequest(BaseModel):
+class SourceWebsitesBulkDeleteRequest(BaseModel):
     ids: List[int] = Field(..., description="List of IDs to delete")
 
 

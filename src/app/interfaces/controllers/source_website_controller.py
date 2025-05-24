@@ -19,7 +19,7 @@ from src.app.interfaces.schemas.source_website_schema import (
     SourceWebsiteCreate,
     SourceWebsiteRead,
     SourceWebsiteUpdate,
-    PaginatedSourceWebsiteResponse, SourceWebsiteBulkDeleteRequest,
+    PaginatedSourceWebsiteResponse, SourceWebsitesBulkDeleteRequest,
 )
 from src.app.entities.source_website import SourceWebsite as SourceWebsiteEntity
 from src.app.entities.user import User as UserEntity
@@ -151,7 +151,7 @@ def delete_source_website(
 
 @router.delete("/bulk/delete", response_model=dict)
 def bulk_delete_source_websites(
-    data: SourceWebsiteBulkDeleteRequest,
+    data: SourceWebsitesBulkDeleteRequest,
     source_website_repo: SourceWebsiteRepository = Depends(get_source_website_repository),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
