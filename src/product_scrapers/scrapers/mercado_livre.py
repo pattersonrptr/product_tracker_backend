@@ -3,7 +3,9 @@ from urllib.parse import urlparse, parse_qs
 
 from src.product_scrapers.scrapers.base.requests_scraper import RequestScraper
 from src.product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
-from src.product_scrapers.scrapers.mixins.rotating_user_agent_mixin import RotatingUserAgentMixin
+from src.product_scrapers.scrapers.mixins.rotating_user_agent_mixin import (
+    RotatingUserAgentMixin,
+)
 
 
 class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
@@ -42,15 +44,12 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
 
         return f"{self.BASE_URL}/{search_term}_Desde_{start_from}_NoIndex_True"
 
-
     def search(self, search_term: str) -> list:
         page_number = 1
         total_links = 0
         has_next = True
         all_links = []
         search_url = f"{self.BASE_URL}/{search_term}"
-
-        print(f"DEBUG: {search_url}")
 
         while has_next:
             try:
@@ -70,7 +69,7 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
                 page_number += 1
                 total_links = total_links + len(links)
                 search_url = self._get_next_url(total_links, search_term)
-                has_next = search_term !=  ""
+                has_next = search_term != ""
 
             except Exception as e:
                 print(f"Error on page {page_number}: {str(e)}")
@@ -122,13 +121,15 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
 
     def _extract_description(self, soup):
         description_element = soup.find("p", {"class": "ui-pdp-description__content"})
-        description = description_element.get_text(strip=True) if description_element else ""
+        description = (
+            description_element.get_text(strip=True) if description_element else ""
+        )
         return description
 
     def _extract_availability(self, soup) -> bool:
         try:
-            stock_info = soup.select_one('.ui-pdp-stock-information__title')
-            if stock_info and 'disponível' in stock_info.get_text(strip=True).lower():
+            stock_info = soup.select_one(".ui-pdp-stock-information__title")
+            if stock_info and "disponível" in stock_info.get_text(strip=True).lower():
                 return True
         except Exception:
             pass
@@ -137,12 +138,12 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
     def _extract_product_code(self, url):
         fragment = urlparse(url).fragment
         params = parse_qs(fragment)
-        return params.get('wid', [None])[0]
+        return params.get("wid", [None])[0]
 
     def _extract_image_src(self, soup):
         try:
-            img = soup.select_one('img.ui-pdp-image.ui-pdp-gallery__figure__image')
-            return img['src'] if img and img.has_attr('src') else None
+            img = soup.select_one("img.ui-pdp-image.ui-pdp-gallery__figure__image")
+            return img["src"] if img and img.has_attr("src") else None
         except Exception:
             return None
 

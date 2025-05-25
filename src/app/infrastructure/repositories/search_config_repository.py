@@ -95,8 +95,6 @@ class SearchConfigRepository(SearchConfigRepositoryInterface):
             .options(joinedload(SearchConfigModel.search_execution_logs))
         )
 
-        print("DEBUG: ", column_filters)
-
         if column_filters:
             for field, filter_info in column_filters.items():
                 value = filter_info.get("value")
