@@ -1,21 +1,30 @@
-import cloudscraper
-
 from bs4 import BeautifulSoup
-from cloudscraper import requests
+from urllib.parse import urlparse, parse_qs
 
+from src.product_scrapers.scrapers.base.requests_scraper import RequestScraper
 from src.product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
+from src.product_scrapers.scrapers.mixins.rotating_user_agent_mixin import (
+    RotatingUserAgentMixin,
+)
 
 
-class MercadoLivreScraper(ScraperInterface):
+class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
     def __init__(self):
+        super().__init__()
         self.BASE_URL = "https://lista.mercadolivre.com.br"
 
-        self.session = cloudscraper.create_scraper()
-        self.headers = {
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+    def headers(self):
+        custom_headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "DNT": "1",
+            "Sec-GPC": "1",
         }
-        self.session.headers.update(self.headers)
+        random_user_agent = self.get_random_user_agent()
+
+        if random_user_agent:
+            custom_headers["User-Agent"] = random_user_agent
+        return custom_headers
 
     def _extract_links(self, html: str) -> list:
         soup = BeautifulSoup(html, "html.parser")
@@ -28,31 +37,12 @@ class MercadoLivreScraper(ScraperInterface):
 
         return links
 
-    def _make_request(self, url: str) -> str:
-        try:
-            response = self.session.get(url, allow_redirects=True)
-            response.raise_for_status()
-            return response.text
-
-        except requests.exceptions.HTTPError as e:
-            status_code = getattr(e.response, "status_code", "unknown")
-            print(f"HTTP error {status_code} em {url}")
-
-        except requests.exceptions.RequestException as e:
-            print(f"Connection error: {str(e)}")
-
-        except Exception as e:
-            print(f"Unexpected error: {str(e)}")
-
-        return ""
-
     def _get_next_url(self, total_links: int, search_term: str) -> str:
         if not total_links:
             return ""
         start_from = total_links + 1
 
         return f"{self.BASE_URL}/{search_term}_Desde_{start_from}_NoIndex_True"
-
 
     def search(self, search_term: str) -> list:
         page_number = 1
@@ -63,12 +53,13 @@ class MercadoLivreScraper(ScraperInterface):
 
         while has_next:
             try:
-                html = self._make_request(search_url)
+                resp = self.retry_request(search_url, self.headers())
+                html_content = resp.text
 
-                if not html:
+                if not html_content:
                     break
 
-                links = self._extract_links(html)
+                links = self._extract_links(html_content)
 
                 if not links:
                     break
@@ -78,7 +69,7 @@ class MercadoLivreScraper(ScraperInterface):
                 page_number += 1
                 total_links = total_links + len(links)
                 search_url = self._get_next_url(total_links, search_term)
-                has_next = search_term !=  ""
+                has_next = search_term != ""
 
             except Exception as e:
                 print(f"Error on page {page_number}: {str(e)}")
@@ -88,17 +79,30 @@ class MercadoLivreScraper(ScraperInterface):
         return all_links
 
     def scrape_data(self, url: str) -> dict:
-        html = self._make_request(url)
-        soup = BeautifulSoup(html, "html.parser")
+        resp = self.retry_request(url, self.headers())
+        html_content = resp.content
+        soup = BeautifulSoup(html_content, "html.parser")
         title = self._extract_title(soup)
         price = self._extract_price(soup)
         description = self._extract_description(soup)
+        source_product_code = f"ML - {self._extract_product_code(url)}"
+        is_available = self._extract_availability(soup)
+        image_url = self._extract_image_src(soup)
+
+        self._extract_product_code(url)
 
         return {
-            "title": title,
             "url": url,
+            "title": title,
             "price": price,
             "description": description,
+            "source_product_code": source_product_code,
+            "city": "not found",
+            "state": "not found",
+            "seller_name": "not found",
+            "is_available": is_available,
+            "image_urls": image_url,
+            "source_metadata": {},
         }
 
     def _extract_price(self, soup):
@@ -117,8 +121,31 @@ class MercadoLivreScraper(ScraperInterface):
 
     def _extract_description(self, soup):
         description_element = soup.find("p", {"class": "ui-pdp-description__content"})
-        description = description_element.get_text(strip=True) if description_element else ""
+        description = (
+            description_element.get_text(strip=True) if description_element else ""
+        )
         return description
+
+    def _extract_availability(self, soup) -> bool:
+        try:
+            stock_info = soup.select_one(".ui-pdp-stock-information__title")
+            if stock_info and "disponível" in stock_info.get_text(strip=True).lower():
+                return True
+        except Exception:
+            pass
+        return False
+
+    def _extract_product_code(self, url):
+        fragment = urlparse(url).fragment
+        params = parse_qs(fragment)
+        return params.get("wid", [None])[0]
+
+    def _extract_image_src(self, soup):
+        try:
+            img = soup.select_one("img.ui-pdp-image.ui-pdp-gallery__figure__image")
+            return img["src"] if img and img.has_attr("src") else None
+        except Exception:
+            return None
 
     def update_data(self, product: dict) -> dict:
         data = self.scrape_data(product["url"])

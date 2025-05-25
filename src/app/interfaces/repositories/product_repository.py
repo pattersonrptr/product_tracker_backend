@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Dict, Tuple, Any
 
 from src.app.entities.product import Product
 
@@ -18,7 +18,14 @@ class ProductRepositoryInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_all(self, limit: int, offset: int) -> List[Product]:
+    def get_all(
+            self,
+            column_filters: Optional[Dict[str, Any]] = None,
+            limit: int = 10,
+            offset: int = 0,
+            sort_by: Optional[str] = None,
+            sort_order: Optional[str] = None,
+    ) -> Tuple[List[Product], int]:
         raise NotImplementedError
 
     @abstractmethod

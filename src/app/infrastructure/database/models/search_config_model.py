@@ -1,4 +1,4 @@
-from datetime import time, datetime, UTC
+from datetime import time, datetime, timezone
 from sqlalchemy import (
     Column,
     Integer,
@@ -26,8 +26,12 @@ class SearchConfig(Base):
     preferred_time = Column(Time, default=time(0, 0))
     search_metadata = Column(JSON)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime, default=datetime.now(UTC))
-    updated_at = Column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC))
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+    )
 
     # Relationships
     user = relationship("User", back_populates="search_configs")

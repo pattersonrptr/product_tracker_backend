@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import Optional, List, Tuple, Dict, Any
 
-from src.app.infrastructure.database.models.source_website_model import SourceWebsite
+from src.app.entities.source_website import SourceWebsite
 
 
 class SourceWebsiteRepositoryInterface(ABC):
@@ -18,7 +18,14 @@ class SourceWebsiteRepositoryInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_all(self) -> List[SourceWebsite]:
+    def get_all(
+        self,
+        column_filters: Optional[Dict[str, Any]] = None,
+        limit: int = 10,
+        offset: int = 0,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
+    ) -> Tuple[List[SourceWebsite], int]:
         raise NotImplementedError
 
     @abstractmethod

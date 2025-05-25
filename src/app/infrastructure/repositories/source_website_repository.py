@@ -1,6 +1,9 @@
-from typing import Optional, List
+from typing import Optional, List, Tuple, Dict, Any
 
 from sqlalchemy.orm import Session
+from sqlalchemy import inspect
+from sqlalchemy.types import Boolean
+
 
 from src.app.infrastructure.database.models.source_website_model import (
     SourceWebsite as SourceWebsiteModel,
@@ -50,12 +53,88 @@ class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
             else None
         )
 
-    def get_all(self) -> List[SourceWebsiteEntity.SourceWebsite]:
-        db_source_websites = self.db.query(SourceWebsiteModel).all()
-        return [
-            SourceWebsiteEntity.SourceWebsite(**db_sw.__dict__)
-            for db_sw in db_source_websites
-        ]
+    def get_all(
+        self,
+        column_filters: Optional[Dict[str, Any]] = None,
+        limit: int = 10,
+        offset: int = 0,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
+    ) -> Tuple[List[SourceWebsiteEntity.SourceWebsite], int]:
+        query = self.db.query(SourceWebsiteModel)
+
+        if column_filters:
+            for field, filter_info in column_filters.items():
+                value = filter_info.get("value")
+                operator = filter_info.get("operator", "equals")
+                column = getattr(SourceWebsiteModel, field, None)
+
+                if column is None:
+                    print(
+                        f"Warning: Filter field '{field}' not found on SourceWebsiteModel."
+                    )
+                    continue
+
+                column_type = (
+                    inspect(column).type if hasattr(inspect(column), "type") else None
+                )
+
+                if value is None:
+                    if operator == "isEmpty":
+                        query = query.filter(column.is_(None) | (column == ""))
+                    elif operator == "isNotEmpty":
+                        query = query.filter(column.isnot(None) & (column != ""))
+                    continue
+
+                if isinstance(column_type, Boolean):
+                    if operator == "equals" or operator == "is":
+                        query = query.filter(column == value)
+                    elif operator == "notEquals":
+                        query = query.filter(column != value)
+                else:
+                    if operator == "equals":
+                        query = query.filter(column == value)
+                    elif operator == "notEquals":
+                        query = query.filter(column != value)
+                    elif operator == "contains":
+                        if hasattr(column, "ilike"):
+                            query = query.filter(column.ilike(f"%{value}%"))
+                        else:
+                            query = query.filter(column.contains(value))
+                    elif operator == "notContains":
+                        if hasattr(column, "ilike"):
+                            query = query.filter(~column.ilike(f"%{value}%"))
+                        else:
+                            query = query.filter(~column.contains(value))
+                    elif operator == "startsWith":
+                        if hasattr(column, "ilike"):
+                            query = query.filter(column.ilike(f"{value}%"))
+                        else:
+                            query = query.filter(column.startswith(value))
+                    elif operator == "endsWith":
+                        if hasattr(column, "ilike"):
+                            query = query.filter(column.ilike(f"%{value}"))
+                        else:
+                            query = query.filter(column.endswith(value))
+
+        if sort_by:
+            sort_column = getattr(SourceWebsiteModel, sort_by, None)
+            if sort_column:
+                if sort_order == "desc":
+                    query = query.order_by(sort_column.desc())
+                else:
+                    query = query.order_by(sort_column.asc())
+
+        total_count = query.count()
+        db_source_websites = query.offset(offset).limit(limit).all()
+
+        return (
+            [
+                SourceWebsiteEntity.SourceWebsite(**db_sw.__dict__)
+                for db_sw in db_source_websites
+            ],
+            total_count,
+        )
 
     def update(
         self, source_website_id: int, source_website: SourceWebsiteEntity.SourceWebsite

@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, DateTime, String, ForeignKey
 from sqlalchemy.orm import relationship
 
@@ -10,7 +10,7 @@ class SearchExecutionLog(Base):
 
     id = Column(Integer, primary_key=True)
     search_config_id = Column(Integer, ForeignKey("search_configs.id"), nullable=False)
-    timestamp = Column(DateTime, default=datetime.now(UTC))
+    timestamp = Column(DateTime, default=datetime.now(timezone.utc))
     results_count = Column(Integer)
     status = Column(String(20))
 

@@ -1,44 +1,31 @@
-import cloudscraper
-
 from requests import Response
-from cloudscraper import requests
 
+from src.product_scrapers.scrapers.base.requests_scraper import RequestScraper
 from src.product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
+from src.product_scrapers.scrapers.mixins.rotating_user_agent_mixin import RotatingUserAgentMixin
 
 
-class EnjoeiScraper(ScraperInterface):
+class EnjoeiScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
     def __init__(self):
+        super().__init__()
         self.BASE_URL = "https://enjusearch.enjoei.com.br"
-        self.session = cloudscraper.create_scraper()
-        self.headers = {
+
+    def headers(self):
+        custom_headers = {
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
             "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
             "DNT": "1",
             "Sec-GPC": "1",
         }
-        self.session.headers.update(self.headers)
+        random_user_agent = self.get_random_user_agent()
 
-    def _make_request(self, url: str) -> object:
-        try:
-            response = self.session.get(url, allow_redirects=True)
-            response.raise_for_status()
-            return response.text
-
-        except requests.exceptions.HTTPError as e:
-            status_code = getattr(e.response, "status_code", "unknown")
-            print(f"HTTP error {status_code} em {url}")
-
-        except requests.exceptions.RequestException as e:
-            print(f"Connection error: {str(e)}")
-
-        except Exception as e:
-            print(f"Unexpected error: {str(e)}")
-
-        return None
+        if random_user_agent:
+            custom_headers["User-Agent"] = random_user_agent
+        return custom_headers
 
     def _get_search_data(self, term: str, after: str = None) -> Response:
         params = {
-            "first": "50",  # seens like 50 is the maximum
+            "first": "50",
             "query_id": "7d3ea67171219db36dfcf404acab5807",
             "search_id": "88d3a54e-085a-46bc-a1f8-9726ee34424a-1743974498480",
             "term": term,
@@ -47,9 +34,9 @@ class EnjoeiScraper(ScraperInterface):
         if after:
             params["after"] = after
 
-        return self.session.get(
+        return self.retry_request(
             f"{self.BASE_URL}/graphql-search-x",
-            headers=self.headers,
+            self.headers(),
             params=params,
         )
 
@@ -91,16 +78,30 @@ class EnjoeiScraper(ScraperInterface):
         return all_urls
 
     def scrape_data(self, url: str) -> dict:
-        response = self.session.get(url)
+        response = self.retry_request(url, self.headers())
         data = response.json()
         url = data["canonical_url"]
         price_dict = data.get("fallback_pricing", {}).get("price", {})
         price = price_dict.get("listed") or price_dict.get("sale") or "0"
+        description = data.get("description", "")
+        photo_codes = data.get("photos")
+        photo_code = photo_codes[0] if photo_codes else ""
+        image_url = f"https://photos.enjoei.com.br/{url.split('/')[-1]}/1200xN/{photo_code}" if photo_code else ""
+        is_available = data.get("fallback_pricing", {}).get("state", "") == "published"
+        source_product_code = f"EJ - {data.get('id')} "
 
         return {
             "url": url,
             "title": data.get("title"),
             "price": price,
+            "description": description,
+            "source_product_code": source_product_code,
+            "city": "not found",
+            "state": "not found",
+            "seller_name": "not found",
+            "is_available": is_available,
+            "image_urls": image_url,
+            "source_metadata": {},
         }
 
     def update_data(self, product: dict) -> dict:

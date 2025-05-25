@@ -1,7 +1,7 @@
 from datetime import time
 from typing import Optional, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.app.interfaces.schemas.source_website_schema import (
     SourceWebsiteRead as SourceWebsiteSchema,
@@ -39,3 +39,18 @@ class SearchConfig(SearchConfigInDBBase):
 
 class SearchConfigSearchResults(BaseModel):
     results: List[SearchConfig]
+
+
+class SearchConfigRead(SearchConfigBase):
+    id: int
+
+
+class SearchConfigsBulkDeleteRequest(BaseModel):
+    ids: List[int] = Field(..., description="List of IDs to delete")
+
+
+class PaginatedSearchConfigResponse(BaseModel):
+    items: List[SearchConfigRead]
+    total_count: int
+    limit: int
+    offset: int

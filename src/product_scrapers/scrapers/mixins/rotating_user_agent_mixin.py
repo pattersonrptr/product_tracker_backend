@@ -11,11 +11,12 @@ class RotatingUserAgentMixin:
         self._user_agents = self._load_user_agents()
 
     def _get_user_agents_file_path(self):
-        mixin_dir = "product_scrapers/resources/"
+        mixin_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'resources')
         return os.path.join(mixin_dir, self._default_user_agents_file)
 
     def _load_user_agents(self):
         filepath = self._get_user_agents_file_path()
+
         try:
             with open(filepath, "r") as f:
                 user_agents = json.load(f)

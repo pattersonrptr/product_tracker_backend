@@ -1,21 +1,30 @@
 import json
-import cloudscraper
 
 from bs4 import BeautifulSoup
+from urllib.parse import quote_plus
 
+from src.product_scrapers.scrapers.base.requests_scraper import RequestScraper
 from src.product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
+from src.product_scrapers.scrapers.mixins.rotating_user_agent_mixin import RotatingUserAgentMixin
 
 
-class EstanteVirtualScraper(ScraperInterface):
+class EstanteVirtualScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
     def __init__(self):
+        super().__init__()
         self.BASE_URL = "https://www.estantevirtual.com.br"
 
-        self.session = cloudscraper.create_scraper()
-        self.headers = {
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0",
+    def headers(self):
+        custom_headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "DNT": "1",
+            "Sec-GPC": "1",
         }
-        self.session.headers.update(self.headers)
+        random_user_agent = self.get_random_user_agent()
+
+        if random_user_agent:
+            custom_headers["User-Agent"] = random_user_agent
+        return custom_headers
 
     def search(self, search_term: str) -> list[str]:
         page_number = 0
@@ -26,22 +35,22 @@ class EstanteVirtualScraper(ScraperInterface):
             page_number += 1
 
             params = {
-                "q": search_term,
+                "q": quote_plus(search_term),
                 "searchField": "titulo-autor",
                 "page": f"{page_number}",
             }
 
-            resp = self.session.get(
+            resp = self.retry_request(
                 f"{self.BASE_URL}/busca/api",
+                self.headers(),
                 params=params,
-                headers=self.headers,
             )
 
             if page_number == resp.json().get("totalPages"):
                 has_next = False
-            else:
-                urls = self._get_products_list(resp.json())
-                all_links.extend(urls)
+
+            urls = self._get_products_list(resp.json())
+            all_links.extend(urls)
 
         return all_links
 
@@ -52,26 +61,34 @@ class EstanteVirtualScraper(ScraperInterface):
         resp = self._fetch_page(url)
         soup = self._parse_html(resp.content)
         data = self._extract_initial_state(soup)
+
         if not data:
             return {}
 
         product_info = self._extract_product_info(data)
-        prices = self._extract_prices(product_info)
-        price = self._get_lowest_price(prices)
+        price = self._extract_price(product_info)
         description = self._extract_description(product_info)
-        seller, location = self._extract_seller_and_location(product_info)
+        seller = self._extract_seller(product_info)
+        location = self._extract_location(product_info)
+        image_url = self._extract_image(product_info)
+        is_available = self._extract_is_available(product_info)
 
         return {
             "url": url,
-            "product_name": f"{product_info.get('name', '')} | {product_info.get('author', '')}",
-            "price": f"R$ {price:.2f}" if price else "",
+            "title": f"{product_info.get('name', '')} | {product_info.get('author', '')}",
+            "price": f"{price:.2f}" if price else "",
             "description": description,
-            "seller": seller,
-            "location": location,
+            "source_product_code": f"EV - {product_info.get('id', '')}",
+            "city": location,
+            "state": "not found",
+            "seller_name": seller,
+            "is_available": is_available,
+            "image_urls": image_url,
+            "source_metadata": {},
         }
 
     def _fetch_page(self, url: str):
-        resp = self.session.get(url)
+        resp = self.retry_request(url)
         resp.raise_for_status()
         return resp
 
@@ -102,23 +119,42 @@ class EstanteVirtualScraper(ScraperInterface):
                 prices.append(price)
         return prices
 
-    def _get_lowest_price(self, prices: list) -> float:
-        return min(prices) if prices else 0
+    def _extract_price(self, product_info: dict) -> float:
+        sale_in_cents = product_info.get("currentProduct", {}).get("price", {}).get("saleInCents")
+
+        if sale_in_cents is None:
+            raise ValueError("Price not found in product info")
+        return sale_in_cents / 100
 
     def _extract_description(self, product_info: dict) -> str:
         return product_info.get("currentProduct", {}).get("description", "")
 
-    def _extract_seller_and_location(self, product_info: dict) -> tuple:
+    def _extract_seller(self, product_info: dict) -> str:
+        return product_info.get("currentProduct", {}).get("price", {}).get("seller").get("name", "Seller not found")
+
+    def _extract_location(self, product_info: dict) -> str:
         grouper = product_info.get("grouper", {})
         group_products = grouper.get("groupProducts", {})
         for condition in ["novo", "usado"]:
             if condition in group_products:
                 prices_list = group_products[condition].get("prices", [])
                 if prices_list:
-                    seller = prices_list[0].get("sellerName", "")
-                    location = prices_list[0].get("city", "")
-                    return seller, location
-        return "", ""
+                    return prices_list[0].get("city", "")
+        return ""
+
+    def _extract_image(self, product_info: dict) -> str:
+        # window.__INITIAL_STATE__["Product"]["currentProduct"]["images"]["details"][0]
+        img_details = product_info.get("currentProduct", {}).get("images", {}).get("details", [])
+        if img_details:
+            return f"https://static.estantevirtual.com.br{img_details[0]}"
+        return ""
+
+    def _extract_is_available(self, product_info: dict) -> bool:
+        return product_info.get("currentProduct", {}).get("available", False)
+
+    def _extract_source_product_code(self, product_info: dict) -> str:
+        sku = product_info.get("currentProduct", {}).get("sku", "")
+        return f"EV - {sku}"
 
     def update_data(self, product: dict) -> dict:
         data = self.scrape_data(product["url"])

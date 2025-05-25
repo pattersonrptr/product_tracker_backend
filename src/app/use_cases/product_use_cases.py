@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 from src.app.entities.price_history import PriceHistory as PriceHistoryEntity
 from src.app.interfaces.repositories.product_repository import (
@@ -9,6 +9,7 @@ from src.app.interfaces.repositories.price_history_repository import (
 )
 from src.app.interfaces.schemas.product_schema import ProductUpdate
 from src.app.entities.product import Product as ProductEntity
+from src.app.infrastructure.database.models.product_model import Product
 
 
 class CreateProductUseCase:
@@ -54,8 +55,23 @@ class ListProductsUseCase:
     def __init__(self, product_repository: ProductRepositoryInterface):
         self.product_repository = product_repository
 
-    def execute(self, limit: int, offset: int) -> List[ProductEntity]:
-        return self.product_repository.get_all(limit=limit, offset=offset)
+    def execute(
+            self,
+            filter_data: Dict[str, Any],
+            limit: int,
+            offset: int,
+            sort_by: Optional[str] = None,
+            sort_order: Optional[str] = None,
+    ) -> tuple[List[Product], int]:
+        column_filters = filter_data.get("column_filters", {})
+
+        return self.product_repository.get_all(
+            column_filters=column_filters,
+            limit=limit,
+            offset=offset,
+            sort_by=sort_by,
+            sort_order=sort_order,
+        )
 
 
 class UpdateProductUseCase:

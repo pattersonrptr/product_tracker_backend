@@ -1,5 +1,3 @@
-# TODO: Implement retry logic for when some task fails.
-
 import os
 import requests
 
@@ -36,8 +34,9 @@ def get_celery_worker_token():
 
 
 @app.task(name="src.product_scrapers.celery.tasks.run_scraper_searches")
-def run_scraper_searches(scraper_name: str = "olx"):
-    active_searches = ApiClient(get_celery_worker_token()).get_active_searches()
+def run_scraper_searches(scraper_name: str):
+    searches = ApiClient(get_celery_worker_token()).get_search_configs_by_source_website(scraper_name)
+    active_searches = [item for item in searches if item.get("is_active")]
 
     return group(
         run_search.s(search["search_term"], scraper_name) for search in active_searches
@@ -98,7 +97,7 @@ def save_products(results, scraper_name: str):
     if results:
         source_website = ApiClient(
             get_celery_worker_token()
-        ).get_source_website_by_name(scraper_name.upper())
+        ).get_source_website_by_name(scraper_name.lower())
         website_id = source_website.get("id")
         successful = [
             {**r["data"], **{"source_website_id": website_id}}
@@ -146,7 +145,7 @@ def update_products(results, scraper_name: str):
     if results:
         source_website = ApiClient(
             get_celery_worker_token()
-        ).get_source_website_by_name(scraper_name.upper())
+        ).get_source_website_by_name(scraper_name.lower())
         website_id = source_website.get("id")
         successful = [
             {**r["data"], **{"source_website_id": website_id}}
@@ -160,4 +159,4 @@ def update_products(results, scraper_name: str):
             )
             return {"status": "success", "updated": updated}
 
-        return {"status": "error", "message": "No products to update"}
+    return {"status": "error", "message": "No products to update"}

@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from starlette.requests import Request
 
 from src.app.infrastructure.database_config import get_db
 from src.app.infrastructure.repositories.product_repository import ProductRepository
@@ -26,7 +27,7 @@ from src.app.interfaces.schemas.product_schema import (
     ProductCreate,
     ProductRead,
     ProductUpdate,
-    ProductMinimal,
+    ProductMinimal, PaginatedProductResponse, ProductsBulkDeleteRequest,
 )
 from src.app.entities.product import Product as ProductEntity
 from src.app.entities.user import User as UserEntity
@@ -90,16 +91,44 @@ def read_product_by_url(
     return product
 
 
-@router.get("/", response_model=List[ProductRead])
+@router.get("/", response_model=PaginatedProductResponse)
 def read_products(
+    request: Request,
+    limit: int = Query(10, ge=1, description="Number of items per page"),
+    offset: int = Query(0, ge=0, description="Offset to start fetching items"),
+    sort_by: Optional[str] = Query(None, description="Field to sort by"),
+    sort_order: Optional[str] = Query(None, description="Sort order (asc or desc)"),
     product_repo: ProductRepository = Depends(get_product_repository),
-    limit: int = Query(default=10, ge=1, description="Number of items per page"),
-    offset: int = Query(default=0, ge=0, description="Offset to start fetching items"),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
+    column_filters = {}
+
+    for param_name, param_value in request.query_params.items():
+        if param_name.startswith("filter_") and param_name.endswith("_value"):
+            field = param_name.replace("filter_", "").replace("_value", "")
+            operator_param_name = f"filter_{field}_operator"
+            operator = request.query_params.get(operator_param_name, "equals")
+
+            if field == 'is_active':
+                if isinstance(param_value, str):
+                    param_value = param_value.lower() == 'true'
+
+            column_filters[field] = {
+                "value": param_value,
+                "operator": operator
+            }
+
+    filter_data = {"column_filters": column_filters}
     use_case = ListProductsUseCase(product_repo)
-    products = use_case.execute(limit=limit, offset=offset)
-    return products
+
+    items, total_count = use_case.execute(
+        filter_data=filter_data,
+        limit=limit,
+        offset=offset,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
+    return {"items": items, "total_count": total_count, "limit": limit, "offset": offset}
 
 
 @router.put("/{product_id}", response_model=ProductRead)
@@ -117,7 +146,7 @@ def update_product(
     return updated_product
 
 
-@router.delete("/{product_id}", status_code=204)
+@router.delete("/delete/{product_id}", status_code=204)
 def delete_product(
     product_id: int,
     product_repo: ProductRepository = Depends(get_product_repository),
@@ -129,6 +158,26 @@ def delete_product(
         raise HTTPException(status_code=404, detail="Product not found")
     return {"detail": "Product deleted successfully"}
 
+
+@router.delete("/bulk/delete", response_model=dict)
+def bulk_delete_products(
+    data: ProductsBulkDeleteRequest,
+    product_repo: ProductRepository = Depends(get_product_repository),
+    current_user: UserEntity = Depends(get_current_active_user),
+):
+    not_found = []
+    deleted = []
+    for pid in data.ids:
+        use_case = DeleteProductUseCase(product_repo)
+        if use_case.execute(pid):
+            deleted.append(pid)
+        else:
+            not_found.append(pid)
+    return {
+        "deleted": deleted,
+        "not_found": not_found,
+        "message": f"{len(deleted)} products deleted, {len(not_found)} not found."
+    }
 
 @router.get("/search/{query}", response_model=List[ProductRead])
 def search_products(
@@ -158,7 +207,6 @@ def filter_products(
     offset: int = Query(default=0, ge=0, description="Offset to start fetching items"),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
-    logging.info(f"Authenticated user accessing /filter/: {current_user.username}")
     filter_params = {
         "url": url,
         "title": title,
