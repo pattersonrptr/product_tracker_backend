@@ -127,11 +127,18 @@ async def login(
 async def verify_token(payload: TokenPayload):
     try:
         jwt.decode(payload.token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        print("Token is valid")
         return {"is_valid": True}
     except JWTError:
-        print("Token is NOT invalid")
         return {"is_valid": False}
+
+
+@auth_router.post("/refresh-token")
+async def refresh_token(current_user: UserEntity = Depends(get_current_active_user)):
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    new_access_token = create_access_token(
+        data={"sub": current_user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": new_access_token, "token_type": "bearer"}
 
 
 @router.get("/", response_model=List[User])
