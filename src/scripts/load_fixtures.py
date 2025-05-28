@@ -11,6 +11,7 @@ from src.app.infrastructure.database.models.search_config_source_website_model i
 )
 
 FIXTURE_DEPENDENCIES = {
+    "all": ["source_websites", "users", "products", "price_history", "search_configs"],
     "users": [],
     "source_websites": [],
     "products": ["source_websites"],
@@ -26,17 +27,21 @@ FIXTURE_INSERT_ORDER = [
     "search_configs",
 ]
 
+
 def resolve_dependencies(selected):
     resolved = set()
+
     def add_with_deps(fixture):
         if fixture not in resolved:
             for dep in FIXTURE_DEPENDENCIES.get(fixture, []):
                 add_with_deps(dep)
             resolved.add(fixture)
+
     for f in selected:
         add_with_deps(f)
     # Returns the fixtures in the order they should be inserted
     return [f for f in FIXTURE_INSERT_ORDER if f in resolved]
+
 
 def load_fixtures(selected_fixtures):
     db = SessionLocal()
@@ -67,7 +72,10 @@ def load_fixtures(selected_fixtures):
                 source_website_ids = sc.get("source_website_ids", [])
                 for sw_id in source_website_ids:
                     search_config_source_website_data.append(
-                        {"search_config_id": search_config_id, "source_website_id": sw_id}
+                        {
+                            "search_config_id": search_config_id,
+                            "source_website_id": sw_id,
+                        }
                     )
             for data_point in search_config_source_website_data:
                 stmt = search_config_source_website.insert().values(data_point)
@@ -78,6 +86,7 @@ def load_fixtures(selected_fixtures):
         raise e
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Load fixtures into the database.")

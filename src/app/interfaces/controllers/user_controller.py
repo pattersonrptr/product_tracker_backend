@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm
@@ -23,6 +23,7 @@ from src.config import settings
 
 router = APIRouter(tags=["users"], prefix="/users")
 auth_router = APIRouter(tags=["auth"], prefix="/auth")
+register_router = APIRouter(tags=["register"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -66,6 +67,42 @@ def create_user(
     return use_cases.create_user(user)
 
 
+@register_router.post(
+    "/register", response_model=User, status_code=status.HTTP_201_CREATED
+)
+async def register_user(
+    user_data: UserCreate, user_use_cases: UserUseCases = Depends(get_user_use_cases)
+):
+    existing_user_by_username = user_use_cases.get_user_by_username(
+        username=user_data.username
+    )
+
+    if existing_user_by_username:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Username already registered"
+        )
+
+    existing_user_by_email = user_use_cases.get_user_by_email(email=user_data.email)
+
+    if existing_user_by_email:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
+        )
+
+    hashed_password = pwd_context.hash(user_data.password)
+
+    new_user_entity = UserEntity(
+        username=user_data.username,
+        email=user_data.email,
+        hashed_password=hashed_password,
+        is_active=True,
+    )
+
+    created_user = user_use_cases.create_user(user=new_user_entity)
+
+    return created_user
+
+
 @auth_router.post("/login")
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -90,11 +127,18 @@ async def login(
 async def verify_token(payload: TokenPayload):
     try:
         jwt.decode(payload.token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        print("Token is valid")
         return {"is_valid": True}
     except JWTError:
-        print("Token is NOT invalid")
         return {"is_valid": False}
+
+
+@auth_router.post("/refresh-token")
+async def refresh_token(current_user: UserEntity = Depends(get_current_active_user)):
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    new_access_token = create_access_token(
+        data={"sub": current_user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": new_access_token, "token_type": "bearer"}
 
 
 @router.get("/", response_model=List[User])
