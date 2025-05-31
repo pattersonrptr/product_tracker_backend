@@ -1,7 +1,10 @@
 from typing import Optional, List
+from passlib.context import CryptContext
 from src.app.entities import user as UserEntity
 from src.app.interfaces.repositories.user_repository import UserRepositoryInterface
 from src.app.interfaces.schemas.user_schema import UserCreate, UserUpdate
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class CreateUserUseCase:
@@ -55,8 +58,8 @@ class GetAllUsersUseCase:
     def __init__(self, user_repo: UserRepositoryInterface):
         self.user_repo = user_repo
 
-    def execute(self) -> List[UserEntity.User]:
-        return self.user_repo.get_all()
+    def execute(self, skip: int = 0, limit: int = 100) -> List[UserEntity.User]:
+        return self.user_repo.get_all(skip=skip, limit=limit)
 
 
 class UpdateUserUseCase:
@@ -68,17 +71,33 @@ class UpdateUserUseCase:
         if not existing_user:
             return None
 
-        user_data = user_in.model_dump(exclude_unset=True)
+        update_data = user_in.model_dump(
+            exclude_unset=True, exclude={"current_password", "new_password"}
+        )
 
-        if "username" in user_data and user_data["username"] != existing_user.username:
-            if self.user_repo.get_by_username(user_data["username"]):
+        if user_in.new_password:
+            if not user_in.current_password:
+                raise ValueError("Current password is required to set a new password.")
+
+            if not pwd_context.verify(
+                user_in.current_password, existing_user.hashed_password
+            ):
+                raise ValueError("Incorrect current password.")
+
+            existing_user.hashed_password = pwd_context.hash(user_in.new_password)
+
+        if (
+            "username" in update_data
+            and update_data["username"] != existing_user.username
+        ):
+            if self.user_repo.get_by_username(update_data["username"]):
                 raise ValueError("New username already registered")
 
-        if "email" in user_data and user_data["email"] != existing_user.email:
-            if self.user_repo.get_by_email(user_data["email"]):
+        if "email" in update_data and update_data["email"] != existing_user.email:
+            if self.user_repo.get_by_email(update_data["email"]):
                 raise ValueError("New email already registered by another user")
 
-        for key, value in user_data.items():
+        for key, value in update_data.items():
             setattr(existing_user, key, value)
 
         return self.user_repo.update(user_id, existing_user)

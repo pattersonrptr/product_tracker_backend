@@ -1,36 +1,53 @@
 from datetime import datetime
-from typing import Optional, List
-
-from pydantic import BaseModel, EmailStr
+from typing import Optional
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserBase(BaseModel):
     username: str
     email: EmailStr
-    is_active: bool = True
 
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(..., min_length=6, description="Password for the new user")
 
 
-class UserUpdate(UserBase):
-    pass
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    is_active: Optional[bool] = None
 
-
-class UserInDBBase(UserBase):
-    id: Optional[int] = None
-    hashed_password: str
-    created_at: datetime
-    updated_at: datetime
+    current_password: Optional[str] = Field(
+        None,
+        min_length=6,
+        description="Current password for verification. Required if new_password is provided.",
+    )
+    new_password: Optional[str] = Field(
+        None,
+        min_length=6,
+        description="New password. Required if current_password is provided.",
+    )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
-class User(UserInDBBase):
-    pass
+class UserInDB(UserBase):
+    id: int
+    hashed_password: str
+    is_active: bool
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
 
 
-class UserSearchResults(BaseModel):
-    results: List[User]
+class User(UserBase):
+    id: int
+    is_active: bool
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
