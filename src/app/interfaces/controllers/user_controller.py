@@ -8,7 +8,6 @@ from datetime import timedelta, datetime, UTC
 from jose import jwt, JWTError
 
 from src.app.interfaces.schemas.auth_schema import TokenPayload
-from src.app.use_cases.user_use_cases import UserUseCases
 from src.app.interfaces.schemas.user_schema import (
     User,
     UserCreate,
@@ -20,6 +19,15 @@ from src.app.entities.user import User as UserEntity
 from src.app.security.auth import get_current_active_user
 from src.config import settings
 
+from src.app.use_cases.user_use_cases import (
+    CreateUserUseCase,
+    GetUserByIdUseCase,
+    GetUserByUsernameUseCase,
+    GetUserByEmailUseCase,
+    GetAllUsersUseCase,
+    UpdateUserUseCase,
+    DeleteUserUseCase,
+)
 
 router = APIRouter(tags=["users"], prefix="/users")
 auth_router = APIRouter(tags=["auth"], prefix="/auth")
@@ -27,9 +35,8 @@ register_router = APIRouter(tags=["register"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def get_user_use_cases(db: Session = Depends(get_db)):
-    user_repo = UserRepository(db)
-    return UserUseCases(user_repo)
+def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
+    return UserRepository(db)
 
 
 def hash_password(password: str) -> str:
@@ -58,58 +65,43 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 @router.post("/", response_model=User, status_code=201)
 def create_user(
     user_in: UserCreate,
-    use_cases: UserUseCases = Depends(get_user_use_cases),
+    user_repo: UserRepository = Depends(get_user_repository),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
     hashed_password = hash_password(user_in.password)
-    user_data = user_in.model_dump(exclude={"password"})
-    user = UserEntity(**user_data, hashed_password=hashed_password)
-    return use_cases.create_user(user)
+    use_case = CreateUserUseCase(user_repo)
+    try:
+        created_user = use_case.execute(user_in, hashed_password)
+        return created_user
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(e)
+        )  # Captura erros de duplicidade
 
 
 @register_router.post(
     "/register", response_model=User, status_code=status.HTTP_201_CREATED
 )
 async def register_user(
-    user_data: UserCreate, user_use_cases: UserUseCases = Depends(get_user_use_cases)
+    user_data: UserCreate, user_repo: UserRepository = Depends(get_user_repository)
 ):
-    existing_user_by_username = user_use_cases.get_user_by_username(
-        username=user_data.username
-    )
-
-    if existing_user_by_username:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Username already registered"
-        )
-
-    existing_user_by_email = user_use_cases.get_user_by_email(email=user_data.email)
-
-    if existing_user_by_email:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
-        )
-
-    hashed_password = pwd_context.hash(user_data.password)
-
-    new_user_entity = UserEntity(
-        username=user_data.username,
-        email=user_data.email,
-        hashed_password=hashed_password,
-        is_active=True,
-    )
-
-    created_user = user_use_cases.create_user(user=new_user_entity)
-
-    return created_user
+    hashed_password = hash_password(user_data.password)
+    use_case = CreateUserUseCase(user_repo)
+    try:
+        created_user = use_case.execute(user_data, hashed_password)
+        return created_user
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
 @auth_router.post("/login")
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    use_cases: UserUseCases = Depends(get_user_use_cases),
+    user_repo: UserRepository = Depends(get_user_repository),
     db: Session = Depends(get_db),
 ):
-    user = use_cases.get_user_by_username(form_data.username)
+    get_user_by_username_uc = GetUserByUsernameUseCase(user_repo)
+    user = get_user_by_username_uc.execute(form_data.username)
 
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
@@ -143,19 +135,21 @@ async def refresh_token(current_user: UserEntity = Depends(get_current_active_us
 
 @router.get("/", response_model=List[User])
 def read_users(
-    use_cases: UserUseCases = Depends(get_user_use_cases),
+    user_repo: UserRepository = Depends(get_user_repository),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
-    return use_cases.get_all_users()
+    get_all_users_uc = GetAllUsersUseCase(user_repo)
+    return get_all_users_uc.execute()
 
 
 @router.get("/{user_id}", response_model=User)
 def read_user(
     user_id: int,
-    use_cases: UserUseCases = Depends(get_user_use_cases),
+    user_repo: UserRepository = Depends(get_user_repository),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
-    user = use_cases.get_user(user_id)
+    get_user_by_id_uc = GetUserByIdUseCase(user_repo)
+    user = get_user_by_id_uc.execute(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -165,36 +159,40 @@ def read_user(
 def update_user(
     user_id: int,
     user_in: UserUpdate,
-    use_cases: UserUseCases = Depends(get_user_use_cases),
+    user_repo: UserRepository = Depends(get_user_repository),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
-    user_data = user_in.model_dump(exclude_unset=True)
-    existing_user = use_cases.get_user(user_id)
-    if not existing_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    updated_data = {**existing_user.__dict__, **user_data}
-    updated_user = UserEntity(**updated_data)
-    return use_cases.update_user(user_id, updated_user)
+    update_user_uc = UpdateUserUseCase(user_repo)
+    try:
+        updated_user = update_user_uc.execute(user_id, user_in)
+        if not updated_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return updated_user
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
-@router.delete("/{user_id}", response_model=bool)
+@router.delete("/{user_id}", status_code=204)
 def delete_user(
     user_id: int,
-    use_cases: UserUseCases = Depends(get_user_use_cases),
+    user_repo: UserRepository = Depends(get_user_repository),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
-    if not use_cases.get_user(user_id):
+    delete_user_uc = DeleteUserUseCase(user_repo)
+    deleted = delete_user_uc.execute(user_id)
+    if not deleted:
         raise HTTPException(status_code=404, detail="User not found")
-    return use_cases.delete_user(user_id)
+    return
 
 
 @router.get("/username/{username}", response_model=User)
 def read_user_by_username(
     username: str,
-    use_cases: UserUseCases = Depends(get_user_use_cases),
+    user_repo: UserRepository = Depends(get_user_repository),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
-    user = use_cases.get_user_by_username(username)
+    get_user_by_username_uc = GetUserByUsernameUseCase(user_repo)
+    user = get_user_by_username_uc.execute(username)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -203,10 +201,11 @@ def read_user_by_username(
 @router.get("/email/{email}", response_model=User)
 def read_user_by_email(
     email: str,
-    use_cases: UserUseCases = Depends(get_user_use_cases),
+    user_repo: UserRepository = Depends(get_user_repository),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
-    user = use_cases.get_user_by_email(email)
+    get_user_by_email_uc = GetUserByEmailUseCase(user_repo)
+    user = get_user_by_email_uc.execute(email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
