@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -48,7 +48,7 @@ class UserRepository(UserRepositoryInterface):
         try:
             for key, value in user.model_dump(exclude_unset=True).items():
                 setattr(db_user, key, value)
-            db_user.updated_at = datetime.now(UTC)
+            db_user.updated_at = datetime.now(timezone.utc)
             self.db.commit()
             self.db.refresh(db_user)
             return UserEntity.User(**db_user.__dict__)
