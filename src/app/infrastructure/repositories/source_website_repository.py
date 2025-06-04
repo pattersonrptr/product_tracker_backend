@@ -1,9 +1,13 @@
+from unittest.mock import MagicMock
+from types import SimpleNamespace
+import pytest
+
+from datetime import timezone, datetime
 from typing import Optional, List, Tuple, Dict, Any
 
 from sqlalchemy.orm import Session
 from sqlalchemy import inspect
 from sqlalchemy.types import Boolean
-
 
 from src.app.infrastructure.database.models.source_website_model import (
     SourceWebsite as SourceWebsiteModel,
@@ -171,3 +175,79 @@ class SourceWebsiteRepository(SourceWebsiteRepositoryInterface):
         except Exception as e:
             self.db.rollback()
             raise e
+
+
+def test_delete_source_website_success():
+    db_mock = MagicMock()
+    repository = SourceWebsiteRepository(db_mock)
+
+    source_website_id = 1
+
+    mock_db_model = SimpleNamespace(
+        id=source_website_id,
+        name="Website to Delete",
+        base_url="http://delete.com",
+        is_active=True,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    db_mock.query.return_value.filter.return_value.first.return_value = mock_db_model
+
+    result = repository.delete(source_website_id)
+
+    db_mock.query.assert_called_once_with(SourceWebsiteModel)
+    db_mock.query.return_value.filter.assert_called_once()
+    db_mock.query.return_value.filter.return_value.first.assert_called_once()
+    db_mock.delete.assert_called_once_with(mock_db_model)
+    db_mock.commit.assert_called_once()
+    assert result is True
+
+
+def test_delete_source_website_not_found():
+    db_mock = MagicMock()
+    repository = SourceWebsiteRepository(db_mock)
+
+    source_website_id = 999
+
+    db_mock.query.return_value.filter.return_value.first.return_value = None
+
+    result = repository.delete(source_website_id)
+
+    db_mock.query.assert_called_once_with(SourceWebsiteModel)
+    db_mock.query.return_value.filter.assert_called_once()
+    db_mock.query.return_value.filter.return_value.first.assert_called_once()
+    db_mock.delete.assert_not_called()
+    db_mock.commit.assert_not_called()
+    assert result is False
+
+
+def test_delete_source_website_rollback_on_exception():
+    db_mock = MagicMock()
+    repository = SourceWebsiteRepository(db_mock)
+
+    source_website_id = 1
+
+    mock_db_model = SimpleNamespace(
+        id=source_website_id,
+        name="Website to Delete",
+        base_url="http://delete.com",
+        is_active=True,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    db_mock.query.return_value.filter.return_value.first.return_value = mock_db_model
+
+    db_mock.delete.side_effect = Exception("Database error during delete")
+
+    with pytest.raises(Exception) as excinfo:
+        repository.delete(source_website_id)
+
+    db_mock.query.assert_called_once_with(SourceWebsiteModel)
+    db_mock.query.return_value.filter.assert_called_once()
+    db_mock.query.return_value.filter.return_value.first.assert_called_once()
+    db_mock.delete.assert_called_once_with(mock_db_model)
+    db_mock.rollback.assert_called_once()
+    db_mock.commit.assert_not_called()
+    assert "Database error during delete" in str(excinfo.value)
