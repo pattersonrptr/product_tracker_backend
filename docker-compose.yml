@@ -46,17 +46,17 @@ services:
       - "5555:5555"
     command: celery -A src.product_scrapers.celery.tasks flower --port=5555
 
-  #  celery-beat:
-  #    build: .
-  #    container_name: celery-beat
-  #    depends_on:
-  #      - scraper
-  #      - redis
-  #    environment:
-  #      - API_URL=http://web:8000
-  #      - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
-  #      - CELERY_BROKER_URL=redis://redis:6379/0
-  #    command: celery -A src.product_scrapers.celery.tasks beat --loglevel=info
+  celery-beat:
+    build: .
+    container_name: celery-beat
+    depends_on:
+      - scraper
+      - redis
+    environment:
+      - API_URL=http://web:8000
+      - DATABASE_URL=postgresql://user:password@db:5432/price_monitor
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    command: celery -A src.product_scrapers.celery.tasks beat --loglevel=info
 
   db:
     image: postgres:13
