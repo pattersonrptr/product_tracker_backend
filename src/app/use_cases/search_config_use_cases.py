@@ -1,7 +1,5 @@
 from typing import List, Optional, Dict, Any
 
-from sqlalchemy.orm import Session  # noqa: F401
-
 from src.app.entities import (
     search_config as SearchConfigEntity,
     source_website as SourceWebsiteEntity,
@@ -13,12 +11,20 @@ from src.app.interfaces.repositories.user_repository import UserRepositoryInterf
 
 
 class CreateSearchConfigUseCase:
-    def __init__(self, search_config_repo: SearchConfigRepositoryInterface, user_repo: UserRepositoryInterface):
+    def __init__(
+        self,
+        search_config_repo: SearchConfigRepositoryInterface,
+        user_repo: UserRepositoryInterface,
+    ):
         self.search_config_repo = search_config_repo
         self.user_repo = user_repo
 
-    def execute(self, search_config: SearchConfigEntity.SearchConfig) -> SearchConfigEntity.SearchConfig:
-        if search_config.user_id and not self.user_repo.get_by_id(search_config.user_id):
+    def execute(
+        self, search_config: SearchConfigEntity.SearchConfig
+    ) -> SearchConfigEntity.SearchConfig:
+        if search_config.user_id and not self.user_repo.get_by_id(
+            search_config.user_id
+        ):
             raise ValueError(f"User with id {search_config.user_id} not found")
         return self.search_config_repo.create(search_config)
 
@@ -27,20 +33,19 @@ class GetSearchConfigUseCase:
     def __init__(self, search_config_repo: SearchConfigRepositoryInterface):
         self.search_config_repo = search_config_repo
 
-    def execute(self, search_config_id: int) -> Optional[SearchConfigEntity.SearchConfig]:
+    def execute(
+        self, search_config_id: int
+    ) -> Optional[SearchConfigEntity.SearchConfig]:
         return self.search_config_repo.get_by_id(search_config_id)
 
 
 class ListSearchConfigsUseCase:
-    def __init__(
-            self,
-            search_config_repo: SearchConfigRepositoryInterface
-        ):
+    def __init__(self, search_config_repo: SearchConfigRepositoryInterface):
         self.search_config_repo = search_config_repo
 
     def execute(
         self,
-        filter_data:  Dict[str, Any],
+        filter_data: Dict[str, Any],
         limit: int,
         offset: int,
         sort_by: Optional[str] = None,
@@ -53,20 +58,28 @@ class ListSearchConfigsUseCase:
             limit=limit,
             offset=offset,
             sort_by=sort_by,
-            sort_order=sort_order
+            sort_order=sort_order,
         )
 
 
 class UpdateSearchConfigUseCase:
-    def __init__(self, search_config_repo: SearchConfigRepositoryInterface, user_repo: UserRepositoryInterface):
+    def __init__(
+        self,
+        search_config_repo: SearchConfigRepositoryInterface,
+        user_repo: UserRepositoryInterface,
+    ):
         self.search_config_repo = search_config_repo
         self.user_repo = user_repo
 
-    def execute(self, search_config_id: int, search_config: SearchConfigEntity.SearchConfig) -> Optional[SearchConfigEntity.SearchConfig]:
+    def execute(
+        self, search_config_id: int, search_config: SearchConfigEntity.SearchConfig
+    ) -> Optional[SearchConfigEntity.SearchConfig]:
         existing_config = self.search_config_repo.get_by_id(search_config_id)
         if not existing_config:
             return None
-        if search_config.user_id and not self.user_repo.get_by_id(search_config.user_id):
+        if search_config.user_id and not self.user_repo.get_by_id(
+            search_config.user_id
+        ):
             raise ValueError(f"User with id {search_config.user_id} not found")
         search_config.id = search_config_id
         return self.search_config_repo.update(search_config_id, search_config)
@@ -81,7 +94,11 @@ class DeleteSearchConfigUseCase:
 
 
 class GetSearchConfigsByUserUseCase:
-    def __init__(self, search_config_repo: SearchConfigRepositoryInterface, user_repo: UserRepositoryInterface):
+    def __init__(
+        self,
+        search_config_repo: SearchConfigRepositoryInterface,
+        user_repo: UserRepositoryInterface,
+    ):
         self.search_config_repo = search_config_repo
         self.user_repo = user_repo
 
@@ -95,7 +112,9 @@ class GetSearchConfigsBySourceWebsiteUseCase:
     def __init__(self, search_config_repo: SearchConfigRepositoryInterface):
         self.search_config_repo = search_config_repo
 
-    def execute(self, source_website: SourceWebsiteEntity.SourceWebsite) -> List[SearchConfigEntity.SearchConfig]:
+    def execute(
+        self, source_website: SourceWebsiteEntity.SourceWebsite
+    ) -> List[SearchConfigEntity.SearchConfig]:
         if not source_website.id:
             raise ValueError("SourceWebsite must have an ID to search by.")
         return self.search_config_repo.get_by_source_website(source_website)
