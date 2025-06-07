@@ -211,24 +211,10 @@ def test_update_product_use_case_success_no_new_price():
 
 
 def test_delete_product_use_case_success():
-    """
-    Testa a exclusão bem-sucedida de um produto.
-    """
     product_repo_mock = MagicMock()
-
     product_id_to_delete = 1
-
-    # Configura o mock para retornar True, indicando que a exclusão foi bem-sucedida
     product_repo_mock.delete.return_value = True
-
     use_case = DeleteProductUseCase(product_repo_mock)
-
-    # Executa o caso de uso
     result = use_case.execute(product_id_to_delete)
-
-    # Asserções
-    # Verifica se o método 'delete' do repositório foi chamado uma vez com o ID correto
     product_repo_mock.delete.assert_called_once_with(product_id_to_delete)
-
-    # Verifica se o caso de uso retornou True
     assert result is True
