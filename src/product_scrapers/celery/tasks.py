@@ -33,15 +33,25 @@ def get_celery_worker_token():
         return None
 
 
-@app.task(name="src.product_scrapers.celery.tasks.run_scraper_searches")
-def run_scraper_searches(scraper_name: str):
-    searches = ApiClient(
-        get_celery_worker_token()
-    ).get_search_configs_by_source_website(scraper_name)
-    active_searches = [item for item in searches if item.get("is_active")]
+@app.task(name="src.product_scrapers.celery.tasks.run_scraper_search")
+def run_scraper_search(search_config_id: int):
+    search_config = ApiClient(get_celery_worker_token()).get_search_configs_by_id(
+        search_config_id
+    )
+
+    searches = []
+    for source_website in search_config.get("source_websites", []):
+        if source_website.get("is_active"):
+            searches.append(
+                {
+                    "search_term": search_config["search_term"],
+                    "scraper_name": source_website["name"],
+                }
+            )
 
     return group(
-        run_search.s(search["search_term"], scraper_name) for search in active_searches
+        run_search.s(search["search_term"], search["scraper_name"])
+        for search in searches
     )()
 
 
@@ -164,30 +174,5 @@ def update_products(results, scraper_name: str):
     return {"status": "error", "message": "No products to update"}
 
 
-# Exemplo de scrapers a serem agendados
-SCRAPERS_TO_SCHEDULE = [
-    "scraper1",
-    "scraper2",
-]  # Substitua pelos nomes reais dos scrapers
-
-# Configuração do Celery Beat
-app.conf.beat_schedule = {
-    # Agendar buscas periódicas para cada scraper
-    **{
-        f"run_scraper_searches_{scraper}": {
-            "task": "src.product_scrapers.celery.tasks.run_scraper_searches",
-            "schedule": 3600.0,  # a cada 1 hora
-            "args": (scraper,),
-        }
-        for scraper in SCRAPERS_TO_SCHEDULE
-    },
-    # Agendar atualizações periódicas para cada scraper
-    **{
-        f"run_scraper_update_{scraper}": {
-            "task": "src.product_scrapers.celery.tasks.run_scraper_update",
-            "schedule": 86400.0,  # a cada 24 horas
-            "args": (scraper,),
-        }
-        for scraper in SCRAPERS_TO_SCHEDULE
-    },
-}
+app.conf.beat_scheduler = "src.product_scrapers.celery.beat_schedule.DynamicDBScheduler"
+app.conf.timezone = "America/Sao_Paulo"
