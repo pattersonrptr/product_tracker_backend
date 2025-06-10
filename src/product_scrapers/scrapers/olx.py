@@ -38,7 +38,7 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
         while True:
             search_url = self._build_search_url(search_term, page_number)
             resp = self.retry_request(search_url, self.headers())
-            html_content = resp.text
+            html_content = resp.text if resp.text else ""
 
             if not html_content:
                 break

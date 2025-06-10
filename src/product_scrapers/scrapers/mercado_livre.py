@@ -54,7 +54,7 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
         while has_next:
             try:
                 resp = self.retry_request(search_url, self.headers())
-                html_content = resp.text
+                html_content = resp.text if resp.text else ""
 
                 if not html_content:
                     break
