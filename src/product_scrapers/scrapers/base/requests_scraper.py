@@ -38,9 +38,7 @@ class RequestScraper(ABC):
                     print("Maximum number of retries reached.")
                     return None
             except Exception as e:
-                # TODO raise an exception instead of printing
                 print(f"unexpected error during attempt {i + 1}: {str(e)}")
                 return None
 
-        # TODO raise an exception instead of returning None
         return None

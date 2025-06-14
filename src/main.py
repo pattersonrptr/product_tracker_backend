@@ -11,7 +11,6 @@ from src.app.interfaces.controllers import (
     search_config_controller,
 )
 
-# TODO: verify if this import is necessary
 from src.app.infrastructure.database import models  # noqa: F401
 
 app = FastAPI()

@@ -61,8 +61,6 @@ def run_search(search: str, scraper_name: str):
     existing_urls = ApiClient(get_celery_worker_token()).get_existing_product_urls(
         scraper_name
     )
-    # TODO: By using list here it makes useless the generator in get_products_urls. Maybe it's better to make the
-    #  scraper.search() method return also the length of the urls list.
     urls = list(scraper.get_products_urls(search))
     new_urls = scraper.get_urls_to_update(existing_urls, urls)
 
@@ -104,7 +102,6 @@ def scrape_product_page(url: str, scraper_name: str):
 
 @app.task(name="src.product_scrapers.celery.tasks.save_products")
 def save_products(results, scraper_name: str):
-    # TODO: Next improvement cold be to save the products in batches
 
     if results:
         source_website = ApiClient(
@@ -132,8 +129,6 @@ def run_scraper_update(scraper_name: str):
     products = ApiClient(get_celery_worker_token()).get_products(
         {"updated_before": cutoff_date}
     )
-
-    # TODO: Todos os produtos estão sendo atualizados... revise essa lógica
 
     return chord(
         update_product.s(product, scraper_name).set(countdown=10)

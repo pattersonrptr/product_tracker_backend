@@ -1,6 +1,3 @@
-# TODO: Use logging instead of simple prints.
-# TODO: Better decouple the logging logic, maybe having a logger class.
-
 from itertools import islice
 
 from src.product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
