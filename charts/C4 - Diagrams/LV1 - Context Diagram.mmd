@@ -1,0 +1,23 @@
+
+C4Context
+    title Price Monitoring and Scraper System
+    Enterprise_Boundary(c1, "Price Monitoring and Scraper System") {
+        System(backend, "API Backend", "Main API for managing products, search configs, and users.")
+        System(scrapers, "Scrapers Module", "System responsible for collecting product data from external websites.")
+    }
+
+    Person(user, "User", "Manages products, search configs, and views price history.")
+
+    System_Ext(external_websites, "External Sales Websites", "OLX, Mercado Livre, Enjoei, Estante Virtual, etc. (product data sources).")
+    System_Ext(celery_broker, "Celery Broker", "Manages the asynchronous task queue for scrapers.")
+    System_Ext(celery_beat, "Celery Beat", "Task scheduler for the Scrapers module.")
+    System_Ext(database, "Database", "Stores all application data (products, users, configs, price history).")
+
+    Rel(user, backend, "Uses (via Frontend)")
+    Rel(backend, database, "Reads and Writes", "SQLAlchemy", "Database")
+    Rel(scrapers, backend, "Sends collected data to", "HTTP Requests (API Client)")
+    Rel(scrapers, celery_broker, "Sends and receives tasks via")
+    Rel(celery_beat, celery_broker, "Schedules tasks via")
+    Rel(scrapers, external_websites, "Collects data from")
+    Rel(backend, scrapers, "Triggers scraper tasks via Celery (indirectly)")
+

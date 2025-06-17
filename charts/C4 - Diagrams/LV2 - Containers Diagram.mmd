@@ -1,0 +1,32 @@
+C4Container
+    title Price Monitoring and Scraper System - Containers
+    Enterprise_Boundary(c1, "Price Monitoring and Scraper System") {
+        Container_Boundary(backend_boundary, "API Backend") {
+            Container(fastapi_app, "FastAPI Application", "Python", "RESTful API to manage users, products, search configs, and price history.")
+            Container(auth_service, "Authentication Service", "Python", "Manages user authentication and tokens (part of FastAPI Application).")
+            Container(database_client, "Database Client", "Connection Driver", "Connection and ORM module (SQLAlchemy) to interact with the database.")
+        }
+        Container_Boundary(scrapers_boundary, "Scrapers Module") {
+            Container(celery_worker, "Celery Worker", "Python", "Executes product collection and update tasks.")
+            Container(celery_beat_scheduler, "Celery Beat Scheduler", "Python", "Dynamic scraper task scheduler (reads from DB).")
+            Container(scraper_executors, "Scraper Executors", "Python", "OLX, ML, Enjoei, Estante Virtual classes implementing scraping logic.")
+            Container(api_client, "API Client", "Python", "HTTP client to interact with the API Backend (save data).")
+        }
+    }
+    Person(user, "User", "Manages products, search configs, and views price history.")
+    System_Ext(external_websites, "External Sales Websites", "OLX, Mercado Livre, Enjoei, Estante Virtual, etc. (product data sources).")
+    System_Ext(celery_message_broker, "Celery Message Broker", "Redis/RabbitMQ", "Manages the message queue and communication between workers.")
+    System_Ext(database, "Database (PostgreSQL)", "PostgreSQL", "Stores all application data.")
+    Rel(user, fastapi_app, "Uses", "HTTP/HTTPS (via React Frontend)")
+    Rel(fastapi_app, auth_service, "Uses for authentication")
+    Rel(fastapi_app, database_client, "Invokes")
+    Rel(database_client, database, "Reads and Writes", "SQL")
+    Rel(celery_worker, scraper_executors, "Invokes to collect data")
+    Rel(scraper_executors, external_websites, "Collects data from", "HTTP/HTTPS")
+    Rel(scraper_executors, api_client, "Uses to persist data")
+    Rel(api_client, fastapi_app, "Sends data to", "HTTP/HTTPS")
+    Rel(celery_worker, celery_message_broker, "Consumes tasks and publishes results")
+    Rel(celery_beat_scheduler, celery_message_broker, "Publishes scheduled tasks")
+    Rel(celery_beat_scheduler, database, "Reads scheduling configs from", "SQL")
+    Rel(fastapi_app, celery_message_broker, "Sends scraper commands/tasks (indirectly)", "Via Celery Client")
+

@@ -1,0 +1,45 @@
+C4Dynamic
+    title Product Creation Flow - Code Detail
+
+    Component(product_controller, "ProductController", "Python", "Receives the HTTP request to create a product.")
+    Component(product_schema, "ProductCreate Schema", "Pydantic", "Defines the input data structure for product creation.")
+    Component(product_entity, "Product Entity", "Pydantic", "Domain representation of the product.")
+    Component(price_history_entity, "PriceHistory Entity", "Pydantic", "Domain representation of the price history.")
+
+    Component(product_use_cases, "ProductUseCases", "Python", "Business logic for product operations (e.g., create_product).")
+    Component(product_repository_interface, "IProductRepository", "Python (ABC)", "Interface for Product persistence operations.")
+    Component(price_history_repository_interface, "IPriceHistoryRepository", "Python (ABC)", "Interface for PriceHistory persistence operations.")
+
+    Component(product_repository_impl, "ProductRepository", "Python", "Concrete implementation of IProductRepository.")
+    Component(price_history_repository_impl, "PriceHistoryRepository", "Python", "Concrete implementation of IPriceHistoryRepository.")
+
+    Component(product_model, "ProductModel", "SQLAlchemy", "ORM model for the products table.")
+    Component(price_history_model, "PriceHistoryModel", "SQLAlchemy", "ORM model for the price history table.")
+
+    Rel(product_controller, product_schema, "1. Receives data formatted by")
+    Rel(product_controller, product_entity, "2. Converts Schema to")
+    Rel(product_controller, product_use_cases, "3. Instantiates and calls create_product(product_entity)", "Injects IProductRepository and IPriceHistoryRepository")
+
+    Rel(product_use_cases, product_repository_interface, "4. Calls method (e.g., add) via")
+    Rel(product_use_cases, price_history_repository_interface, "5. Calls method (e.g., add) via")
+
+    Rel(product_repository_impl, product_repository_interface, "6. Implements")
+    Rel(price_history_repository_impl, price_history_repository_interface, "7. Implements")
+
+    Rel(product_repository_impl, product_model, "8. Interacts with (for persistence)")
+    Rel(price_history_repository_impl, price_history_model, "9. Interacts with (for persistence)")
+
+    Rel(product_repository_impl, product_entity, "10. Converts Model to and returns")
+    Rel(price_history_repository_impl, price_history_entity, "11. Converts Model to and returns")
+
+    Rel(product_model, product_entity, "12. Can be converted to")
+    Rel(price_history_model, price_history_entity, "13. Can be converted to")
+
+    Rel(product_use_cases, product_entity, "14. Returns")
+
+    Rel(product_controller, product_entity, "15. Receives back and serializes")
+
+    System_Ext(database, "Database (PostgreSQL)", "PostgreSQL", "Stores product and price history data.")
+    Rel(product_model, database, "Persists data in")
+    Rel(price_history_model, database, "Persists data in")
+

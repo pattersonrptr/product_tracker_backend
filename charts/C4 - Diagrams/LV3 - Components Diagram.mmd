@@ -1,0 +1,27 @@
+C4Component
+    title FastAPI Application - Components
+    Container(fastapi_app, "FastAPI Application", "Python", "RESTful API to manage users, products, search configs, and price history.")
+
+    Component(controllers, "Controllers", "Python (Interfaces)", "Receive HTTP requests, validate with Schemas, and orchestrate Use Case calls.")
+    Component(schemas, "Schemas", "Python (Pydantic)", "Input and output data definitions for the API (validation and serialization).")
+    Component(use_cases, "Use Cases", "Python", "Contain main business logic, orchestrate operations, and call Repositories.")
+    Component(repository_interfaces, "Repository Interfaces", "Python (ABC)", "Defined contracts for data persistence operations.")
+    Component(repositories, "Repositories", "Python", "Implement repository interfaces, interact with the database via Models.")
+    Component(entities, "Entities", "Python (Pydantic)", "Represent pure domain objects of the application.")
+    Component(models, "Models", "Python (SQLAlchemy)", "ORM mapping for database tables.")
+
+    Rel(controllers, schemas, "Uses for validation and typing")
+    Rel(controllers, use_cases, "Invokes")
+
+    Rel(use_cases, repository_interfaces, "Depends on (via Dependency Injection)")
+    Rel(use_cases, entities, "Manipulates and returns")
+
+    Rel(repositories, repository_interfaces, "Implements")
+    Rel(repositories, models, "Interacts with (ORM)")
+    Rel(repositories, entities, "Converts to and returns")
+
+    Rel(models, entities, "Can be converted to")
+
+    System_Ext(database, "Database (PostgreSQL)", "PostgreSQL", "Stores all application data.")
+    Rel(repositories, database, "Reads and Writes", "SQL")
+    
