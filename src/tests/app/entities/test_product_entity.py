@@ -1,21 +1,17 @@
-import sys
-import os
 from datetime import datetime, timezone
 
 from src.app.entities.product import Product
 
+
 def test_product_minimal_fields():
-    product = Product(
-        url="http://example.com",
-        title="Produto",
-        source_website_id=1
-    )
+    product = Product(url="http://example.com", title="Produto", source_website_id=1)
     assert product.url == "http://example.com"
     assert product.title == "Produto"
     assert product.source_website_id == 1
     assert product.is_available is True
     assert isinstance(product.created_at, datetime)
     assert isinstance(product.updated_at, datetime)
+
 
 def test_product_all_fields():
     now = datetime(2024, 1, 1, tzinfo=timezone.utc)
@@ -35,7 +31,7 @@ def test_product_all_fields():
         created_at=now,
         updated_at=now,
         current_price=99.99,
-        id=10
+        id=10,
     )
     assert product.description == "desc"
     assert product.source_product_code == "SRC123"
@@ -50,6 +46,7 @@ def test_product_all_fields():
     assert product.updated_at == now
     assert product.current_price == 99.99
     assert product.id == 10
+
 
 def test_product_defaults_are_independent():
     p1 = Product(url="a", title="b", source_website_id=1)

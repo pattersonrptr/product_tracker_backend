@@ -109,8 +109,12 @@ def get_fixtures():
                 "email": "user@admin.com",
                 "hashed_password": "$2b$12$twjBaSo7cCa9v/tn4V4jBeGHT1QD5g0ZkrIySUTJqjvZa2KT0LSwy",  # admin123
                 "is_active": True,
-                "created_at": datetime(2025, 5, 18, 2, 4, 29, 767003, tzinfo=timezone.utc),
-                "updated_at": datetime(2025, 5, 18, 2, 4, 29, 767037, tzinfo=timezone.utc),
+                "created_at": datetime(
+                    2025, 5, 18, 2, 4, 29, 767003, tzinfo=timezone.utc
+                ),
+                "updated_at": datetime(
+                    2025, 5, 18, 2, 4, 29, 767037, tzinfo=timezone.utc
+                ),
             },
             {
                 "id": 3,

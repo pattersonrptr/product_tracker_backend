@@ -56,12 +56,12 @@ class ListProductsUseCase:
         self.product_repository = product_repository
 
     def execute(
-            self,
-            filter_data: Dict[str, Any],
-            limit: int,
-            offset: int,
-            sort_by: Optional[str] = None,
-            sort_order: Optional[str] = None,
+        self,
+        filter_data: Dict[str, Any],
+        limit: int,
+        offset: int,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
     ) -> tuple[List[Product], int]:
         column_filters = filter_data.get("column_filters", {})
 

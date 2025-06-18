@@ -5,7 +5,9 @@ from urllib.parse import quote_plus
 
 from src.product_scrapers.scrapers.base.requests_scraper import RequestScraper
 from src.product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
-from src.product_scrapers.scrapers.mixins.rotating_user_agent_mixin import RotatingUserAgentMixin
+from src.product_scrapers.scrapers.mixins.rotating_user_agent_mixin import (
+    RotatingUserAgentMixin,
+)
 
 
 class EstanteVirtualScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
@@ -120,7 +122,9 @@ class EstanteVirtualScraper(ScraperInterface, RequestScraper, RotatingUserAgentM
         return prices
 
     def _extract_price(self, product_info: dict) -> float:
-        sale_in_cents = product_info.get("currentProduct", {}).get("price", {}).get("saleInCents")
+        sale_in_cents = (
+            product_info.get("currentProduct", {}).get("price", {}).get("saleInCents")
+        )
 
         if sale_in_cents is None:
             raise ValueError("Price not found in product info")
@@ -130,7 +134,12 @@ class EstanteVirtualScraper(ScraperInterface, RequestScraper, RotatingUserAgentM
         return product_info.get("currentProduct", {}).get("description", "")
 
     def _extract_seller(self, product_info: dict) -> str:
-        return product_info.get("currentProduct", {}).get("price", {}).get("seller").get("name", "Seller not found")
+        return (
+            product_info.get("currentProduct", {})
+            .get("price", {})
+            .get("seller")
+            .get("name", "Seller not found")
+        )
 
     def _extract_location(self, product_info: dict) -> str:
         grouper = product_info.get("grouper", {})
@@ -144,7 +153,9 @@ class EstanteVirtualScraper(ScraperInterface, RequestScraper, RotatingUserAgentM
 
     def _extract_image(self, product_info: dict) -> str:
         # window.__INITIAL_STATE__["Product"]["currentProduct"]["images"]["details"][0]
-        img_details = product_info.get("currentProduct", {}).get("images", {}).get("details", [])
+        img_details = (
+            product_info.get("currentProduct", {}).get("images", {}).get("details", [])
+        )
         if img_details:
             return f"https://static.estantevirtual.com.br{img_details[0]}"
         return ""

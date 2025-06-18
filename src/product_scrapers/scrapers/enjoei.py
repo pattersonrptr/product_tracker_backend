@@ -2,7 +2,9 @@ from requests import Response
 
 from src.product_scrapers.scrapers.base.requests_scraper import RequestScraper
 from src.product_scrapers.scrapers.interfaces.scraper_interface import ScraperInterface
-from src.product_scrapers.scrapers.mixins.rotating_user_agent_mixin import RotatingUserAgentMixin
+from src.product_scrapers.scrapers.mixins.rotating_user_agent_mixin import (
+    RotatingUserAgentMixin,
+)
 
 
 class EnjoeiScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
@@ -86,7 +88,11 @@ class EnjoeiScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
         description = data.get("description", "")
         photo_codes = data.get("photos")
         photo_code = photo_codes[0] if photo_codes else ""
-        image_url = f"https://photos.enjoei.com.br/{url.split('/')[-1]}/1200xN/{photo_code}" if photo_code else ""
+        image_url = (
+            f"https://photos.enjoei.com.br/{url.split('/')[-1]}/1200xN/{photo_code}"
+            if photo_code
+            else ""
+        )
         is_available = data.get("fallback_pricing", {}).get("state", "") == "published"
         source_product_code = f"EJ - {data.get('id')} "
 

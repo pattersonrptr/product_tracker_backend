@@ -5,6 +5,7 @@ from src.product_scrapers.scrapers.enjoei import EnjoeiScraper
 from src.product_scrapers.scrapers.estante_virtual import EstanteVirtualScraper
 from src.product_scrapers.scrapers.mercado_livre import MercadoLivreScraper
 
+
 @pytest.mark.parametrize(
     "name,expected_type",
     [
@@ -19,6 +20,7 @@ from src.product_scrapers.scrapers.mercado_livre import MercadoLivreScraper
 def test_create_scraper_success(name, expected_type):
     scraper = ScraperFactory.create_scraper(name)
     assert isinstance(scraper, expected_type)
+
 
 def test_create_scraper_invalid():
     with pytest.raises(ValueError) as exc:

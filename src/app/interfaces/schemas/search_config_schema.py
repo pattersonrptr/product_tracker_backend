@@ -29,9 +29,7 @@ class SearchConfigUpdate(SearchConfigBase):
 class SearchConfigInDBBase(SearchConfigBase):
     id: Optional[int] = None
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
 
 class SearchConfig(SearchConfigInDBBase):

@@ -44,12 +44,8 @@ def test_create_price_history_exception(repo, mock_db, mocker):
 def test_get_by_product_id_found(repo, mock_db):
     now = datetime.now(timezone.utc)
     mock_db.query.return_value.filter.return_value.all.return_value = [
-        PriceHistoryModel.PriceHistory(
-            id=1, product_id=1, price=10.50, created_at=now
-        ),
-        PriceHistoryModel.PriceHistory(
-            id=2, product_id=1, price=12.00, created_at=now
-        ),
+        PriceHistoryModel.PriceHistory(id=1, product_id=1, price=10.50, created_at=now),
+        PriceHistoryModel.PriceHistory(id=2, product_id=1, price=12.00, created_at=now),
     ]
     history = repo.get_by_product_id(1)
     assert len(history) == 2
@@ -95,9 +91,7 @@ def test_create_and_get_by_product_id_integration(mocker):
     # Simula get_by_product_id
     now = datetime.now(timezone.utc)
     mock_db.query.return_value.filter.return_value.all.return_value = [
-        PriceHistoryModel.PriceHistory(
-            id=10, product_id=2, price=20.0, created_at=now
-        )
+        PriceHistoryModel.PriceHistory(id=10, product_id=2, price=20.0, created_at=now)
     ]
     result = repo.get_by_product_id(2)
     assert len(result) == 1
@@ -125,6 +119,7 @@ def test_create_rollback_on_refresh_exception(repo, mock_db, mocker):
 
 def test_get_by_product_id_with_extra_attrs(repo, mock_db):
     now = datetime.now(timezone.utc)
+
     # Simula um modelo com atributos extras
     class DummyModel:
         def __init__(self):
@@ -133,6 +128,7 @@ def test_get_by_product_id_with_extra_attrs(repo, mock_db):
             self.price = 99.99
             self.created_at = now
             self.extra = "should be ignored"
+
         def __dict__(self):
             # Simula __dict__ como dicionário real
             return {
@@ -142,6 +138,7 @@ def test_get_by_product_id_with_extra_attrs(repo, mock_db):
                 "created_at": self.created_at,
                 "extra": self.extra,
             }
+
     dummy = DummyModel()
     # Força __dict__ como atributo, não método
     dummy.__dict__ = {
@@ -164,6 +161,7 @@ def test_get_by_product_id_model_to_entity_exception(repo, mock_db, monkeypatch)
         @property
         def __dict__(self):
             raise ValueError("dict error")
+
     mock_db.query.return_value.filter.return_value.all.return_value = [DummyModel()]
     with pytest.raises(ValueError):
         repo.get_by_product_id(1)

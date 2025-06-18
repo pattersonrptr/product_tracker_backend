@@ -27,7 +27,9 @@ from src.app.interfaces.schemas.product_schema import (
     ProductCreate,
     ProductRead,
     ProductUpdate,
-    ProductMinimal, PaginatedProductResponse, ProductsBulkDeleteRequest,
+    ProductMinimal,
+    PaginatedProductResponse,
+    ProductsBulkDeleteRequest,
 )
 from src.app.entities.product import Product as ProductEntity
 from src.app.entities.user import User as UserEntity
@@ -109,14 +111,11 @@ def read_products(
             operator_param_name = f"filter_{field}_operator"
             operator = request.query_params.get(operator_param_name, "equals")
 
-            if field == 'is_active':
+            if field == "is_active":
                 if isinstance(param_value, str):
-                    param_value = param_value.lower() == 'true'
+                    param_value = param_value.lower() == "true"
 
-            column_filters[field] = {
-                "value": param_value,
-                "operator": operator
-            }
+            column_filters[field] = {"value": param_value, "operator": operator}
 
     filter_data = {"column_filters": column_filters}
     use_case = ListProductsUseCase(product_repo)
@@ -126,9 +125,14 @@ def read_products(
         limit=limit,
         offset=offset,
         sort_by=sort_by,
-        sort_order=sort_order
+        sort_order=sort_order,
     )
-    return {"items": items, "total_count": total_count, "limit": limit, "offset": offset}
+    return {
+        "items": items,
+        "total_count": total_count,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.put("/{product_id}", response_model=ProductRead)
@@ -176,8 +180,9 @@ def bulk_delete_products(
     return {
         "deleted": deleted,
         "not_found": not_found,
-        "message": f"{len(deleted)} products deleted, {len(not_found)} not found."
+        "message": f"{len(deleted)} products deleted, {len(not_found)} not found.",
     }
+
 
 @router.get("/search/{query}", response_model=List[ProductRead])
 def search_products(

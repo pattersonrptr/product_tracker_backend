@@ -15,6 +15,7 @@ from src.app.interfaces.schemas.search_config_schema import (
 )
 from src.app.interfaces.schemas.source_website_schema import SourceWebsiteRead
 
+
 def test_search_config_base_valid():
     data = {
         "search_term": "notebook",
@@ -23,7 +24,9 @@ def test_search_config_base_valid():
         "preferred_time": time(8, 30),
         "search_metadata": {"brand": "Dell"},
         "source_websites": [
-            SourceWebsiteRead(id=1, name="OLX", base_url="https://olx.com.br", is_active=True)
+            SourceWebsiteRead(
+                id=1, name="OLX", base_url="https://olx.com.br", is_active=True
+            )
         ],
         "user_id": 42,
     }
@@ -35,6 +38,7 @@ def test_search_config_base_valid():
     assert obj.source_websites[0].id == 1
     assert obj.user_id == 42
 
+
 def test_search_config_base_defaults():
     obj = SearchConfigBase(search_term="celular")
     assert obj.is_active is True
@@ -44,22 +48,27 @@ def test_search_config_base_defaults():
     assert obj.source_websites is None
     assert obj.user_id is None
 
+
 def test_search_config_base_missing_required():
     with pytest.raises(ValidationError):
         SearchConfigBase()
+
 
 def test_search_config_create_accepts_ids():
     obj = SearchConfigCreate(search_term="tv", source_websites=[1, 2])
     assert obj.source_websites == [1, 2]
 
+
 def test_search_config_update_accepts_ids():
     obj = SearchConfigUpdate(search_term="tv", source_websites=[3])
     assert obj.source_websites == [3]
+
 
 def test_search_config_in_db_base():
     obj = SearchConfigInDBBase(search_term="geladeira", id=5)
     assert obj.id == 5
     assert obj.is_active is True
+
 
 def test_search_config_orm_mode():
     class Dummy:
@@ -72,11 +81,13 @@ def test_search_config_orm_mode():
             self.search_metadata = None
             self.source_websites = None
             self.user_id = 1
+
     dummy = Dummy()
     obj = SearchConfigInDBBase.from_orm(dummy)
     assert obj.id == 10
     assert obj.search_term == "carro"
     assert obj.is_active is False
+
 
 def test_search_config_read():
     obj = SearchConfigRead(
@@ -92,13 +103,16 @@ def test_search_config_read():
     assert obj.id == 7
     assert obj.search_term == "bicicleta"
 
+
 def test_search_configs_bulk_delete_request():
     req = SearchConfigsBulkDeleteRequest(ids=[1, 2, 3])
     assert req.ids == [1, 2, 3]
 
+
 def test_search_configs_bulk_delete_request_empty():
     with pytest.raises(ValidationError):
         SearchConfigsBulkDeleteRequest(ids=None)
+
 
 def test_paginated_search_config_response():
     items = [
@@ -118,6 +132,7 @@ def test_paginated_search_config_response():
     assert resp.limit == 10
     assert resp.offset == 0
     assert len(resp.items) == 1
+
 
 def test_search_config_search_results():
     configs = [

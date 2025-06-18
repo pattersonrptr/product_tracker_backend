@@ -21,4 +21,3 @@ class Product(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     current_price: Optional[float] = None
     id: Optional[int] = None
-

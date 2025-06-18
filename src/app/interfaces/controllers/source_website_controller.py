@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Body, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
 
 from src.app.infrastructure.database_config import get_db
@@ -19,7 +19,8 @@ from src.app.interfaces.schemas.source_website_schema import (
     SourceWebsiteCreate,
     SourceWebsiteRead,
     SourceWebsiteUpdate,
-    PaginatedSourceWebsiteResponse, SourceWebsitesBulkDeleteRequest,
+    PaginatedSourceWebsiteResponse,
+    SourceWebsitesBulkDeleteRequest,
 )
 from src.app.entities.source_website import SourceWebsite as SourceWebsiteEntity
 from src.app.entities.user import User as UserEntity
@@ -75,7 +76,6 @@ def read_source_website_by_name(
     return source_website
 
 
-
 @router.get("/", response_model=PaginatedSourceWebsiteResponse)
 def list_source_websites(
     request: Request,
@@ -96,16 +96,13 @@ def list_source_websites(
             operator_param_name = f"filter_{field}_operator"
             operator = request.query_params.get(operator_param_name, "equals")
 
-            if field == 'is_active':
+            if field == "is_active":
                 if isinstance(param_value, str):
-                    param_value = param_value.lower() == 'true'
+                    param_value = param_value.lower() == "true"
 
-            column_filters[field] = {
-                "value": param_value,
-                "operator": operator
-            }
+            column_filters[field] = {"value": param_value, "operator": operator}
 
-    filter_data = { "column_filters": column_filters }
+    filter_data = {"column_filters": column_filters}
     use_case = ListSourceWebsitesUseCase(source_website_repo)
 
     items, total_count = use_case.execute(
@@ -113,9 +110,14 @@ def list_source_websites(
         limit=limit,
         offset=offset,
         sort_by=sort_by,
-        sort_order=sort_order
+        sort_order=sort_order,
     )
-    return {"items": items, "total_count": total_count, "limit": limit, "offset": offset}
+    return {
+        "items": items,
+        "total_count": total_count,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.put("/{source_website_id}", response_model=SourceWebsiteRead)
@@ -127,7 +129,9 @@ def update_source_website(
     ),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
-    source_website_entity = SourceWebsiteEntity(id=source_website_id, **source_website.model_dump())
+    source_website_entity = SourceWebsiteEntity(
+        id=source_website_id, **source_website.model_dump()
+    )
     use_case = UpdateSourceWebsiteUseCase(source_website_repo)
     updated_source_website = use_case.execute(source_website_id, source_website_entity)
     if not updated_source_website:
@@ -152,7 +156,9 @@ def delete_source_website(
 @router.delete("/bulk/delete", response_model=dict)
 def bulk_delete_source_websites(
     data: SourceWebsitesBulkDeleteRequest,
-    source_website_repo: SourceWebsiteRepository = Depends(get_source_website_repository),
+    source_website_repo: SourceWebsiteRepository = Depends(
+        get_source_website_repository
+    ),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
     deleted = []

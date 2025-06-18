@@ -19,12 +19,12 @@ class ProductRepositoryInterface(ABC):
 
     @abstractmethod
     def get_all(
-            self,
-            column_filters: Optional[Dict[str, Any]] = None,
-            limit: int = 10,
-            offset: int = 0,
-            sort_by: Optional[str] = None,
-            sort_order: Optional[str] = None,
+        self,
+        column_filters: Optional[Dict[str, Any]] = None,
+        limit: int = 10,
+        offset: int = 0,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
     ) -> Tuple[List[Product], int]:
         raise NotImplementedError
 

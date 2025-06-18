@@ -25,7 +25,9 @@ class RequestScraper(ABC):
     ) -> Optional[requests.Response]:
         for i in range(max_retries + 1):
             try:
-                response = self._session.get(url, headers=headers, params=params, allow_redirects=True)
+                response = self._session.get(
+                    url, headers=headers, params=params, allow_redirects=True
+                )
                 response.raise_for_status()
                 return response
             except requests.exceptions.RequestException as e:

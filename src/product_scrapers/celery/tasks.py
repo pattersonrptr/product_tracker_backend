@@ -102,7 +102,6 @@ def scrape_product_page(url: str, scraper_name: str):
 
 @app.task(name="src.product_scrapers.celery.tasks.save_products")
 def save_products(results, scraper_name: str):
-
     if results:
         source_website = ApiClient(
             get_celery_worker_token()

@@ -3,9 +3,11 @@ from unittest.mock import patch, MagicMock
 
 from src.product_scrapers.scrapers.mercado_livre import MercadoLivreScraper
 
+
 @pytest.fixture
 def scraper():
     return MercadoLivreScraper()
+
 
 def test_headers_with_random_user_agent(scraper):
     with patch.object(scraper, "get_random_user_agent", return_value="UA_TEST"):
@@ -13,11 +15,13 @@ def test_headers_with_random_user_agent(scraper):
         assert headers["User-Agent"] == "UA_TEST"
         assert "Accept-Language" in headers
 
+
 def test_headers_without_random_user_agent(scraper):
     with patch.object(scraper, "get_random_user_agent", return_value=None):
         headers = scraper.headers()
         assert "User-Agent" not in headers or headers["User-Agent"] != ""
         assert "Accept-Language" in headers
+
 
 def test_extract_links(scraper):
     html = """
@@ -30,12 +34,14 @@ def test_extract_links(scraper):
     links = scraper._extract_links(html)
     assert "https://produto1" in links
     assert "https://produto2" in links
-    assert all(not l.startswith("https://click1") for l in links)
+    assert all(not link.startswith("https://click1") for link in links)
+
 
 def test_get_next_url(scraper):
     url = scraper._get_next_url(20, "notebook")
     assert "notebook" in url
     assert "_Desde_21_" in url
+
 
 @patch.object(MercadoLivreScraper, "retry_request")
 @patch.object(MercadoLivreScraper, "_extract_links")
@@ -51,6 +57,7 @@ def test_search_success(mock_extract_links, mock_retry, scraper):
     assert result == ["url1", "url2"]
     assert mock_extract_links.call_count == 2
 
+
 @patch.object(MercadoLivreScraper, "retry_request")
 def test_search_no_results(mock_retry, scraper):
     mock_resp = MagicMock()
@@ -59,17 +66,22 @@ def test_search_no_results(mock_retry, scraper):
     result = scraper.search("notebook")
     assert result == []
 
+
 def test_extract_title(scraper):
     class Soup:
         def find(self, tag, class_=None):
             if tag == "h1" and class_ == "ui-pdp-title":
+
                 class Title:
                     def get_text(self, strip):
                         return "Produto Teste"
+
                 return Title()
             return None
+
     soup = Soup()
     assert scraper._extract_title(soup) == "Produto Teste"
+
 
 def test_extract_price(scraper):
     class Soup:
@@ -77,51 +89,69 @@ def test_extract_price(scraper):
             if tag == "meta" and itemprop == "price":
                 return {"content": "123.45"}
             return None
+
     soup = Soup()
     assert scraper._extract_price(soup) == "123.45"
+
 
 def test_extract_description(scraper):
     class Soup:
         def find(self, tag, attrs=None):
-            if tag == "p" and attrs and attrs.get("class") == "ui-pdp-description__content":
+            if (
+                tag == "p"
+                and attrs
+                and attrs.get("class") == "ui-pdp-description__content"
+            ):
+
                 class Desc:
                     def get_text(self, strip):
                         return "Descrição"
+
                 return Desc()
             return None
+
     soup = Soup()
     assert scraper._extract_description(soup) == "Descrição"
+
 
 def test_extract_availability(scraper):
     class StockInfo:
         def get_text(self, strip):
             return "Disponível"
+
     class Soup:
         def select_one(self, selector):
             if selector == ".ui-pdp-stock-information__title":
                 return StockInfo()
             return None
+
     soup = Soup()
     assert scraper._extract_availability(soup) is True
+
 
 def test_extract_product_code(scraper):
     url = "https://produto.com#wid=12345"
     assert scraper._extract_product_code(url) == "12345"
 
+
 def test_extract_image_src(scraper):
     class Img:
         def has_attr(self, attr):
             return attr == "src"
+
         def __getitem__(self, key):
             if key == "src":
                 return "img_url"
+
     class Soup:
         def select_one(self, selector):
             if selector == "img.ui-pdp-image.ui-pdp-gallery__figure__image":
                 return Img()
             return None
+
     soup = Soup()
     assert scraper._extract_image_src(soup) == "img_url"
+
 
 @patch.object(MercadoLivreScraper, "retry_request")
 def test_scrape_data_success(mock_retry, scraper):
@@ -146,6 +176,7 @@ def test_scrape_data_success(mock_retry, scraper):
         assert data["image_urls"] == "img_url"
         assert data["source_product_code"] == "ML - abc"
 
+
 @patch.object(MercadoLivreScraper, "scrape_data")
 def test_update_data_merges_product_and_updated(scrape_data_mock, scraper):
     scrape_data_mock.return_value = {"url": "abc", "price": "200"}
@@ -154,6 +185,7 @@ def test_update_data_merges_product_and_updated(scrape_data_mock, scraper):
     assert updated["url"] == "abc"
     assert updated["price"] == "200"
     assert updated["id"] == 123
+
 
 def test_str_repr(scraper):
     assert str(scraper) == "Mercado Livre Scraper"

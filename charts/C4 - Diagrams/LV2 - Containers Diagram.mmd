@@ -29,4 +29,3 @@ C4Container
     Rel(celery_beat_scheduler, celery_message_broker, "Publishes scheduled tasks")
     Rel(celery_beat_scheduler, database, "Reads scheduling configs from", "SQL")
     Rel(fastapi_app, celery_message_broker, "Sends scraper commands/tasks (indirectly)", "Via Celery Client")
-

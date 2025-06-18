@@ -1,20 +1,27 @@
-import pytest
 from unittest.mock import patch, MagicMock
 
 import src.app.infrastructure.database_config as db_config
 
+
 def test_get_db_url_from_alembic_ini_reads_config(monkeypatch):
     fake_url = "sqlite:///test.db"
+
     class FakeConfig:
-        def read(self, path): pass
-        def get(self, section, key): return fake_url
+        def read(self, path):
+            pass
+
+        def get(self, section, key):
+            return fake_url
+
     monkeypatch.setattr(db_config, "ConfigParser", lambda: FakeConfig())
     url = db_config.get_db_url_from_alembic_ini()
     assert url == fake_url
 
+
 def test_engine_and_sessionlocal_created():
     assert db_config.engine is not None
     assert db_config.SessionLocal is not None
+
 
 def test_get_db_yields_and_closes():
     db_mock = MagicMock()

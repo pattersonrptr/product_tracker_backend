@@ -69,7 +69,13 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
         title = json_data.get("subject")
         description = json_data.get("body")
         source_product_code = f"OLX - {json_data.get('listId')}"
-        price = json_data.get("priceValue", '').replace("R$", "").replace(".", "").replace(",", ".").strip()
+        price = (
+            json_data.get("priceValue", "")
+            .replace("R$", "")
+            .replace(".", "")
+            .replace(",", ".")
+            .strip()
+        )
         images = json_data.get("images", [])
         image_url = images[0].get("original", "") if images else ""
         seller_name = json_data.get("user", {}).get("name")
@@ -111,7 +117,7 @@ class OLXScraper(ScraperInterface, RequestScraper, RotatingUserAgentMixin):
             raise Exception("No data found")
 
         data = json.loads(data_element.string)
-        ads_data = data.get('props', {}).get('pageProps', {}).get('ads')
+        ads_data = data.get("props", {}).get("pageProps", {}).get("ads")
 
         if not ads_data:
             raise Exception("No ads data found")

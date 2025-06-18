@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Body, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
 
 from src.app.entities.user import User as UserEntity
@@ -18,7 +18,9 @@ from src.app.use_cases.search_config_use_cases import (
 from src.app.interfaces.schemas.search_config_schema import (
     SearchConfig,
     SearchConfigCreate,
-    SearchConfigUpdate, PaginatedSearchConfigResponse, SearchConfigsBulkDeleteRequest,
+    SearchConfigUpdate,
+    PaginatedSearchConfigResponse,
+    SearchConfigsBulkDeleteRequest,
 )
 from src.app.infrastructure.database_config import get_db
 from src.app.infrastructure.repositories.search_config_repository import (
@@ -62,7 +64,9 @@ def create_search_config(
         **search_config_in.model_dump(exclude={"source_websites"}),
         source_websites=source_websites,
     )
-    use_case = CreateSearchConfigUseCase(repos["search_config_repo"], repos["user_repo"])
+    use_case = CreateSearchConfigUseCase(
+        repos["search_config_repo"], repos["user_repo"]
+    )
     try:
         return use_case.execute(search_config)
     except ValueError as e:
@@ -87,14 +91,11 @@ def read_search_configs(
             operator_param_name = f"filter_{field}_operator"
             operator = request.query_params.get(operator_param_name, "equals")
 
-            if field == 'is_active':
+            if field == "is_active":
                 if isinstance(param_value, str):
-                    param_value = param_value.lower() == 'true'
+                    param_value = param_value.lower() == "true"
 
-            column_filters[field] = {
-                "value": param_value,
-                "operator": operator
-            }
+            column_filters[field] = {"value": param_value, "operator": operator}
 
     filter_data = {"column_filters": column_filters}
     use_case = ListSearchConfigsUseCase(repos["search_config_repo"])
@@ -104,10 +105,15 @@ def read_search_configs(
         limit=limit,
         offset=offset,
         sort_by=sort_by,
-        sort_order=sort_order
+        sort_order=sort_order,
     )
 
-    return {"items": items, "total_count": total_count, "limit": limit, "offset": offset}
+    return {
+        "items": items,
+        "total_count": total_count,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.get("/{search_config_id}", response_model=SearchConfig)
@@ -146,7 +152,9 @@ def update_search_config(
         **search_config_in.model_dump(exclude={"source_websites"}),
         source_websites=source_websites_models,
     )
-    use_case = UpdateSearchConfigUseCase(repos["search_config_repo"], repos["user_repo"])
+    use_case = UpdateSearchConfigUseCase(
+        repos["search_config_repo"], repos["user_repo"]
+    )
     try:
         updated_config = use_case.execute(search_config_id, search_config)
     except ValueError as e:
@@ -163,7 +171,9 @@ def delete_search_config(
     current_user: UserEntity = Depends(get_current_active_user),
 ):
     use_case = DeleteSearchConfigUseCase(repos["search_config_repo"])
-    if not GetSearchConfigUseCase(repos["search_config_repo"]).execute(search_config_id):
+    if not GetSearchConfigUseCase(repos["search_config_repo"]).execute(
+        search_config_id
+    ):
         raise HTTPException(status_code=404, detail="Search config not found")
     return use_case.execute(search_config_id)
 
@@ -187,7 +197,7 @@ def bulk_delete_search_configs(
     return {
         "deleted": deleted,
         "not_found": not_found,
-        "message": f"{len(deleted)} configs deleted, {len(not_found)} not found."
+        "message": f"{len(deleted)} configs deleted, {len(not_found)} not found.",
     }
 
 
@@ -197,7 +207,9 @@ def read_user_search_configs(
     repos=Depends(get_repos),
     current_user: UserEntity = Depends(get_current_active_user),
 ):
-    use_case = GetSearchConfigsByUserUseCase(repos["search_config_repo"], repos["user_repo"])
+    use_case = GetSearchConfigsByUserUseCase(
+        repos["search_config_repo"], repos["user_repo"]
+    )
     try:
         return use_case.execute(user_id)
     except ValueError as e:
