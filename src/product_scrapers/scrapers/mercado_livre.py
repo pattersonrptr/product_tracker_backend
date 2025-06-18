@@ -30,7 +30,8 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
         soup = BeautifulSoup(html, "html.parser")
         links = []
 
-        for a in soup.select(".poly-component__title-wrapper a"):
+        # Corrigido: buscar diretamente as tags <a> com a classe correta
+        for a in soup.select("a.poly-component__title-wrapper"):
             href = a.get("href", "")
             if not href.startswith("https://click1"):
                 links.append(href)
@@ -107,12 +108,11 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
 
     def _extract_price(self, soup):
         price_element = soup.find("meta", itemprop="price")
-        price = (
-            price_element["content"]
-            if price_element and "content" in price_element.attrs
-            else ""
-        )
-        return price
+        # Corrigido: acessar o atributo 'content' de forma segura
+        if price_element:
+            # price_element pode ser um Tag do BeautifulSoup
+            return price_element.get("content", "")
+        return ""
 
     def _extract_title(self, soup):
         title_element = soup.find("h1", class_="ui-pdp-title")
