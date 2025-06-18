@@ -24,7 +24,7 @@ class ApiClient:
             )
             response.raise_for_status()
             return response
-        except requests.exceptions.RequestException as e:
+        except Exception as e:  # Alterado para capturar qualquer exceção
             print(f"🔴 Request error at {url}: {e}")
             return requests.Response()
 
