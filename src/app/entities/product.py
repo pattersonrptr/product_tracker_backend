@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Product(BaseModel):
@@ -17,7 +17,8 @@ class Product(BaseModel):
     is_available: bool = True
     image_urls: Optional[str] = None
     source_metadata: Optional[dict] = None
-    created_at: datetime = datetime.now(timezone.utc)
-    updated_at: datetime = datetime.now(timezone.utc)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     current_price: Optional[float] = None
     id: Optional[int] = None
+

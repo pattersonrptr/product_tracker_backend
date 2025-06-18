@@ -22,7 +22,7 @@ def test_get_db_yields_and_closes():
         gen = db_config.get_db()
         db = next(gen)
         assert db is db_mock
-        # Simula finalização do generator
+
         try:
             next(gen)
         except StopIteration:
