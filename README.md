@@ -53,29 +53,29 @@ To run the tests, you can use the following commands:
 Run all the tests.
 
 ```bash
- pytest src/tests
+  pytest src/tests
 ```
 
 Run tests for a specific module.
 
 ```bash
- pytest -vv src/tests/app/infrastructure/repositories/test_product_repository.py
+  pytest -vv src/tests/app/infrastructure/repositories/test_product_repository.py
 ```
 
 Run tests for a specific function.
 
 ```bash
- pytest -vv src/tests/app/infrastructure/repositories/test_product_repository.py::test_get_product_by_id
+  pytest -vv src/tests/app/infrastructure/repositories/test_product_repository.py::test_get_product_by_id
 ```
 
 Run tests with coverage.
 
 ```bash
- pytest --cov=src src/tests
+  pytest --cov=src src/tests
 ```
 
 or to generate an HTML report:
 
 ```bash
- pytest --cov=src --cov-report=html src/tests
+  pytest --cov=src --cov-report=html src/tests
 ```

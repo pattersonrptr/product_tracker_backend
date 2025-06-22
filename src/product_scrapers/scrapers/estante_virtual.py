@@ -1,3 +1,4 @@
+import datetime
 import json
 
 from bs4 import BeautifulSoup
@@ -74,13 +75,14 @@ class EstanteVirtualScraper(ScraperInterface, RequestScraper, RotatingUserAgentM
         location = self._extract_location(product_info)
         image_url = self._extract_image(product_info)
         is_available = self._extract_is_available(product_info)
+        product_id = product_info.get("id", int(datetime.datetime.now().timestamp()))
 
         return {
             "url": url,
             "title": f"{product_info.get('name', '')} | {product_info.get('author', '')}",
             "price": f"{price:.2f}" if price else "",
             "description": description,
-            "source_product_code": f"EV - {product_info.get('id', '')}",
+            "source_product_code": f"EV - {product_id}",
             "city": location,
             "state": "not found",
             "seller_name": seller,
