@@ -30,10 +30,9 @@ This project is a system for price monitoring and data collection of products on
    ```
 3. **(Optional)**. If you want to test running the scrapers manually, you can execute the following commands to start the scrapers:
    ```bash
-   docker exec -it web celery -A src.product_scrapers.celery.tasks call src.product_scrapers.celery.tasks.run_scraper_searches --args '["olx"]'
    docker exec -it web celery -A src.product_scrapers.celery.tasks call src.product_scrapers.celery.tasks.run_scraper_searches --args '["mercado_livre"]'
    ```
-   In this example, we are running the scrapers for OLX and Mercado Livre. You can replace the arguments with other scrapers as needed.
+   In this example, we are running the scrapers for Mercado Livre. You can replace the arguments with other scrapers as needed.
 
 ### Features
 
