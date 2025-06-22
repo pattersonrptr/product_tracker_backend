@@ -183,7 +183,6 @@ def test_update_product_list(mock_request, client):
 def test_make_request_exception(mock_request, client):
     mock_request.side_effect = Exception("fail")
     resp = client._make_request("GET", "/fail")
-    # Should return an empty requests.Response
     from requests import Response
 
     assert isinstance(resp, Response)

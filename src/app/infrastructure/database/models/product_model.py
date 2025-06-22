@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Boolean,
     JSON,
+    Text,
 )
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import relationship
@@ -27,9 +28,13 @@ class Product(Base):
     __tablename__ = "products"
 
     id = Column(Integer, primary_key=True, index=True)
-    url = Column(String, unique=True, index=True)
-    title = Column(String, index=True)
-    description = Column(String)
+    url = Column(
+        Text,
+        # unique=True,
+        # index=True
+    )
+    title = Column(String(255), index=True)
+    description = Column(Text)
 
     # Product code from source website (nullable) - Example: source + '-' + the product code in website = olx-1365326779)
     source_product_code = Column(
@@ -40,8 +45,8 @@ class Product(Base):
     )
 
     # Location
-    city = Column(String)
-    state = Column(String)
+    city = Column(String(255))
+    state = Column(String(50))
 
     # Ad metadata
     condition = Column(
@@ -51,7 +56,7 @@ class Product(Base):
     is_available = Column(Boolean, default=True)
 
     # Images (URLs separated by commas)
-    image_urls = Column(String)
+    image_urls = Column(Text)
 
     # Important dates
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -61,7 +66,6 @@ class Product(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    # Improved source tracking (replaces previous 'source' field)
     source_website_id = Column(
         Integer,
         ForeignKey("source_websites.id"),

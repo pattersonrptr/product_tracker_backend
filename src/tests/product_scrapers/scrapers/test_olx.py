@@ -29,7 +29,7 @@ def test_search_success(mock_extract_links, mock_retry, scraper):
     mock_resp = MagicMock()
     mock_resp.text = "<html></html>"
     mock_retry.return_value = mock_resp
-    # Simula duas páginas, depois para
+
     mock_extract_links.side_effect = [
         ["url1", "url2"],
         [],

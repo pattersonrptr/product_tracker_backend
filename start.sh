@@ -1,7 +1,7 @@
 #!/bin/bash
 
 while ! nc -z db 5432; do
-  echo "Waiting for database..."
+  echo "Waiting for database $db..."
   sleep 1
 done
 
