@@ -178,3 +178,5 @@ notes.txt
 .idea/
 
 *.ipynb
+
+alembic/versions/

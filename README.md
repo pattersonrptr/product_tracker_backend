@@ -1,6 +1,13 @@
 # Price Monitoring and Scraper System
 
-This project is a system for price monitoring and data collection of products on external sales websites, such as OLX, Mercado Livre, Enjoei, and Estante Virtual. It consists of a FastAPI backend and a scrapers module that uses Celery for asynchronous tasks.
+This project offers a solution for automated price monitoring and product data collection on online shopping sites such as OLX, Mercado Livre, Enjoei and Estante Virtual. It allows users to track price variations, identify market trends and make informed decisions about purchases, sales or pricing strategies. The system is valuable for anyone interested in data collection automation, as it centralizes and organizes information from multiple sources in a single robust backend, with asynchronous tasks and a modern API interface.
+
+### Features
+
+- **Product Management**: Add, edit, and remove products.
+- **Price History**: View the price history of collected products.
+- **Search Settings**: Define parameters for data collection.
+- **Authentication**: Manage users and authentication.
 
 ## System Structure
 
@@ -9,12 +16,17 @@ This project is a system for price monitoring and data collection of products on
 - **Database**: Stores information about products, users, price history, and settings.
 - **Celery**: Manages asynchronous and scheduled tasks.
 
-## Running the Project
+## Installing and running the Project
 
 ### Install Docker
 
-1. Make sure you have Docker and Docker Compose installed. Follow the instructions on the [Docker website](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) to install Docker.
-2. Build and start the containers:
+1. Clone the repository
+   ```bash
+   git clone git@github.com:pattersonrptr/product_tracker_backend.git
+   ```
+   cd product_tracker_backend
+2. Make sure you have Docker and Docker Compose installed. Follow the instructions on the [Docker website](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) to install Docker.
+3. Build and start the containers:
    ```bash
    docker-compose up --build
    ```
@@ -34,9 +46,36 @@ This project is a system for price monitoring and data collection of products on
    ```
    In this example, we are running the scrapers for Mercado Livre. You can replace the arguments with other scrapers as needed.
 
-### Features
+## Run tests
 
-- **Product Management**: Add, edit, and remove products.
-- **Price History**: View the price history of collected products.
-- **Search Settings**: Define parameters for data collection.
-- **Authentication**: Manage users and authentication.
+To run the tests, you can use the following commands:
+
+Run all the tests.
+
+```bash
+ pytest src/tests
+```
+
+Run tests for a specific module.
+
+```bash
+ pytest -vv src/tests/app/infrastructure/repositories/test_product_repository.py
+```
+
+Run tests for a specific function.
+
+```bash
+ pytest -vv src/tests/app/infrastructure/repositories/test_product_repository.py::test_get_product_by_id
+```
+
+Run tests with coverage.
+
+```bash
+ pytest --cov=src src/tests
+```
+
+or to generate an HTML report:
+
+```bash
+ pytest --cov=src --cov-report=html src/tests
+```
