@@ -42,9 +42,9 @@ This project offers a solution for automated price monitoring and product data c
    ```
 3. **(Optional)**. If you want to test running the scrapers manually, you can execute the following commands to start the scrapers:
    ```bash
-   docker exec -it web celery -A src.product_scrapers.celery.tasks call src.product_scrapers.celery.tasks.run_scraper_searches --args '["mercado_livre"]'
+   docker exec -it web celery -A src.product_scrapers.celery.tasks call src.product_scrapers.celery.tasks.run_scraper_search --args '["3"]'
    ```
-   In this example, we are running the scrapers for Mercado Livre. You can replace the arguments with other scrapers as needed.
+   This example runs a scraper for the search setting with ID 3. You can change the ID to run other scrapers.
 
 ## Run tests
 
