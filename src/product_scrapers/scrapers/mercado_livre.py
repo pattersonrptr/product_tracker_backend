@@ -1,3 +1,5 @@
+import datetime
+
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
 
@@ -30,8 +32,7 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
         soup = BeautifulSoup(html, "html.parser")
         links = []
 
-        # Corrigido: buscar diretamente as tags <a> com a classe correta
-        for a in soup.select("a.poly-component__title-wrapper"):
+        for a in soup.select(".poly-component__title-wrapper a"):
             href = a.get("href", "")
             if not href.startswith("https://click1"):
                 links.append(href)
@@ -86,11 +87,9 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
         title = self._extract_title(soup)
         price = self._extract_price(soup)
         description = self._extract_description(soup)
-        source_product_code = f"ML - {self._extract_product_code(url)}"
+        source_product_code = f"ML - {int(datetime.datetime.now().timestamp())}"
         is_available = self._extract_availability(soup)
         image_url = self._extract_image_src(soup)
-
-        self._extract_product_code(url)
 
         return {
             "url": url,
@@ -108,7 +107,6 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
 
     def _extract_price(self, soup):
         price_element = soup.find("meta", itemprop="price")
-        # Corrigido: acessar o atributo 'content' de forma segura
         if price_element:
             # price_element pode ser um Tag do BeautifulSoup
             return price_element.get("content", "")
