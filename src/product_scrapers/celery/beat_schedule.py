@@ -29,14 +29,20 @@ def get_dynamic_schedule():
 
 
 class DynamicDBScheduler(Scheduler):
-    last_sync = 0
-    sync_interval = 60
+    # last_sync = 0
+    # sync_interval = 10
 
     def setup_schedule(self):
-        self.sync_from_db()
+        while True:
+            time.sleep(10)
+            self.tick()
+            self.sync_from_db()
 
     def sync_from_db(self):
+        print("DynamicDBScheduler is running...")
+
         self.schedule.clear()
+
         for name, entry in get_dynamic_schedule().items():
             self.schedule[name] = ScheduleEntry(
                 name=name,
@@ -48,12 +54,12 @@ class DynamicDBScheduler(Scheduler):
                 app=self.app,
             )
 
-    def tick(self):
-        now = time.time()
-        if now - self.last_sync > self.sync_interval:
-            self.sync_from_db()
-            self.last_sync = now
-        return super().tick()
+    # def tick(self):
+    #     now = time.time()
+    #     if now - self.last_sync > self.sync_interval:
+    #         self.sync_from_db()
+    #         self.last_sync = now
+    #     return super().tick()
 
 
 # Celery beat static scheduling example:

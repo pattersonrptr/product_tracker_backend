@@ -31,9 +31,13 @@ services:
     volumes:
       - ./alembic:/src/alembic
       - .:/src
-    #    command: celery -A product_scrapers.celery.tasks worker --loglevel=info --concurrency=16
-    command: celery -A src.product_scrapers.celery.tasks worker --loglevel=info --concurrency=16
-    # command: ["/bin/sh", "-c", "celery multi start 8 -A product_scrapers.celery.tasks --loglevel=info --concurrency=2 --detach && tail -f /dev/null"]
+    # command: celery -A src.product_scrapers.celery.tasks worker --loglevel=info --concurrency=16
+    command:
+      [
+        "/bin/sh",
+        "-c",
+        "celery multi start 8 -A src.product_scrapers.celery.tasks --loglevel=info --concurrency=2 --detach && tail -f /dev/null",
+      ]
 
   flower:
     build: .

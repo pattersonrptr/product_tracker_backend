@@ -168,5 +168,5 @@ def update_products(results, scraper_name: str):
     return {"status": "error", "message": "No products to update"}
 
 
-app.conf.beat_scheduler = "src.product_scrapers.celery.beat_schedule.DynamicDBScheduler"
 app.conf.timezone = "America/Sao_Paulo"
+app.conf.beat_scheduler = "src.product_scrapers.celery.beat_schedule.DynamicDBScheduler"
