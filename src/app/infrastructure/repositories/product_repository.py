@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Tuple
 
-from sqlalchemy import func
+from sqlalchemy import func, cast, Date
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import inspect
 from sqlalchemy.types import Boolean
@@ -61,6 +61,38 @@ class ProductRepository(ProductRepositoryInterface):
                 column_type = (
                     inspect(column).type if hasattr(inspect(column), "type") else None
                 )
+
+                # Support for date filters
+                if field in ["created_at", "updated_at"]:
+                    # Convert ISO string to datetime.date if necessary
+                    if value and isinstance(value, str):
+                        try:
+                            value = datetime.fromisoformat(
+                                value.replace("Z", "+00:00")
+                            ).date()
+                        except Exception:
+                            print("Unable to convert value to date:", value)
+                            pass
+                    if isinstance(value, datetime):
+                        value = value.date()
+
+                    if operator in ["is"]:
+                        query = query.filter(cast(column, Date) == value)
+                    elif operator in ["not"]:
+                        query = query.filter(cast(column, Date) != value)
+                    elif operator in ["after"]:
+                        query = query.filter(cast(column, Date) > value)
+                    elif operator in ["onOrAfter"]:
+                        query = query.filter(cast(column, Date) >= value)
+                    elif operator in ["before"]:
+                        query = query.filter(cast(column, Date) < value)
+                    elif operator in ["onOrBefore"]:
+                        query = query.filter(cast(column, Date) <= value)
+                    elif operator in ["isEmpty"]:
+                        query = query.filter(column.is_(None))
+                    elif operator in ["isNotEmpty"]:
+                        query = query.filter(column.isnot(None))
+                    continue
 
                 if value is None:
                     if operator == "isEmpty":
