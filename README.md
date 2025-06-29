@@ -1,4 +1,4 @@
-# Price Monitoring and Scraper System
+# Price Monitoring System
 
 This project offers a solution for automated price monitoring and product data collection on online shopping sites such as OLX, Mercado Livre, Enjoei and Estante Virtual. It allows users to track price variations, identify market trends and make informed decisions about purchases, sales or pricing strategies. The system is valuable for anyone interested in data collection automation, as it centralizes and organizes information from multiple sources in a single robust backend, with asynchronous tasks and a modern API interface.
 

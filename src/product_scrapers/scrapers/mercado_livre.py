@@ -108,7 +108,6 @@ class MercadoLivreScraper(ScraperInterface, RequestScraper, RotatingUserAgentMix
     def _extract_price(self, soup):
         price_element = soup.find("meta", itemprop="price")
         if price_element:
-            # price_element pode ser um Tag do BeautifulSoup
             return price_element.get("content", "")
         return ""
 
